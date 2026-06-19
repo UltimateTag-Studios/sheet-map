@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { useCallback } from "react";
 
+import { SheetMapDivider } from "./divider";
 import { usePeekMeasureRef } from "./peek-measure-context";
+import { SheetMapPeekSpacers } from "./peek-spacers";
 
 export type BottomSheetCollapsedLayersProps = {
   /** Sheet is resting at the collapsed snap. */
@@ -10,6 +12,8 @@ export type BottomSheetCollapsedLayersProps = {
   revealExpandedWhileCollapsed: boolean;
   peek: ReactNode;
   expanded: ReactNode;
+  /** Renders tab bar clearance spacer after peek (from `config.layout.tabBarClearance`). */
+  reserveTabBar?: boolean;
 };
 
 /**
@@ -25,6 +29,7 @@ export function BottomSheetCollapsedLayers({
   revealExpandedWhileCollapsed,
   peek,
   expanded,
+  reserveTabBar = false,
 }: BottomSheetCollapsedLayersProps) {
   const onPeekMeasure = usePeekMeasureRef();
 
@@ -35,7 +40,27 @@ export function BottomSheetCollapsedLayers({
     [onPeekMeasure],
   );
 
-  const showPeek = isCollapsed && !revealExpandedWhileCollapsed;
+  const showCollapsedPeek = isCollapsed && !revealExpandedWhileCollapsed;
+
+  /** Collapsed snap: peek + handle spacer + optional tab bar spacer. */
+  const collapsedPeek = (
+    <>
+      {peek}
+      <SheetMapPeekSpacers reserveTabBar={reserveTabBar} />
+    </>
+  );
+
+  /** Half / full (and drag-reveal): peek + spacer, divider, scroll body. */
+  const openSheetContent = (
+    <>
+      <div className="shrink-0">
+        {peek}
+        <SheetMapPeekSpacers />
+      </div>
+      <SheetMapDivider />
+      <div className="flex min-h-0 flex-1 flex-col">{expanded}</div>
+    </>
+  );
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -44,30 +69,32 @@ export function BottomSheetCollapsedLayers({
         aria-hidden
         className="pointer-events-none invisible absolute top-0 w-full"
       >
-        {peek}
+        {collapsedPeek}
       </div>
 
       {isCollapsed ? (
         <>
           <div
             className={
-              showPeek ? "w-full shrink-0" : "pointer-events-none opacity-0"
+              showCollapsedPeek
+                ? "w-full shrink-0"
+                : "pointer-events-none opacity-0"
             }
-            aria-hidden={!showPeek}
+            aria-hidden={!showCollapsedPeek}
           >
-            {peek}
+            {collapsedPeek}
           </div>
           <div
             className={`sheet-map-expanded-overlay absolute inset-x-0 top-0 z-10 flex min-h-0 flex-col ${
-              showPeek ? "pointer-events-none opacity-0" : ""
+              showCollapsedPeek ? "pointer-events-none opacity-0" : ""
             }`.trim()}
-            aria-hidden={showPeek}
+            aria-hidden={showCollapsedPeek}
           >
-            {expanded}
+            {openSheetContent}
           </div>
         </>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col">{expanded}</div>
+        openSheetContent
       )}
     </div>
   );

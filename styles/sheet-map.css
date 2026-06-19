@@ -5,19 +5,16 @@
 .sheet-map-drawer {
   --sheet-map-handle-margin-top: 0.75rem;
   --sheet-map-handle-bar-height: 0.25rem;
+  --sheet-map-handle-margin-bottom: 0.75rem;
   --sheet-map-handle-height: calc(
     var(--sheet-map-handle-margin-top) +
-    var(--sheet-map-handle-bar-height)
+    var(--sheet-map-handle-bar-height) +
+    var(--sheet-map-handle-margin-bottom)
   );
-  --sheet-map-peek-padding-y: 0.75rem;
   /** Trims half-leading under peek title/eyebrow for vertical balance. */
   --sheet-map-peek-balance-adjust: -7px;
-  --sheet-map-peek-margin-bottom: calc(
-    var(--sheet-map-handle-height) +
-    var(--sheet-map-peek-balance-adjust)
-  );
   /** Total bottom chrome to clear (e.g. tab bar gap + bar height). Safe area is added separately. */
-  --sheet-map-tab-bar-height: 0px;
+  --sheet-map-tab-bar-clearance: 0px;
 
   border-radius: 0.75rem;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -29,6 +26,7 @@
 
 .sheet-map-drawer-handle {
   margin-top: var(--sheet-map-handle-margin-top);
+  margin-bottom: var(--sheet-map-handle-margin-bottom);
   height: var(--sheet-map-handle-bar-height);
   width: 2.5rem;
   border-radius: 9999px;
@@ -40,28 +38,21 @@
   backdrop-filter: blur(24px);
 }
 
-/** Peek/header chrome — mirrors handle height in bottom padding for vertical balance. */
-.sheet-map-peek {
-  box-sizing: border-box;
-  flex-shrink: 0;
-  width: 100%;
-  padding-inline: 1rem;
-  padding-top: var(--sheet-map-peek-padding-y);
-  padding-bottom: calc(
-    var(--sheet-map-peek-padding-y) +
-    var(--sheet-map-peek-margin-bottom)
-  );
-}
-
-.sheet-map-peek--reserve-tab-bar {
-  padding-bottom: calc(
-    var(--sheet-map-peek-padding-y) +
-    var(--sheet-map-peek-margin-bottom) +
-    env(safe-area-inset-bottom) +
-    var(--sheet-map-tab-bar-height)
-  );
-}
-
-.sheet-map-peek--bordered {
+.sheet-map-divider {
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/** Mirrors handle block below user peek for vertical balance. */
+.sheet-map-handle-spacer {
+  height: calc(
+    var(--sheet-map-handle-height) +
+    var(--sheet-map-peek-balance-adjust)
+  );
+}
+
+.sheet-map-tab-bar-spacer {
+  height: calc(
+    env(safe-area-inset-bottom) +
+    var(--sheet-map-tab-bar-clearance)
+  );
 }

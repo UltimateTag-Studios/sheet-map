@@ -1,20 +1,39 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import type { MapObscuredInsets } from "../canvas/viewport/map-viewport";
-import { DEFAULT_PEEK_BALANCE_ADJUST_PX } from "./build-sheet-map-drawer-css-vars";
 import { DEFAULT_HALF_SNAP_FRACTION } from "./normalize-half-snap-fraction";
 
 export type MapChromeInsets = Partial<MapObscuredInsets>;
 
+/** Sheet drawer geometry — spacing and clearance. Visuals: theme CSS on `.sheet-map-*` classes. */
+export type MapSheetLayout = {
+  /** Handle block top margin (default `0.75rem`). Number = px. */
+  drawerHandleMarginTop?: number | string;
+  /** Handle bar height (default `0.25rem`). Number = px. */
+  drawerHandleBarHeight?: number | string;
+  /** Gap between handle bar and peek content (default `0.75rem`). Number = px. */
+  drawerHandleMarginBottom?: number | string;
+  /** Optical trim on handle spacer under peek (default `-7`). */
+  peekBalanceAdjustPx?: number;
+  /** Bottom chrome cleared by tab bar spacer (default `0`). Safe area added separately. */
+  tabBarClearance?: number | string;
+};
+
+/** Optional visual overrides merged onto drawer surfaces. */
+export type MapSheetStyles = {
+  drawer?: CSSProperties;
+  drawerHandle?: CSSProperties;
+};
+
 export type MapShellConfig = {
+  /** Sheet drawer geometry — defaults work out of the box. */
+  layout?: MapSheetLayout;
+  /** Optional drawer/handle visual overrides (colors, shadows, …). */
+  styles?: MapSheetStyles;
   /** Extra obscured area (tab bar, top nav). Combined with sheet insets. */
   fixedChromeInsets?: MapChromeInsets;
   /** Extra pixels added below measured peek for collapsed snap (e.g. floating tab bar). */
   collapsedBottomInsetPx?: number;
-  /** Vertical peek padding (default `0.75rem`). Number = px. */
-  peekPaddingY?: number | string;
-  /** Optical balance trim under peek title row (default `-7`). */
-  peekBalanceAdjustPx?: number;
   /** Vaul fraction snap between collapsed and full (default 0.5). */
   halfSnapFraction?: number;
   initialZoom?: number;
@@ -59,7 +78,6 @@ export const defaultMapShellConfig: Required<
     | "myLocationAriaLabel"
     | "collapsedBottomInsetPx"
     | "halfSnapFraction"
-    | "peekBalanceAdjustPx"
   >
 > = {
   initialZoom: 15,
@@ -68,5 +86,4 @@ export const defaultMapShellConfig: Required<
   myLocationAriaLabel: "Focus my location",
   collapsedBottomInsetPx: 0,
   halfSnapFraction: DEFAULT_HALF_SNAP_FRACTION,
-  peekBalanceAdjustPx: DEFAULT_PEEK_BALANCE_ADJUST_PX,
 };

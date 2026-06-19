@@ -23,7 +23,7 @@ export function readFullHeightPx(): number {
   return height > 0 ? height : FALLBACK_FULL_HEIGHT_PX;
 }
 
-/** Height of the handle block (bar + top margin) in CSS pixels. */
+/** Height of the handle block (bar + top and bottom margin) in CSS pixels. */
 export function measureHandleBlockHeightPx(
   handleEl: HTMLElement | null,
 ): number {
@@ -33,7 +33,8 @@ export function measureHandleBlockHeightPx(
 
   const style = getComputedStyle(handleEl);
   const marginTop = Number.parseFloat(style.marginTop) || 0;
-  return handleEl.offsetHeight + marginTop;
+  const marginBottom = Number.parseFloat(style.marginBottom) || 0;
+  return handleEl.offsetHeight + marginTop + marginBottom;
 }
 
 /** Sum handle + peek DOM heights and optional extra bottom inset. */

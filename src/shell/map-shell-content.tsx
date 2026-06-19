@@ -15,12 +15,15 @@ import {
   MapVisibleAreaOverlay,
 } from "../canvas";
 import type { MapViewportSyncState } from "../canvas/viewport/use-map-viewport-sync";
-import { buildSheetMapDrawerCssVars } from "./build-sheet-map-drawer-css-vars";
 import type {
   MapShellConfig,
   MapShellSlots,
   MapUserLocationCoords,
 } from "./config";
+import {
+  buildSheetMapDrawerStyle,
+  hasTabBarClearance,
+} from "./sheet-map-drawer-style";
 
 const MAP_VIEWPORT_CLASS = "h-full min-h-[100dvh]";
 
@@ -83,7 +86,10 @@ export function MapShellContent({
 }: MapShellContentProps) {
   const isCollapsed = sheetSnap === "collapsed";
   const myLocationAriaLabel = config.myLocationAriaLabel ?? "Focus my location";
-  const drawerCssVars = buildSheetMapDrawerCssVars(config);
+  const layout = config.layout ?? {};
+  const { drawer: drawerStyle, drawerHandle: drawerHandleStyle } =
+    buildSheetMapDrawerStyle(layout, config.styles);
+  const reserveTabBar = hasTabBarClearance(layout);
 
   return (
     <div className={`relative min-h-0 flex-1 ${MAP_VIEWPORT_CLASS}`}>
@@ -147,7 +153,8 @@ export function MapShellContent({
         contentRef={onSheetContentRef}
         collapsedBottomInsetPx={config.collapsedBottomInsetPx}
         halfSnapFraction={config.halfSnapFraction}
-        drawerCssVars={drawerCssVars}
+        drawerStyle={drawerStyle}
+        drawerHandleStyle={drawerHandleStyle}
         onSnapHeightsChange={onSnapHeightsChange}
       >
         <BottomSheetCollapsedLayers
@@ -155,6 +162,7 @@ export function MapShellContent({
           revealExpandedWhileCollapsed={isDraggingSheet}
           peek={peekContent}
           expanded={expandedContent}
+          reserveTabBar={reserveTabBar}
         />
       </BottomSheet>
     </div>

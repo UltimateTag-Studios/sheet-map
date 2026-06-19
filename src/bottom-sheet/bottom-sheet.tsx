@@ -24,8 +24,10 @@ export type BottomSheetProps = {
   collapsedBottomInsetPx?: number;
   /** Vaul fraction snap between collapsed and full (default 0.5). */
   halfSnapFraction?: number;
-  /** CSS custom properties for `.sheet-map-drawer` (peek balance, padding). */
-  drawerCssVars?: CSSProperties;
+  /** Merged layout vars + optional drawer visual overrides. */
+  drawerStyle?: CSSProperties;
+  /** Optional handle visual overrides. */
+  drawerHandleStyle?: CSSProperties;
   /** Called when measured collapsed/full snap heights change. */
   onSnapHeightsChange?: (heights: {
     collapsedHeightPx: number;
@@ -70,7 +72,8 @@ export function BottomSheet({
   contentRef,
   collapsedBottomInsetPx = 0,
   halfSnapFraction,
-  drawerCssVars,
+  drawerStyle,
+  drawerHandleStyle,
   onSnapHeightsChange,
 }: BottomSheetProps) {
   const resolvedHalfSnap = normalizeHalfSnapFraction(halfSnapFraction);
@@ -155,12 +158,13 @@ export function BottomSheet({
       <Drawer.Content
         ref={contentRef}
         className="sheet-map-drawer fixed inset-x-0 bottom-0 flex h-[100dvh] flex-col outline-none"
-        style={{ bottom: "0px", ...drawerCssVars }}
+        style={{ bottom: "0px", ...drawerStyle }}
         aria-describedby={undefined}
       >
         <Drawer.Handle
           ref={setHandleEl}
           className="sheet-map-drawer-handle mx-auto shrink-0"
+          style={drawerHandleStyle}
         />
         <PeekMeasureProvider onPeekMeasure={setPeekEl}>
           <div className="flex min-h-0 flex-1 flex-col">{children}</div>

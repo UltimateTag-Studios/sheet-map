@@ -22,14 +22,15 @@ describe("snap-heights", () => {
     expect(bottomSheetSnapPointPx(152.4)).toBe("152px");
   });
 
-  it("includes handle top margin in handle block height", () => {
+  it("includes handle top and bottom margins in handle block height", () => {
     const handle = document.createElement("div");
     stubOffsetHeight(handle, 4);
     vi.spyOn(window, "getComputedStyle").mockReturnValue({
       marginTop: "12px",
+      marginBottom: "8px",
     } as CSSStyleDeclaration);
 
-    expect(measureHandleBlockHeightPx(handle)).toBe(16);
+    expect(measureHandleBlockHeightPx(handle)).toBe(24);
   });
 
   it("sums handle, peek, and bottom inset heights", () => {
