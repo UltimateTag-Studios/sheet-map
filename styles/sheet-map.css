@@ -1,0 +1,67 @@
+/*
+ * Semantic sheet-map surfaces — override in your app with plain CSS.
+ * Layout (position, flex, z-index) stays in compiled Tailwind utilities.
+ */
+.sheet-map-drawer {
+  --sheet-map-handle-margin-top: 0.75rem;
+  --sheet-map-handle-bar-height: 0.25rem;
+  --sheet-map-handle-height: calc(
+    var(--sheet-map-handle-margin-top) +
+    var(--sheet-map-handle-bar-height)
+  );
+  --sheet-map-peek-padding-y: 0.75rem;
+  /** Trims half-leading under peek title/eyebrow for vertical balance. */
+  --sheet-map-peek-balance-adjust: -7px;
+  --sheet-map-peek-margin-bottom: calc(
+    var(--sheet-map-handle-height) +
+    var(--sheet-map-peek-balance-adjust)
+  );
+  /** Total bottom chrome to clear (e.g. tab bar gap + bar height). Safe area is added separately. */
+  --sheet-map-tab-bar-height: 0px;
+
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: none;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(24px);
+}
+
+.sheet-map-drawer-handle {
+  margin-top: var(--sheet-map-handle-margin-top);
+  height: var(--sheet-map-handle-bar-height);
+  width: 2.5rem;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.sheet-map-expanded-overlay {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+}
+
+/** Peek/header chrome — mirrors handle height in bottom padding for vertical balance. */
+.sheet-map-peek {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 100%;
+  padding-inline: 1rem;
+  padding-top: var(--sheet-map-peek-padding-y);
+  padding-bottom: calc(
+    var(--sheet-map-peek-padding-y) +
+    var(--sheet-map-peek-margin-bottom)
+  );
+}
+
+.sheet-map-peek--reserve-tab-bar {
+  padding-bottom: calc(
+    var(--sheet-map-peek-padding-y) +
+    var(--sheet-map-peek-margin-bottom) +
+    env(safe-area-inset-bottom) +
+    var(--sheet-map-tab-bar-height)
+  );
+}
+
+.sheet-map-peek--bordered {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
