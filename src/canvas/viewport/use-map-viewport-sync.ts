@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import type { BottomSheetSnap } from "../../bottom-sheet/bottom-sheet";
@@ -92,11 +92,10 @@ function viewportEquals(
 export type UseMapViewportSyncOptions = {
   mapRef: MapRef | null;
   sheetSnap: BottomSheetSnap;
-  sheetElement?: HTMLElement | null;
   collapsedHeightPx: number;
   fullHeightPx: number;
   halfSnapFraction?: number;
-  /** When false, viewport state is frozen until the sheet snap settles. */
+  /** When false, viewport state is frozen and resize listeners are detached. */
   settled?: boolean;
   /** Extra obscured area (tab bar, top nav). */
   fixedChromeInsets?: Partial<MapObscuredInsets>;
@@ -104,11 +103,10 @@ export type UseMapViewportSyncOptions = {
   debug?: boolean;
 };
 
-/** Sheet-aware map viewport; re-syncs after snap settles and on layout resize only. */
+/** Sheet-aware map viewport; syncs when settled and on canvas/layout resize. */
 export function useMapViewportSync({
   mapRef,
   sheetSnap,
-  sheetElement = null,
   collapsedHeightPx,
   fullHeightPx,
   halfSnapFraction,
@@ -119,55 +117,6 @@ export function useMapViewportSync({
   const resolvedHalfSnap = normalizeHalfSnapFraction(halfSnapFraction);
   const [viewport, setViewport] =
     useState<MapViewportSyncState>(EMPTY_VIEWPORT);
-  const settledRef = useRef(settled);
-  const sheetSnapRef = useRef(sheetSnap);
-  const collapsedHeightPxRef = useRef(collapsedHeightPx);
-  const fullHeightPxRef = useRef(fullHeightPx);
-  const halfSnapFractionRef = useRef(resolvedHalfSnap);
-  const fixedChromeInsetsRef = useRef(fixedChromeInsets);
-  const syncRef = useRef<() => void>(() => {});
-
-  useEffect(() => {
-    settledRef.current = settled;
-    if (settled) {
-      syncRef.current();
-    }
-  }, [settled]);
-
-  useEffect(() => {
-    sheetSnapRef.current = sheetSnap;
-    if (settledRef.current) {
-      syncRef.current();
-    }
-  }, [sheetSnap]);
-
-  useEffect(() => {
-    collapsedHeightPxRef.current = collapsedHeightPx;
-    if (settledRef.current) {
-      syncRef.current();
-    }
-  }, [collapsedHeightPx]);
-
-  useEffect(() => {
-    fullHeightPxRef.current = fullHeightPx;
-    if (settledRef.current) {
-      syncRef.current();
-    }
-  }, [fullHeightPx]);
-
-  useEffect(() => {
-    halfSnapFractionRef.current = resolvedHalfSnap;
-    if (settledRef.current) {
-      syncRef.current();
-    }
-  }, [resolvedHalfSnap]);
-
-  useEffect(() => {
-    fixedChromeInsetsRef.current = fixedChromeInsets;
-    if (settledRef.current) {
-      syncRef.current();
-    }
-  }, [fixedChromeInsets]);
 
   useEffect(() => {
     if (!mapRef) {
@@ -175,23 +124,18 @@ export function useMapViewportSync({
       return;
     }
 
-    const applyViewport = (next: MapViewportSyncState) => {
-      if (!settledRef.current) {
-        return;
-      }
-      setViewport((current) =>
-        viewportEquals(current, next) ? current : next,
-      );
-    };
+    if (!settled) {
+      return;
+    }
 
     const sync = () => {
       const next = readViewport(
         mapRef,
-        sheetSnapRef.current,
-        collapsedHeightPxRef.current,
-        fullHeightPxRef.current,
-        halfSnapFractionRef.current,
-        fixedChromeInsetsRef.current,
+        sheetSnap,
+        collapsedHeightPx,
+        fullHeightPx,
+        resolvedHalfSnap,
+        fixedChromeInsets,
       );
       if (!next) {
         return;
@@ -200,8 +144,7 @@ export function useMapViewportSync({
       if (debug) {
         const canvas = mapRef.getMap().getCanvas();
         console.info("[map-viewport-sync]", {
-          sheetSnap: sheetSnapRef.current,
-          settled: settledRef.current,
+          sheetSnap,
           hasVisibleArea: next.hasVisibleArea,
           clientRect: next.clientRect,
           centerOffset: next.centerOffset,
@@ -211,13 +154,12 @@ export function useMapViewportSync({
         });
       }
 
-      applyViewport(next);
+      setViewport((current) =>
+        viewportEquals(current, next) ? current : next,
+      );
     };
 
-    syncRef.current = sync;
-    if (settledRef.current) {
-      sync();
-    }
+    sync();
 
     const map = mapRef.getMap();
     const canvas = map.getCanvas();
@@ -229,12 +171,6 @@ export function useMapViewportSync({
     const canvasObserver = new ResizeObserver(sync);
     canvasObserver.observe(canvas);
 
-    let sheetObserver: ResizeObserver | undefined;
-    if (sheetElement) {
-      sheetObserver = new ResizeObserver(sync);
-      sheetObserver.observe(sheetElement);
-    }
-
     window.addEventListener("resize", sync);
     const visualViewport = window.visualViewport;
     visualViewport?.addEventListener("resize", sync);
@@ -245,12 +181,20 @@ export function useMapViewportSync({
       map.off("resize", sync);
       map.off("idle", sync);
       canvasObserver.disconnect();
-      sheetObserver?.disconnect();
       window.removeEventListener("resize", sync);
       visualViewport?.removeEventListener("resize", sync);
       visualViewport?.removeEventListener("scroll", sync);
     };
-  }, [mapRef, sheetElement, debug]);
+  }, [
+    mapRef,
+    settled,
+    sheetSnap,
+    collapsedHeightPx,
+    fullHeightPx,
+    resolvedHalfSnap,
+    fixedChromeInsets,
+    debug,
+  ]);
 
   return viewport;
 }

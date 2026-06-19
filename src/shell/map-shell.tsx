@@ -45,7 +45,6 @@ export function MapShell({
         publishMapInstance={shell.publishMapInstance}
         sheetSnap={shell.sheetSnap}
         onSheetSnapChange={shell.handleSheetSnapChange}
-        onSheetContentRef={shell.handleSheetContentRef}
         onSnapHeightsChange={shell.handleSnapHeightsChange}
         isDraggingSheet={shell.isDraggingSheet}
         onDragInteractionChange={shell.setIsDraggingSheet}

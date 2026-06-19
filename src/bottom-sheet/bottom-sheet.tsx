@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode, Ref } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Drawer } from "vaul";
 
@@ -18,8 +18,6 @@ export type BottomSheetProps = {
   onSnapChange?: (snap: BottomSheetSnap) => void;
   /** Fires when the user starts or stops dragging (for collapsed peek overlays). */
   onDragInteractionChange?: (isDragging: boolean) => void;
-  /** Observed by map viewport sync for sheet layout changes. */
-  contentRef?: Ref<HTMLDivElement>;
   /** Extra pixels below measured peek for collapsed snap (e.g. floating tab bar). */
   collapsedBottomInsetPx?: number;
   /** Vaul fraction snap between collapsed and full (default 0.5). */
@@ -69,7 +67,6 @@ export function BottomSheet({
   defaultSnap = "half",
   onSnapChange,
   onDragInteractionChange,
-  contentRef,
   collapsedBottomInsetPx = 0,
   halfSnapFraction,
   drawerStyle,
@@ -156,7 +153,6 @@ export function BottomSheet({
       }}
     >
       <Drawer.Content
-        ref={contentRef}
         className="sheet-map-drawer fixed inset-x-0 bottom-0 flex h-[100dvh] flex-col outline-none"
         style={{ bottom: "0px", ...drawerStyle }}
         aria-describedby={undefined}

@@ -32,7 +32,6 @@ export type MapShellContentProps = {
   publishMapInstance: (map: MapRef | null) => void;
   sheetSnap: BottomSheetSnap;
   onSheetSnapChange: (snap: BottomSheetSnap) => void;
-  onSheetContentRef: (node: HTMLDivElement | null) => void;
   onSnapHeightsChange: (heights: {
     collapsedHeightPx: number;
     fullHeightPx: number;
@@ -64,7 +63,6 @@ export function MapShellContent({
   publishMapInstance,
   sheetSnap,
   onSheetSnapChange,
-  onSheetContentRef,
   onSnapHeightsChange,
   isDraggingSheet,
   onDragInteractionChange,
@@ -150,7 +148,6 @@ export function MapShellContent({
         defaultSnap="collapsed"
         onSnapChange={onSheetSnapChange}
         onDragInteractionChange={onDragInteractionChange}
-        contentRef={onSheetContentRef}
         collapsedBottomInsetPx={config.collapsedBottomInsetPx}
         halfSnapFraction={config.halfSnapFraction}
         drawerStyle={drawerStyle}

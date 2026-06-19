@@ -36,7 +36,6 @@ export function useMapShell({
 
   const [sheetSnap, setSheetSnapState] = useState<BottomSheetSnap>("collapsed");
   const [isDraggingSheet, setIsDraggingSheet] = useState(false);
-  const [sheetElement, setSheetElement] = useState<HTMLElement | null>(null);
   const [collapsedHeightPx, setCollapsedHeightPx] = useState(
     FALLBACK_COLLAPSED_HEIGHT_PX,
   );
@@ -74,7 +73,6 @@ export function useMapShell({
   const viewport: MapViewportSyncState = useMapViewportSync({
     mapRef,
     sheetSnap,
-    sheetElement,
     collapsedHeightPx,
     fullHeightPx,
     halfSnapFraction: resolvedConfig.halfSnapFraction,
@@ -82,10 +80,6 @@ export function useMapShell({
     fixedChromeInsets: config.fixedChromeInsets,
     debug,
   });
-
-  const handleSheetContentRef = useCallback((node: HTMLDivElement | null) => {
-    setSheetElement(node);
-  }, []);
 
   const handleSnapHeightsChange = useCallback(
     (heights: { collapsedHeightPx: number; fullHeightPx: number }) => {
@@ -168,10 +162,8 @@ export function useMapShell({
     handleSheetSnapChange,
     isDraggingSheet,
     setIsDraggingSheet,
-    sheetElement,
     collapsedHeightPx,
     fullHeightPx,
-    handleSheetContentRef,
     handleSnapHeightsChange,
     mapRef,
     publishMapInstance,
