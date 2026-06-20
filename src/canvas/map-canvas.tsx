@@ -116,7 +116,7 @@ export function MapCanvas({
   ];
 
   return (
-    <div className={`relative h-full w-full ${className}`.trim()}>
+    <div className={`sheet-map-canvas-root${className ? ` ${className}` : ""}`}>
       <GlMap
         mapboxAccessToken={accessToken}
         mapStyle={styleUrl}

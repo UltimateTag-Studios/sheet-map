@@ -11,10 +11,10 @@ export type MapVisibleAreaOverlayProps = {
 function MapCanvasCornerDecorations() {
   return (
     <>
-      <div className="absolute left-2 top-2 h-4 w-4 border-cyan-400/50 border-t-2 border-l-2" />
-      <div className="absolute right-2 top-2 h-4 w-4 border-cyan-400/50 border-t-2 border-r-2" />
-      <div className="absolute bottom-2 left-2 h-4 w-4 border-cyan-400/50 border-b-2 border-l-2" />
-      <div className="absolute bottom-2 right-2 h-4 w-4 border-cyan-400/50 border-r-2 border-b-2" />
+      <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--top-left" />
+      <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--top-right" />
+      <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--bottom-left" />
+      <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--bottom-right" />
     </>
   );
 }
@@ -34,7 +34,7 @@ export function MapVisibleAreaOverlay({
 
   return (
     <div
-      className={`pointer-events-none fixed z-10${className ? ` ${className}` : ""}`}
+      className={`sheet-map-visible-area-overlay${className ? ` ${className}` : ""}`}
       style={{
         left: clientRect.x,
         top: clientRect.y,

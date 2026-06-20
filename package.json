@@ -21,13 +21,13 @@
   },
   "files": [
     "dist/style.css",
-    "styles/build.css",
+    "styles/sheet-map.css",
     "src",
     "package.json"
   ],
   "scripts": {
     "build": "pnpm run build:styles",
-    "build:styles": "tailwindcss -i ./styles/build.css -o ./dist/style.css --minify",
+    "build:styles": "node ./scripts/build-styles.mjs",
     "prepare": "pnpm run build:styles",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
@@ -38,12 +38,11 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@siegetag/sheet": "workspace:*",
-    "@siegetag/ui": "workspace:*",
     "mapbox-gl": "^3.24.1",
     "react-map-gl": "^8.1.1"
   },
   "peerDependencies": {
+    "@siegetag/sheet": "^0.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.0.0"
@@ -51,8 +50,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.3.14",
     "@napi-rs/canvas": "^1.0.0",
-    "@tailwindcss/cli": "^4",
-    "@tailwindcss/postcss": "^4",
+    "@siegetag/sheet": "workspace:*",
     "@testing-library/react": "^16.3.2",
     "@types/geojson": "^7946.0.16",
     "@types/mapbox-gl": "^3.5.0",
@@ -63,7 +61,6 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-router-dom": "^7.9.4",
-    "tailwindcss": "^4",
     "typescript": "~5.9.3",
     "vitest": "^2.1.9"
   }

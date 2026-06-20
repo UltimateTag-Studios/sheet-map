@@ -8,7 +8,11 @@ export {
   DEFAULT_SHEET_HANDLE_MARGIN_TOP,
 } from "@siegetag/sheet";
 
-/** Whether layout config requests floating tab bar bottom padding. */
-export function reservesFloatingTabBar(layout: MapSheetGeometry = {}): boolean {
-  return layout.reserveFloatingTabBar === true;
+/** Whether layout config reserves space above bottom chrome. */
+export function hasBottomChromeReserve(layout: MapSheetGeometry = {}): boolean {
+  const reserve = layout.bottomChromeReserve;
+  return (
+    reserve?.collapsedHeaderPaddingBottom !== undefined ||
+    reserve?.scrollBodyPaddingBottom !== undefined
+  );
 }

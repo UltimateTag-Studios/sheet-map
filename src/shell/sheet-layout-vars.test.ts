@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildMapSheetLayoutVars,
   buildMapSheetStyle,
-  reservesFloatingTabBar,
+  hasBottomChromeReserve,
 } from "./sheet-layout-vars";
 
 describe("buildMapSheetLayoutVars", () => {
@@ -30,16 +30,27 @@ describe("buildMapSheetLayoutVars", () => {
   });
 });
 
-describe("reservesFloatingTabBar", () => {
+describe("hasBottomChromeReserve", () => {
   it("returns false by default", () => {
-    expect(reservesFloatingTabBar()).toBe(false);
-    expect(reservesFloatingTabBar({ reserveFloatingTabBar: false })).toBe(
-      false,
-    );
+    expect(hasBottomChromeReserve()).toBe(false);
+    expect(hasBottomChromeReserve({ bottomChromeReserve: {} })).toBe(false);
   });
 
-  it("returns true when reserveFloatingTabBar is enabled", () => {
-    expect(reservesFloatingTabBar({ reserveFloatingTabBar: true })).toBe(true);
+  it("returns true when bottom chrome padding is configured", () => {
+    expect(
+      hasBottomChromeReserve({
+        bottomChromeReserve: {
+          collapsedHeaderPaddingBottom: "4rem",
+        },
+      }),
+    ).toBe(true);
+    expect(
+      hasBottomChromeReserve({
+        bottomChromeReserve: {
+          scrollBodyPaddingBottom: "5rem",
+        },
+      }),
+    ).toBe(true);
   });
 });
 

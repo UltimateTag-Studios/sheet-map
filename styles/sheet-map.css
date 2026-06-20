@@ -1,4 +1,330 @@
 /*
- * Map-specific sheet-map surfaces — app themes override `.sheet` via sheet-map-theme.css.
- * Import `@siegetag/sheet/styles.css` and `@siegetag/sheet-map/styles.css` in your app entry.
+ * @siegetag/sheet-map — layout + semantic surfaces.
+ * Import once: import "@siegetag/sheet-map/styles.css"
+ * Override tokens and classes in your app theme CSS.
  */
+.sheet-map-layout {
+  position: relative;
+  display: flex;
+  min-height: 100%;
+  height: 100%;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sheet-map-shell {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+}
+
+.sheet-map-viewport {
+  height: 100%;
+  min-height: 100dvh;
+}
+
+.sheet-map-canvas-root {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.sheet-map-canvas-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.sheet-map-visible-area-overlay {
+  pointer-events: none;
+  position: fixed;
+  z-index: 10;
+}
+
+.sheet-map-visible-area-corner {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border-color: rgba(34, 211, 238, 0.5);
+}
+
+.sheet-map-visible-area-corner--top-left {
+  top: 0.5rem;
+  left: 0.5rem;
+  border-top: 2px solid;
+  border-left: 2px solid;
+}
+
+.sheet-map-visible-area-corner--top-right {
+  top: 0.5rem;
+  right: 0.5rem;
+  border-top: 2px solid;
+  border-right: 2px solid;
+}
+
+.sheet-map-visible-area-corner--bottom-left {
+  bottom: 0.5rem;
+  left: 0.5rem;
+  border-bottom: 2px solid;
+  border-left: 2px solid;
+}
+
+.sheet-map-visible-area-corner--bottom-right {
+  right: 0.5rem;
+  bottom: 0.5rem;
+  border-right: 2px solid;
+  border-bottom: 2px solid;
+}
+
+.sheet-map-overlay-slot--bottom-left {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+}
+
+.sheet-map-my-location-button {
+  pointer-events: auto;
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(23, 23, 23, 0.9);
+  color: rgb(212, 212, 212);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.sheet-map-my-location-button:hover {
+  background: rgba(38, 38, 38, 0.9);
+}
+
+.sheet-map-my-location-button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.sheet-map-my-location-button[aria-pressed="true"] {
+  border-color: #1a73e8;
+  background: #1a73e8;
+  color: #fff;
+}
+
+.sheet-map-my-location-button[aria-pressed="true"]:hover {
+  background: #1558b0;
+}
+
+.sheet-map-back-button {
+  pointer-events: auto;
+  border: 0;
+  background: transparent;
+  padding: 0.25rem;
+  color: #fff;
+}
+
+.sheet-map-back-button:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sheet-map-back-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
+.sheet-map-loading {
+  display: flex;
+  min-height: 100%;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.sheet-map-loading-card {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 24rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(23, 23, 23, 0.9);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.sheet-map-loading-spinner {
+  margin-inline: auto;
+  margin-bottom: 1rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+  animation: sheet-map-spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-map-loading-spinner {
+    animation: none;
+  }
+}
+
+@keyframes sheet-map-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sheet-map-loading-message {
+  margin: 0;
+  color: rgb(163, 163, 163);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.sheet-map-visible-area-debug {
+  pointer-events: none;
+  position: fixed;
+  z-index: 10;
+  border: 2px dashed #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.sheet-map-visible-area-debug-label {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #f59e0b;
+}
+
+.sheet-map-visible-area-debug-crosshair-v {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 100%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: rgba(245, 158, 11, 0.7);
+}
+
+.sheet-map-visible-area-debug-crosshair-h {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 1px;
+  width: 100%;
+  transform: translateY(-50%);
+  background: rgba(245, 158, 11, 0.7);
+}
+
+.sheet-map-error-boundary {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  padding: 1.5rem 1rem;
+}
+
+.sheet-map-error-card {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1rem;
+}
+
+.sheet-map-error-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(220, 38, 38);
+}
+
+.sheet-map-error-message {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: rgb(23, 23, 23);
+}
+
+/** Optional header typography hooks — apps override in theme CSS. */
+.sheet-map-header-eyebrow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheet-map-header-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Storybook / docs fixtures only */
+.sheet-map-story-chrome {
+  background: rgb(10, 10, 10);
+  padding: 1rem;
+}
+
+.sheet-map-story-stage {
+  position: relative;
+  height: 8rem;
+  width: 100%;
+  max-width: 20rem;
+  border-radius: 0.5rem;
+  background: rgba(38, 38, 38, 0.4);
+}
+
+.sheet-map-story-stage--tall {
+  height: 30rem;
+  max-width: 24rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sheet-map-story-slot--top-right {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.sheet-map-story-slot--bottom-left {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.sheet-map-story-map-fill {
+  position: absolute;
+  inset: 0;
+  background: rgba(38, 38, 38, 0.3);
+}
+
+.sheet-map-story-overlay-preview {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+}
+
+.sheet-map-story-sheet-preview {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 35%;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  background: rgba(23, 23, 23, 0.9);
+}

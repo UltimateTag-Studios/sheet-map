@@ -7,7 +7,7 @@ import type { MapShellState } from "./map-route-context";
 import { MapScreenErrorBoundary } from "./map-screen-error-boundary";
 import { MapShellContent } from "./map-shell-content";
 
-const MAP_VIEWPORT_CLASS = "h-full min-h-[100dvh]";
+const MAP_VIEWPORT_CLASS = "sheet-map-viewport";
 
 export type MapShellProps = {
   shell: MapShellState;

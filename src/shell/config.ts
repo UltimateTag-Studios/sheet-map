@@ -5,6 +5,14 @@ import { DEFAULT_HALF_SNAP_FRACTION } from "./normalize-half-snap-fraction";
 
 export type MapChromeInsets = Partial<MapObscuredInsets>;
 
+/** Optional padding to keep sheet content clear of fixed bottom chrome (tab bar, etc.). */
+export type MapBottomChromeReserve = {
+  /** Header padding-bottom while collapsed (live during drag). CSS length. */
+  collapsedHeaderPaddingBottom?: string;
+  /** Body inner padding-bottom at full height. CSS length. */
+  scrollBodyPaddingBottom?: string;
+};
+
 /** Sheet geometry — spacing and clearance. Visuals: theme CSS on `.sheet` classes. */
 export type MapSheetGeometry = {
   /** Handle block top margin (default `0.75rem`). Number = px. */
@@ -13,8 +21,8 @@ export type MapSheetGeometry = {
   sheetHandleBarHeight?: number | string;
   /** Gap between handle bar and header content (default `0.75rem`). Number = px. */
   sheetHandleMarginBottom?: number | string;
-  /** When true, sheet spacers use @siegetag/ui floating tab bar reserves (safe area added in CSS). */
-  reserveFloatingTabBar?: boolean;
+  /** Reserve space above app bottom chrome — values come from your app (not baked into sheet-map). */
+  bottomChromeReserve?: MapBottomChromeReserve;
 };
 
 /** Optional visual overrides merged onto sheet surfaces. */

@@ -4,30 +4,32 @@ import {
   showCollapsedBottomChromePadding,
   useSheetContext,
 } from "@siegetag/sheet";
-import {
-  tabBarCollapsedAreaPaddingBottom,
-  tabBarScrollAreaPaddingBottom,
-} from "@siegetag/ui";
 import type { ReactNode } from "react";
+
+import type { MapBottomChromeReserve } from "./config";
 
 export type MapSheetLayoutProps = {
   sheetSnap: SheetSnap;
   header?: ReactNode;
   body: ReactNode;
-  reserveFloatingTabBar?: boolean;
+  bottomChromeReserve?: MapBottomChromeReserve;
 };
 
-/** Map shell adapter: wires floating tab bar padding into generic sheet layout. */
+/** Map shell adapter: wires optional bottom-chrome padding into generic sheet layout. */
 export function MapSheetLayout({
   sheetSnap,
   header,
   body,
-  reserveFloatingTabBar = false,
+  bottomChromeReserve,
 }: MapSheetLayoutProps) {
   const { visibleHeightPx, collapsedHeightPx, isDragging } = useSheetContext();
 
+  const collapsedHeaderPaddingBottom =
+    bottomChromeReserve?.collapsedHeaderPaddingBottom;
+  const scrollBodyPaddingBottom = bottomChromeReserve?.scrollBodyPaddingBottom;
+
   const showCollapsedHeaderPadding = showCollapsedBottomChromePadding({
-    reserveBottomChrome: reserveFloatingTabBar,
+    reserveBottomChrome: collapsedHeaderPaddingBottom !== undefined,
     sheetSnap,
     isDragging,
     visibleHeightPx,
@@ -39,13 +41,13 @@ export function MapSheetLayout({
       header={header}
       body={body}
       headerStyle={
-        showCollapsedHeaderPadding
-          ? { paddingBottom: tabBarCollapsedAreaPaddingBottom() }
+        showCollapsedHeaderPadding && collapsedHeaderPaddingBottom
+          ? { paddingBottom: collapsedHeaderPaddingBottom }
           : undefined
       }
       bodyInnerStyle={
-        reserveFloatingTabBar
-          ? { paddingBottom: tabBarScrollAreaPaddingBottom() }
+        scrollBodyPaddingBottom
+          ? { paddingBottom: scrollBodyPaddingBottom }
           : undefined
       }
     />

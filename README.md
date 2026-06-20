@@ -21,6 +21,8 @@ Generic Mapbox map + bottom sheet shell for React web apps (react-map-gl + `@sie
 
 Pin to a commit or tag for stability: `#abc1234` or `#v0.1.0`.
 
+**Monorepo note:** apps in this repo use `"workspace:*"` in their `package.json`. That protocol only works inside a pnpm workspace. External apps must pin real versions or git URLs for **both** `@siegetag/sheet` and `@siegetag/sheet-map` (sheet-map lists `@siegetag/sheet` as a peer dependency).
+
 Import styles once in your app entry (both packages ship built CSS as `./styles.css`):
 
 ```tsx
@@ -78,7 +80,16 @@ function MyListScreen() {
 
 When the sheet settles to a new snap, body scroll resets to the top.
 
-Collapsed floating tab bar clearance uses header padding while at collapsed height (live during drag). Scroll-end reserve uses body inner padding when `layout.reserveFloatingTabBar` is enabled.
+Collapsed floating tab bar clearance uses header padding while at collapsed height (live during drag). Scroll-end reserve uses body inner padding when `layout.bottomChromeReserve` is set — **your app supplies the CSS lengths** (SiegeTag passes `@siegetag/ui` tab bar reserves from the Capacitor map layout).
+
+```tsx
+layout: {
+  bottomChromeReserve: {
+    collapsedHeaderPaddingBottom: "calc(1rem + 2.75rem)", // your tab bar math
+    scrollBodyPaddingBottom: "calc(2rem + 2.75rem + env(safe-area-inset-bottom))",
+  },
+},
+```
 
 ## Configuration (`MapShellConfig`)
 
@@ -90,11 +101,13 @@ Override `.sheet`, `.sheet-handle`, and `.sheet-divider` from `@siegetag/sheet/s
 
 ## Build
 
-Tailwind utilities compile to `dist/style.css` on `pnpm install` (`prepare`) or manually:
+Styles compile from `styles/sheet-map.css` to `dist/style.css` on `pnpm install` (`prepare`) or manually:
 
 ```bash
 pnpm --filter @siegetag/sheet-map build:styles
 ```
+
+`dist/` is gitignored — after a clean checkout run `pnpm install` (or `build:styles`) before starting apps that import `@siegetag/sheet-map/styles.css`.
 
 ## Standalone sheet
 

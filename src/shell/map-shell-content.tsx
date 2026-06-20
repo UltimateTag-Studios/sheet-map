@@ -17,9 +17,8 @@ import type {
   MapUserLocationCoords,
 } from "./config";
 import { MapSheetLayout } from "./map-sheet-layout";
-import { reservesFloatingTabBar } from "./sheet-layout-vars";
 
-const MAP_VIEWPORT_CLASS = "h-full min-h-[100dvh]";
+const MAP_VIEWPORT_CLASS = "sheet-map-viewport";
 
 export type MapShellContentProps = {
   mapToken: string;
@@ -80,10 +79,8 @@ export function MapShellContent({
     layout,
     config.styles,
   );
-  const reserveFloatingTabBar = reservesFloatingTabBar(layout);
-
   return (
-    <div className={`relative min-h-0 flex-1 ${MAP_VIEWPORT_CLASS}`}>
+    <div className={`sheet-map-shell ${MAP_VIEWPORT_CLASS}`}>
       <MapCanvas
         accessToken={mapToken}
         reuseMaps={false}
@@ -92,7 +89,7 @@ export function MapShellContent({
         extraInteractiveLayerIds={extraInteractiveLayerIds}
         onLayerFeaturePress={onLayerFeaturePress}
         onUserLocationPress={onUserLocationPress}
-        className="absolute inset-0 z-0"
+        className="sheet-map-canvas-layer"
       >
         {mapChildren}
         {userLocation
@@ -120,7 +117,7 @@ export function MapShellContent({
               onPress: onUserLocationPress,
               focused: isUserLocationFocused,
             }) ?? (
-              <div className="pointer-events-auto absolute bottom-3 left-3">
+              <div className="sheet-map-overlay-slot--bottom-left">
                 <MapMyLocationButton
                   ariaLabel={myLocationAriaLabel}
                   onPress={onUserLocationPress}
@@ -151,7 +148,7 @@ export function MapShellContent({
           sheetSnap={sheetSnap}
           header={header}
           body={body}
-          reserveFloatingTabBar={reserveFloatingTabBar}
+          bottomChromeReserve={layout.bottomChromeReserve}
         />
       </Sheet>
     </div>

@@ -39,7 +39,7 @@ export function MapLayout({
   });
 
   return (
-    <div className="relative flex h-full min-h-full flex-1 flex-col overflow-hidden">
+    <div className="sheet-map-layout">
       <MapRouteProvider shell={shell} routeContentStore={routeContentStore}>
         <MapShell
           shell={shell}
