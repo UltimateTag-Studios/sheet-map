@@ -33,13 +33,11 @@
 .sheet-map-canvas-layer {
   position: absolute;
   inset: 0;
-  z-index: 0;
 }
 
 .sheet-map-visible-area-overlay {
   pointer-events: none;
   position: fixed;
-  z-index: 10;
 }
 
 .sheet-map-visible-area {
@@ -163,7 +161,6 @@
 .sheet-map-visible-area-debug {
   pointer-events: none;
   position: fixed;
-  z-index: 10;
   border: 2px dashed #f59e0b;
   background: rgba(245, 158, 11, 0.1);
 }

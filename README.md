@@ -83,6 +83,10 @@ function MyListScreen() {
 
 When the sheet settles to a new snap, body scroll resets to the top.
 
+## Stacking (no default z-index)
+
+`MapShellContent` renders **map canvas → visible-area overlay → sheet** in that DOM order. Neither `@siegetag/sheet-map` nor `@siegetag/sheet` sets `z-index`. App chrome that must sit above the sheet (floating tab bar, scanner button, etc.) should be rendered **after** the map route in your layout — see `@siegetag/sheet` README.
+
 Collapsed floating tab bar clearance uses header padding while at collapsed height (live during drag). Scroll-end reserve uses body inner padding when `layout.bottomChromeReserve` is set — **your app supplies the CSS lengths** (SiegeTag passes `@siegetag/ui` tab bar reserves from the Capacitor map layout).
 
 ```tsx
