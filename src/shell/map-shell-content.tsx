@@ -5,6 +5,7 @@ import type { MapRef } from "react-map-gl/mapbox";
 
 import {
   MapCanvas,
+  MapDismissSelectionButton,
   MapMyLocationButton,
   MapUserLocation,
   MapVisibleAreaDebug,
@@ -33,6 +34,7 @@ export type MapShellContentProps = {
   userLocation?: MapUserLocationCoords;
   isUserLocationFocused: boolean;
   onUserLocationPress: () => void;
+  onDismissSelectionPress: () => void;
   onMarkerPress?: (markerId: string) => void;
   extraInteractiveLayerIds?: string[];
   onLayerFeaturePress?: (
@@ -43,6 +45,7 @@ export type MapShellContentProps = {
   header: ReactNode;
   body: ReactNode;
   overlay?: ReactNode;
+  collapsedTopRight?: ReactNode;
   myLocationButton?: boolean;
   viewport: MapViewportSyncState;
   config?: MapShellConfig;
@@ -59,6 +62,7 @@ export function MapShellContent({
   userLocation,
   isUserLocationFocused,
   onUserLocationPress,
+  onDismissSelectionPress,
   onMarkerPress,
   extraInteractiveLayerIds,
   onLayerFeaturePress,
@@ -66,17 +70,39 @@ export function MapShellContent({
   header,
   body,
   overlay,
+  collapsedTopRight,
   myLocationButton = true,
   viewport,
   config = {},
   slots = {},
 }: MapShellContentProps) {
   const myLocationAriaLabel = config.myLocationAriaLabel ?? "Focus my location";
+  const dismissSelectionAriaLabel =
+    config.dismissSelectionAriaLabel ?? "Clear selection";
   const layout = config.layout ?? {};
   const { sheet: sheetStyle, sheetHandle: sheetHandleStyle } = buildSheetStyle(
     layout,
     config.styles,
   );
+
+  const topRightControl =
+    sheetSnap !== "collapsed" ? (
+      (slots.renderDismissButton?.({
+        ariaLabel: dismissSelectionAriaLabel,
+        onPress: onDismissSelectionPress,
+      }) ?? (
+        <MapDismissSelectionButton
+          ariaLabel={dismissSelectionAriaLabel}
+          onPress={onDismissSelectionPress}
+          positioned
+        />
+      ))
+    ) : collapsedTopRight ? (
+      <div className="sheet-map-collapsed-top-right--positioned">
+        {collapsedTopRight}
+      </div>
+    ) : null;
+
   return (
     <div className={`sheet-map-shell ${MAP_VIEWPORT_CLASS}`}>
       <MapCanvas
@@ -109,6 +135,7 @@ export function MapShellContent({
 
       <MapVisibleAreaOverlay clientRect={viewport.clientRect}>
         {overlay}
+        {topRightControl}
         {myLocationButton && userLocation
           ? (slots.renderMyLocationButton?.({
               ariaLabel: myLocationAriaLabel,

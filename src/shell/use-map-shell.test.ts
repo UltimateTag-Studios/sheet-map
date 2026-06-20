@@ -94,6 +94,25 @@ describe("useMapShell", () => {
     harness.unmount();
   });
 
+  it("focusPoint opens the sheet and bumps the camera when the point has a location", () => {
+    const harness = mountMapShell();
+
+    act(() => {
+      harness.shell.focusPoint("ABC123", true);
+    });
+
+    expect(harness.shell.selectedPointId).toBe("ABC123");
+    expect(harness.shell.cameraAnchor).toEqual({
+      kind: "point",
+      id: "ABC123",
+    });
+    expect(harness.shell.followUser).toBe(false);
+    expect(harness.shell.sheetSnap).toBe("half");
+    expect(harness.shell.cameraEpoch).toBe(1);
+
+    harness.unmount();
+  });
+
   it("selectPoint focuses a point, stops user follow, and opens the sheet", () => {
     const harness = mountMapShell();
 
@@ -151,6 +170,23 @@ describe("useMapShell", () => {
     expect(harness.shell.selectedPointId).toBeNull();
     expect(harness.shell.cameraAnchor).toBeNull();
     expect(harness.shell.sheetSnap).toBe("collapsed");
+
+    harness.unmount();
+  });
+
+  it("clearPointSelection when the sheet collapses while a point is selected", () => {
+    const harness = mountMapShell();
+
+    act(() => {
+      harness.shell.selectPoint("ABC123", true);
+    });
+
+    act(() => {
+      harness.shell.handleSheetSnapChange("collapsed");
+    });
+
+    expect(harness.shell.selectedPointId).toBeNull();
+    expect(harness.shell.cameraAnchor).toBeNull();
 
     harness.unmount();
   });

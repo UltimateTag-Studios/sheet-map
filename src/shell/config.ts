@@ -47,6 +47,7 @@ export type MapShellConfig = {
   followThresholdPx?: number;
   debug?: boolean;
   myLocationAriaLabel?: string;
+  dismissSelectionAriaLabel?: string;
 };
 
 export type MapUserLocationCoords = {
@@ -71,7 +72,7 @@ export type UserLocationSlotProps = {
 export type MapShellSlots = {
   renderMyLocationButton?: (props: MyLocationButtonSlotProps) => ReactNode;
   renderUserLocation?: (props: UserLocationSlotProps) => ReactNode;
-  renderDismissButton?: (props: { onPress: () => void }) => ReactNode;
+  renderDismissButton?: (props: DismissSelectionButtonSlotProps) => ReactNode;
   renderTokenMissing?: (message: string) => ReactNode;
 };
 
@@ -82,6 +83,7 @@ export const defaultMapShellConfig: Required<
     | "smoothFlyDurationMs"
     | "followThresholdPx"
     | "myLocationAriaLabel"
+    | "dismissSelectionAriaLabel"
     | "collapsedBottomInsetPx"
     | "halfSnapFraction"
   >
@@ -90,6 +92,7 @@ export const defaultMapShellConfig: Required<
   smoothFlyDurationMs: 600,
   followThresholdPx: 40,
   myLocationAriaLabel: "Focus my location",
+  dismissSelectionAriaLabel: "Clear selection",
   collapsedBottomInsetPx: 0,
   halfSnapFraction: DEFAULT_HALF_SNAP_FRACTION,
 };

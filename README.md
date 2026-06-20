@@ -60,18 +60,45 @@ function MyListScreen() {
     header: <YourHeaderContent />,
     body: <YourBodyContent />,
     overlay: <YourVisibleMapOverlay />,
-    onMarkerPress: (markerId) => { /* select item */ },
-    isUserLocationFocused: shell.followUser,
-    onUserLocationPress: shell.startFollowingUser,
+    selectablePoints: yourPoints.map((point) => ({
+      id: point.id,
+      location: point.location,
+    })),
+    // Optional: non-marker layer clicks
+    resolveFeatureId: (_layerId, properties) =>
+      typeof properties?.id === "string" ? properties.id : null,
+    // Optional: back control when sheet is collapsed (nested routes)
+    collapsedTopRight: <YourBackButton onPress={yourExitHandler} />,
   });
 
+  // List rows call shell.selectPoint(id, hasLocation) — same as map taps.
   return null;
 }
 ```
 
+The shell owns map interaction:
+
+- **Map marker / layer tap** → `selectPoint` + fly (from `selectablePoints`)
+- **My location** → `startFollowingUser`
+- **X (sheet open)** → `dismissPointSelection`
+- **Camera sync** → driven by `selectablePoints` + shell anchor state
+
+Override the default dismiss button with `MapLayout` `slots.renderDismissButton` (same pattern as `renderMyLocationButton`):
+
+```tsx
+<MapLayout
+  config={{ dismissSelectionAriaLabel: "Clear map focus" }}
+  slots={{
+    renderDismissButton: ({ ariaLabel, onPress }) => (
+      <YourDismissButton ariaLabel={ariaLabel} onPress={onPress} />
+    ),
+  }}
+/>
+```
+
 `header` is the **header row** at every snap; `body` is the scroll/drag region below the divider (shell adds handle spacers between them). Style header/body however your app styles UI.
 
-**`overlay`** fills the visible map rectangle and resizes automatically as the sheet snaps — put legend, corner art, and top actions there. The shell positions the frame; your app owns all chrome inside it.
+**`overlay`** fills the visible map rectangle for app chrome (legends, frames). The shell renders **dismiss (X)** and **my location** controls; use **`collapsedTopRight`** for route-specific controls when the sheet is collapsed (e.g. back on a detail route).
 
 ### Overlay controls (taps after sheet drag)
 
@@ -95,7 +122,7 @@ function MyMapControl({ onPress }: { onPress: () => void }) {
 }
 ```
 
-`MapMyLocationButton` and `MapBackButton` already use this hook. Custom `renderMyLocationButton` slots should too.
+`MapMyLocationButton` and `MapDismissSelectionButton` already use this hook. Custom `renderMyLocationButton` / `renderDismissButton` slots should too.
 
 **`overlay`** content from `useRegisterMapRoute` should follow the same rules if it includes tappable UI.
 

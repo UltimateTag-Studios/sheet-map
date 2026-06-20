@@ -4,12 +4,12 @@ export {
   MapDotMarkers,
   type MapDotMarkersProps,
 } from "./dot";
-export {
-  MapBackButton,
-  type MapBackButtonProps,
-} from "./map-back-button";
 export type { MapCanvasProps } from "./map-canvas";
 export { MapCanvas } from "./map-canvas";
+export {
+  MapDismissSelectionButton,
+  type MapDismissSelectionButtonProps,
+} from "./map-dismiss-selection-button";
 export { MapLineLayer, type MapLineLayerProps } from "./map-line-layer";
 export {
   MapMyLocationButton,

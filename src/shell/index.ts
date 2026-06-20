@@ -9,6 +9,7 @@ export {
 } from "@siegetag/sheet";
 
 export type {
+  DismissSelectionButtonSlotProps,
   MapBottomChromeReserve,
   MapChromeInsets,
   MapSheetGeometry,
@@ -29,6 +30,7 @@ export { createMapRouteContentStore } from "./map-route-content-store";
 export type {
   MapRouteContent,
   MapRouteProviderProps,
+  MapSelectablePoint,
   MapShellState,
 } from "./map-route-context";
 export { MapRouteProvider, useMapRouteContext } from "./map-route-context";

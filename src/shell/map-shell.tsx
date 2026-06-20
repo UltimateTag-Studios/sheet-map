@@ -1,5 +1,8 @@
-import { useSyncExternalStore } from "react";
+import type { GeoJsonProperties } from "geojson";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
+import { buildPointListCameraIntent } from "../camera/map-camera-intent";
+import { useMapCameraSync } from "../camera/use-map-camera-sync";
 import { notifyMapTouchProbeLocationPress } from "../debug/use-map-touch-probe";
 import type { MapShellSlots } from "./config";
 import { MapLoadingState } from "./map-loading-state";
@@ -7,6 +10,7 @@ import type { MapRouteContentStore } from "./map-route-content-store";
 import type { MapShellState } from "./map-route-context";
 import { MapScreenErrorBoundary } from "./map-screen-error-boundary";
 import { MapShellContent } from "./map-shell-content";
+import { pressSelectableMapFeature } from "./press-selectable-map-feature";
 
 const MAP_VIEWPORT_CLASS = "sheet-map-viewport";
 
@@ -28,7 +32,75 @@ export function MapShell({
     routeContentStore.getContent,
   );
 
-  if (!shell.mapToken) {
+  const {
+    mapToken,
+    mapRef,
+    publishMapInstance,
+    sheetSnap,
+    handleSheetSnapChange,
+    handleSnapHeightsChange,
+    setIsDraggingSheet,
+    userLocation,
+    viewport,
+    followUser,
+    dismissPointSelection,
+    focusPoint,
+    startFollowingUser,
+    config,
+  } = shell;
+
+  const selectablePoints = routeContent?.selectablePoints ?? [];
+
+  const cameraIntent = useMemo(
+    () =>
+      buildPointListCameraIntent({
+        cameraAnchor: shell.cameraAnchor,
+        userLocation,
+        points: selectablePoints,
+        cameraEpoch: shell.cameraEpoch,
+      }),
+    [shell.cameraAnchor, userLocation, selectablePoints, shell.cameraEpoch],
+  );
+
+  useMapCameraSync({
+    mapRef,
+    intent: cameraIntent,
+    viewport,
+    settled: shell.viewportSettled,
+    initialZoom: config.initialZoom,
+    smoothFlyDurationMs: config.smoothFlyDurationMs,
+    debug: config.debug === true,
+    onFulfilled: shell.handleCameraFulfilled,
+  });
+
+  const handleMarkerPress = useCallback(
+    (markerId: string) => {
+      pressSelectableMapFeature(markerId, selectablePoints, focusPoint);
+    },
+    [selectablePoints, focusPoint],
+  );
+
+  const resolveFeatureId = routeContent?.resolveFeatureId;
+
+  const handleLayerFeaturePress = useCallback(
+    (layerId: string, properties: GeoJsonProperties) => {
+      const featureId = resolveFeatureId?.(layerId, properties);
+      if (!featureId) {
+        return;
+      }
+      pressSelectableMapFeature(featureId, selectablePoints, focusPoint);
+    },
+    [resolveFeatureId, selectablePoints, focusPoint],
+  );
+
+  const handleUserLocationPress = useCallback(() => {
+    if (config.debug) {
+      notifyMapTouchProbeLocationPress();
+    }
+    startFollowingUser();
+  }, [config.debug, startFollowingUser]);
+
+  if (!mapToken) {
     return (
       slots.renderTokenMissing?.(mapTokenMissingMessage) ?? (
         <MapLoadingState
@@ -42,29 +114,28 @@ export function MapShell({
   return (
     <MapScreenErrorBoundary>
       <MapShellContent
-        mapToken={shell.mapToken}
-        publishMapInstance={shell.publishMapInstance}
-        sheetSnap={shell.sheetSnap}
-        onSheetSnapChange={shell.handleSheetSnapChange}
-        onSnapHeightsChange={shell.handleSnapHeightsChange}
-        onDragInteractionChange={shell.setIsDraggingSheet}
-        userLocation={shell.userLocation}
+        mapToken={mapToken}
+        publishMapInstance={publishMapInstance}
+        sheetSnap={sheetSnap}
+        onSheetSnapChange={handleSheetSnapChange}
+        onSnapHeightsChange={handleSnapHeightsChange}
+        onDragInteractionChange={setIsDraggingSheet}
+        userLocation={userLocation}
         mapChildren={routeContent?.mapLayers ?? null}
         header={routeContent?.header ?? null}
         body={routeContent?.body ?? null}
         overlay={routeContent?.overlay}
-        onMarkerPress={routeContent?.onMarkerPress}
+        collapsedTopRight={routeContent?.collapsedTopRight}
+        onDismissSelectionPress={dismissPointSelection}
+        onMarkerPress={handleMarkerPress}
         extraInteractiveLayerIds={routeContent?.extraInteractiveLayerIds}
-        onLayerFeaturePress={routeContent?.onLayerFeaturePress}
-        isUserLocationFocused={routeContent?.isUserLocationFocused ?? false}
-        onUserLocationPress={() => {
-          if (shell.config.debug) {
-            notifyMapTouchProbeLocationPress();
-          }
-          routeContent?.onUserLocationPress();
-        }}
-        viewport={shell.viewport}
-        config={shell.config}
+        onLayerFeaturePress={
+          resolveFeatureId ? handleLayerFeaturePress : undefined
+        }
+        isUserLocationFocused={followUser}
+        onUserLocationPress={handleUserLocationPress}
+        viewport={viewport}
+        config={config}
         slots={slots}
       />
     </MapScreenErrorBoundary>

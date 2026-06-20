@@ -3,7 +3,7 @@ import {
   FALLBACK_FULL_HEIGHT_PX,
   type SheetSnap,
 } from "@siegetag/sheet";
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import type { MapCameraAnchor } from "../camera/map-camera-anchor";
 import type { MapCameraIntent } from "../camera/map-camera-intent";
@@ -108,9 +108,15 @@ export function useMapShell({
     setSheetSnapState("half");
   }, []);
 
-  const setPointId = useCallback((id: string) => {
-    setSelectedPointId(id);
-  }, []);
+  const focusPoint = useCallback(
+    (id: string, hasLocation: boolean) => {
+      selectPoint(id, hasLocation);
+      if (hasLocation) {
+        bumpCamera();
+      }
+    },
+    [selectPoint, bumpCamera],
+  );
 
   const recenterUserSmooth = useCallback(() => {
     setCameraAnchor({ kind: "user", motion: "smooth" });
@@ -145,6 +151,12 @@ export function useMapShell({
     dismissPointSelection();
     recenterUserSmooth();
   }, [dismissPointSelection, recenterUserSmooth]);
+
+  useEffect(() => {
+    if (sheetSnap === "collapsed" && selectedPointId !== null) {
+      clearPointSelection();
+    }
+  }, [sheetSnap, selectedPointId, clearPointSelection]);
 
   const handleCameraFulfilled = useCallback(
     (fulfilledIntent: MapCameraIntent) => {
@@ -185,7 +197,7 @@ export function useMapShell({
     bumpCamera,
     handleCameraFulfilled,
     selectPoint,
-    setPointId,
+    focusPoint,
     startFollowingUser,
     stopFollowingUser,
     clearPointSelection,

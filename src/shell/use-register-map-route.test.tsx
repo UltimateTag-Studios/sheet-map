@@ -12,8 +12,7 @@ const baseContent: MapRouteContent = {
   mapLayers: null,
   header: "header",
   body: "body",
-  isUserLocationFocused: false,
-  onUserLocationPress: vi.fn(),
+  selectablePoints: [],
 };
 
 function mountRegisterRoute(initialContent: MapRouteContent) {

@@ -5,20 +5,27 @@ import { createContext, useContext } from "react";
 import type { MapRouteContentStore } from "./map-route-content-store";
 import type { useMapShell } from "./use-map-shell";
 
+export type MapSelectablePoint = {
+  id: string;
+  location?: { lng: number; lat: number } | null;
+};
+
 export type MapRouteContent = {
   mapLayers: ReactNode;
   header: ReactNode;
   body: ReactNode;
+  /** Points the shell uses for camera fly-to and map feature selection. */
+  selectablePoints: MapSelectablePoint[];
   /** Fills the visible map area; tracks sheet snap via shell viewport sync. */
   overlay?: ReactNode;
-  onMarkerPress?: (markerId: string) => void;
-  extraInteractiveLayerIds?: string[];
-  onLayerFeaturePress?: (
+  /** Shown top-right when the sheet is collapsed (e.g. trail back). */
+  collapsedTopRight?: ReactNode;
+  /** Extract selectable id from GeoJSON layer clicks (non-marker layers). */
+  resolveFeatureId?: (
     layerId: string,
     properties: GeoJsonProperties,
-  ) => void;
-  isUserLocationFocused: boolean;
-  onUserLocationPress: () => void;
+  ) => string | null;
+  extraInteractiveLayerIds?: string[];
 };
 
 export type MapShellState = ReturnType<typeof useMapShell>;

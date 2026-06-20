@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 
 import "../../styles/sheet-map.css";
 
-import { MapBackButton } from "./map-back-button";
+import { MapDismissSelectionButton } from "./map-dismiss-selection-button";
 import { MapMyLocationButton } from "./map-my-location-button";
 
 const meta = {
@@ -21,11 +21,14 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const BackButton: Story = {
+export const DismissSelectionButton: Story = {
   render: () => (
     <div className="sheet-map-story-stage">
       <div className="sheet-map-story-slot--top-right">
-        <MapBackButton ariaLabel="Back to map" onPress={() => undefined} />
+        <MapDismissSelectionButton
+          ariaLabel="Clear selection"
+          onPress={() => undefined}
+        />
       </div>
     </div>
   ),
@@ -58,6 +61,11 @@ export const VisibleAreaOverlay: Story = {
         className="sheet-map-story-overlay-preview sheet-map-visible-area"
         style={{ height: "65%" }}
       >
+        <MapDismissSelectionButton
+          ariaLabel="Clear selection"
+          positioned
+          onPress={() => undefined}
+        />
         <MapMyLocationButton
           ariaLabel="Focus on my location"
           focused
