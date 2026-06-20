@@ -42,39 +42,11 @@
   z-index: 10;
 }
 
-.sheet-map-visible-area-corner {
-  position: absolute;
-  width: 1rem;
-  height: 1rem;
-  border-color: rgba(34, 211, 238, 0.5);
-}
-
-.sheet-map-visible-area-corner--top-left {
-  top: 0.5rem;
-  left: 0.5rem;
-  border-top: 2px solid;
-  border-left: 2px solid;
-}
-
-.sheet-map-visible-area-corner--top-right {
-  top: 0.5rem;
-  right: 0.5rem;
-  border-top: 2px solid;
-  border-right: 2px solid;
-}
-
-.sheet-map-visible-area-corner--bottom-left {
-  bottom: 0.5rem;
-  left: 0.5rem;
-  border-bottom: 2px solid;
-  border-left: 2px solid;
-}
-
-.sheet-map-visible-area-corner--bottom-right {
-  right: 0.5rem;
-  bottom: 0.5rem;
-  border-right: 2px solid;
-  border-bottom: 2px solid;
+.sheet-map-visible-area {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .sheet-map-overlay-slot--bottom-left {

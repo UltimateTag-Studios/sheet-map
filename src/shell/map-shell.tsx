@@ -51,8 +51,7 @@ export function MapShell({
         mapChildren={routeContent?.mapLayers ?? null}
         header={routeContent?.header ?? null}
         body={routeContent?.body ?? null}
-        overlayTopLeft={routeContent?.overlayTopLeft}
-        overlayTopRight={routeContent?.overlayTopRight}
+        overlay={routeContent?.overlay}
         onMarkerPress={routeContent?.onMarkerPress}
         extraInteractiveLayerIds={routeContent?.extraInteractiveLayerIds}
         onLayerFeaturePress={routeContent?.onLayerFeaturePress}

@@ -55,13 +55,9 @@ export const VisibleAreaOverlay: Story = {
     <div className="sheet-map-story-stage sheet-map-story-stage--tall">
       <div className="sheet-map-story-map-fill" />
       <div
-        className="sheet-map-story-overlay-preview"
+        className="sheet-map-story-overlay-preview sheet-map-visible-area"
         style={{ height: "65%" }}
       >
-        <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--top-left" />
-        <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--top-right" />
-        <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--bottom-left" />
-        <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--bottom-right" />
         <div className="sheet-map-overlay-slot--bottom-left">
           <MapMyLocationButton
             ariaLabel="Focus on my location"

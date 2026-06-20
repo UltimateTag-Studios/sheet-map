@@ -8,20 +8,9 @@ export type MapVisibleAreaOverlayProps = {
   className?: string;
 };
 
-function MapCanvasCornerDecorations() {
-  return (
-    <>
-      <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--top-left" />
-      <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--top-right" />
-      <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--bottom-left" />
-      <div className="sheet-map-visible-area-corner sheet-map-visible-area-corner--bottom-right" />
-    </>
-  );
-}
-
 /**
- * Borderless fixed overlay aligned to the computed visible map rect. Corner
- * brackets, legend, and other chrome live here so they track sheet snap changes.
+ * Fixed frame aligned to the computed visible map rect. Consumer `overlay` content
+ * fills this area and tracks sheet snap changes via viewport sync.
  */
 export function MapVisibleAreaOverlay({
   clientRect,
@@ -42,8 +31,7 @@ export function MapVisibleAreaOverlay({
         height: clientRect.height,
       }}
     >
-      <MapCanvasCornerDecorations />
-      {children}
+      <div className="sheet-map-visible-area">{children}</div>
     </div>
   );
 }

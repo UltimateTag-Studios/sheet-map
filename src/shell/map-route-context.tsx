@@ -9,8 +9,8 @@ export type MapRouteContent = {
   mapLayers: ReactNode;
   header: ReactNode;
   body: ReactNode;
-  overlayTopLeft?: ReactNode;
-  overlayTopRight?: ReactNode;
+  /** Fills the visible map area; tracks sheet snap via shell viewport sync. */
+  overlay?: ReactNode;
   onMarkerPress?: (markerId: string) => void;
   extraInteractiveLayerIds?: string[];
   onLayerFeaturePress?: (

@@ -1,9 +1,14 @@
 {
   "name": "@siegetag/sheet-map",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "description": "Generic Mapbox map + bottom sheet shell for React web apps",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UltimateTag-Studios/sheet-map.git"
+  },
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -20,10 +25,12 @@
     }
   },
   "files": [
+    "LICENSE",
     "dist/style.css",
     "styles/sheet-map.css",
     "src",
-    "package.json"
+    "package.json",
+    "README.md"
   ],
   "scripts": {
     "build": "pnpm run build:styles",
@@ -42,7 +49,7 @@
     "react-map-gl": "^8.1.1"
   },
   "peerDependencies": {
-    "@siegetag/sheet": "^0.0.0",
+    "@siegetag/sheet": "^0.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.0.0"

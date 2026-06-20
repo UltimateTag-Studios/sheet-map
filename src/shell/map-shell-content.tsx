@@ -42,8 +42,7 @@ export type MapShellContentProps = {
   mapChildren: ReactNode;
   header: ReactNode;
   body: ReactNode;
-  overlayTopLeft?: ReactNode;
-  overlayTopRight?: ReactNode;
+  overlay?: ReactNode;
   myLocationButton?: boolean;
   viewport: MapViewportSyncState;
   config?: MapShellConfig;
@@ -66,8 +65,7 @@ export function MapShellContent({
   mapChildren,
   header,
   body,
-  overlayTopLeft,
-  overlayTopRight,
+  overlay,
   myLocationButton = true,
   viewport,
   config = {},
@@ -110,7 +108,7 @@ export function MapShellContent({
       </MapCanvas>
 
       <MapVisibleAreaOverlay clientRect={viewport.clientRect}>
-        {overlayTopLeft}
+        {overlay}
         {myLocationButton && userLocation
           ? (slots.renderMyLocationButton?.({
               ariaLabel: myLocationAriaLabel,
@@ -126,7 +124,6 @@ export function MapShellContent({
               </div>
             ))
           : null}
-        {overlayTopRight}
       </MapVisibleAreaOverlay>
 
       {config.debug ? (

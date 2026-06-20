@@ -11,8 +11,8 @@ Generic Mapbox map + bottom sheet shell for React web apps (react-map-gl + `@sie
 ```json
 {
   "dependencies": {
-    "@siegetag/sheet-map": "github:YOUR_ORG/siegetag#main:packages/sheet-map",
-    "@siegetag/sheet": "github:YOUR_ORG/siegetag#main:packages/sheet",
+    "@siegetag/sheet-map": "github:UltimateTag-Studios/sheet-map#v0.1.0",
+    "@siegetag/sheet": "github:UltimateTag-Studios/sheet#v0.1.0",
     "mapbox-gl": "^3.24.1",
     "react-map-gl": "^8.1.1"
   }
@@ -59,6 +59,7 @@ function MyListScreen() {
     mapLayers: <MapMarkers id="points" data={yourGeoJson} />,
     header: <YourHeaderContent />,
     body: <YourBodyContent />,
+    overlay: <YourVisibleMapOverlay />,
     onMarkerPress: (markerId) => { /* select item */ },
     isUserLocationFocused: shell.followUser,
     onUserLocationPress: shell.startFollowingUser,
@@ -69,6 +70,8 @@ function MyListScreen() {
 ```
 
 `header` is the **header row** at every snap; `body` is the scroll/drag region below the divider (shell adds handle spacers between them). Style header/body however your app styles UI.
+
+**`overlay`** fills the visible map rectangle and resizes automatically as the sheet snaps — put legend, corner art, and top actions there. The shell positions the frame; your app owns all chrome inside it.
 
 **Do not add `overflow-y-auto` to body content.** `@siegetag/sheet` owns scroll on the body root.
 
@@ -112,3 +115,9 @@ pnpm --filter @siegetag/sheet-map build:styles
 ## Standalone sheet
 
 For non-map apps, use `@siegetag/sheet` directly — see [`packages/sheet/README.md`](../sheet/README.md).
+
+## License
+
+**GNU Affero General Public License v3.0 or later** — see [LICENSE](./LICENSE).
+
+Network use (including SaaS) may trigger AGPL source-sharing obligations when users interact with your modified version. Private apps that only **link** to published packages may have different obligations — confirm with legal counsel for your model.
