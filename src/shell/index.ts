@@ -1,5 +1,3 @@
-import "../import-sheet-map-styles";
-
 export type {
   MapChromeInsets,
   MapSheetGeometry,

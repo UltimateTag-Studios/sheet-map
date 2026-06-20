@@ -1,5 +1,3 @@
-import "./import-sheet-map-styles";
-
 export * from "./camera";
 export * from "./canvas";
 export { moveSelectedFirst } from "./lib/move-selected-first";

@@ -4,16 +4,12 @@
   "private": true,
   "type": "module",
   "description": "Generic Mapbox map + bottom sheet shell for React web apps",
-  "sideEffects": [
-    "./dist/styles.css",
-    "./src/import-sheet-map-styles.ts"
-  ],
   "exports": {
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./styles.css": "./dist/styles.css",
+    "./styles.css": "./dist/style.css",
     "./shell": {
       "types": "./src/shell/index.ts",
       "default": "./src/shell/index.ts"
@@ -24,13 +20,14 @@
     }
   },
   "files": [
-    "dist/styles.css",
+    "dist/style.css",
     "styles/build.css",
     "src",
     "package.json"
   ],
   "scripts": {
-    "build:styles": "tailwindcss -i ./styles/build.css -o ./dist/styles.css --minify",
+    "build": "pnpm run build:styles",
+    "build:styles": "tailwindcss -i ./styles/build.css -o ./dist/style.css --minify",
     "prepare": "pnpm run build:styles",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",

@@ -1,4 +1,4 @@
 /*
  * Map-specific sheet-map surfaces — app themes override `.sheet` via sheet-map-theme.css.
- * Base sheet chrome lives in @siegetag/sheet/styles.css.
+ * Import `@siegetag/sheet/styles.css` and `@siegetag/sheet-map/styles.css` in your app entry.
  */

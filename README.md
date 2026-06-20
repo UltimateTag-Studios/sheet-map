@@ -21,10 +21,19 @@ Generic Mapbox map + bottom sheet shell for React web apps (react-map-gl + `@sie
 
 Pin to a commit or tag for stability: `#abc1234` or `#v0.1.0`.
 
+Import styles once in your app entry (both packages ship built CSS as `./styles.css`):
+
+```tsx
+import "@siegetag/sheet/styles.css";
+import "@siegetag/sheet-map/styles.css";
+```
+
 ## Quick start
 
 ```tsx
 import { MapLayout, useMapRouteContext, useRegisterMapRoute, MapMarkers } from "@siegetag/sheet-map";
+import "@siegetag/sheet/styles.css";
+import "@siegetag/sheet-map/styles.css";
 import { Route } from "react-router-dom";
 
 function AppMapLayout() {
@@ -77,7 +86,15 @@ See package source [`src/shell/config.ts`](src/shell/config.ts) for full options
 
 ## Theming
 
-Override `.sheet`, `.sheet-handle`, and `.sheet-divider` from `@siegetag/sheet/styles.css`. See app example [`apps/capacitor/src/screens/map/sheet-map-theme.css`](../../apps/capacitor/src/screens/map/sheet-map-theme.css).
+Override `.sheet`, `.sheet-handle`, and `.sheet-divider` from `@siegetag/sheet/styles.css`. Map-specific header typography uses classes from `@siegetag/sheet-map/styles.css`. See app example [`apps/capacitor/src/screens/map/sheet-map-theme.css`](../../apps/capacitor/src/screens/map/sheet-map-theme.css).
+
+## Build
+
+Tailwind utilities compile to `dist/style.css` on `pnpm install` (`prepare`) or manually:
+
+```bash
+pnpm --filter @siegetag/sheet-map build:styles
+```
 
 ## Standalone sheet
 
