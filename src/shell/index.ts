@@ -37,7 +37,6 @@ export {
   DEFAULT_SHEET_HANDLE_BAR_HEIGHT,
   DEFAULT_SHEET_HANDLE_MARGIN_BOTTOM,
   DEFAULT_SHEET_HANDLE_MARGIN_TOP,
-  hasBottomChromeReserve,
 } from "./sheet-layout-vars";
 export type { UseMapShellOptions } from "./use-map-shell";
 export { useMapShell } from "./use-map-shell";

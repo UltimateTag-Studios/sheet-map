@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   buildMapSheetLayoutVars,
   buildMapSheetStyle,
-  hasBottomChromeReserve,
 } from "./sheet-layout-vars";
 
 describe("buildMapSheetLayoutVars", () => {
@@ -27,30 +26,6 @@ describe("buildMapSheetLayoutVars", () => {
       "--sheet-handle-bar-height": "0.5rem",
       "--sheet-handle-margin-bottom": "1rem",
     });
-  });
-});
-
-describe("hasBottomChromeReserve", () => {
-  it("returns false by default", () => {
-    expect(hasBottomChromeReserve()).toBe(false);
-    expect(hasBottomChromeReserve({ bottomChromeReserve: {} })).toBe(false);
-  });
-
-  it("returns true when bottom chrome padding is configured", () => {
-    expect(
-      hasBottomChromeReserve({
-        bottomChromeReserve: {
-          collapsedHeaderPaddingBottom: "4rem",
-        },
-      }),
-    ).toBe(true);
-    expect(
-      hasBottomChromeReserve({
-        bottomChromeReserve: {
-          scrollBodyPaddingBottom: "5rem",
-        },
-      }),
-    ).toBe(true);
   });
 });
 

@@ -5,12 +5,12 @@ import { DEFAULT_HALF_SNAP_FRACTION } from "./normalize-half-snap-fraction";
 
 export type MapChromeInsets = Partial<MapObscuredInsets>;
 
-/** Optional padding to keep sheet content clear of fixed bottom chrome (tab bar, etc.). */
+/** Tab-bar clearance and scroll-end gap for sheet bottom chrome reserve. */
 export type MapBottomChromeReserve = {
-  /** Header padding-bottom while collapsed (live during drag). CSS length. */
-  collapsedHeaderPaddingBottom?: string;
-  /** Body inner padding-bottom at full height. CSS length. */
-  scrollBodyPaddingBottom?: string;
+  /** Always-on reserve spacer height (tab bar clearance). CSS length. */
+  reserve: string;
+  /** Body inner padding-bottom for scroll-end breathing room above tab bar. */
+  floatGap: string;
 };
 
 /** Sheet geometry — spacing and clearance. Visuals: theme CSS on `.sheet` classes. */
