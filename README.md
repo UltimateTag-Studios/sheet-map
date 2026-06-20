@@ -63,9 +63,11 @@ function MyListScreen() {
 
 | Zone / snap | Gestures |
 |------|-----|
-| Handle + header | Sheet drag — all snaps |
+| Handle + header (chrome) | Sheet drag — all snaps, even when body is scrolled at full |
 | Body below divider at `collapsed` / `half` | Sheet drag only |
 | Body at **live full height** (mid-drag or resting `full`) | Scroll when scrolled; at scroll top, drag down collapses, drag up scrolls |
+
+When the sheet settles to a new snap, body scroll resets to the top.
 
 Collapsed floating tab bar clearance uses header padding while at collapsed height (live during drag). Scroll-end reserve uses body inner padding when `layout.reserveFloatingTabBar` is enabled.
 
