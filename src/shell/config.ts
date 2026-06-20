@@ -15,8 +15,8 @@ export type MapSheetLayout = {
   drawerHandleMarginBottom?: number | string;
   /** Optical trim on handle spacer under peek (default `-7`). */
   peekBalanceAdjustPx?: number;
-  /** Bottom chrome cleared by tab bar spacer (default `0`). Safe area added separately. */
-  tabBarClearance?: number | string;
+  /** When true, sheet spacers use @siegetag/ui floating tab bar reserves (safe area added in CSS). */
+  reserveFloatingTabBar?: boolean;
 };
 
 /** Optional visual overrides merged onto drawer surfaces. */

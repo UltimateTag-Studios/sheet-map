@@ -22,8 +22,8 @@ import type {
 } from "./config";
 import {
   buildSheetMapDrawerStyle,
-  hasTabBarClearance,
-} from "./sheet-map-drawer-style";
+  reservesFloatingTabBar,
+} from "./drawer-layout-vars";
 
 const MAP_VIEWPORT_CLASS = "h-full min-h-[100dvh]";
 
@@ -87,7 +87,7 @@ export function MapShellContent({
   const layout = config.layout ?? {};
   const { drawer: drawerStyle, drawerHandle: drawerHandleStyle } =
     buildSheetMapDrawerStyle(layout, config.styles);
-  const reserveTabBar = hasTabBarClearance(layout);
+  const reserveFloatingTabBar = reservesFloatingTabBar(layout);
 
   return (
     <div className={`relative min-h-0 flex-1 ${MAP_VIEWPORT_CLASS}`}>
@@ -155,11 +155,12 @@ export function MapShellContent({
         onSnapHeightsChange={onSnapHeightsChange}
       >
         <BottomSheetCollapsedLayers
+          sheetSnap={sheetSnap}
           isCollapsed={isCollapsed}
           revealExpandedWhileCollapsed={isDraggingSheet}
           peek={peekContent}
           expanded={expandedContent}
-          reserveTabBar={reserveTabBar}
+          reserveFloatingTabBar={reserveFloatingTabBar}
         />
       </BottomSheet>
     </div>

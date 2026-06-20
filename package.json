@@ -41,6 +41,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@siegetag/ui": "workspace:*",
     "mapbox-gl": "^3.24.1",
     "react-map-gl": "^8.1.1",
     "vaul": "^1.1.2"

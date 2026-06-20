@@ -4,8 +4,8 @@ import {
   buildSheetMapDrawerLayoutVars,
   buildSheetMapDrawerStyle,
   DEFAULT_PEEK_BALANCE_ADJUST_PX,
-  hasTabBarClearance,
-} from "./sheet-map-drawer-style";
+  reservesFloatingTabBar,
+} from "./drawer-layout-vars";
 
 describe("buildSheetMapDrawerLayoutVars", () => {
   it("applies package defaults when layout is omitted", () => {
@@ -14,7 +14,6 @@ describe("buildSheetMapDrawerLayoutVars", () => {
       "--sheet-map-handle-bar-height": "0.25rem",
       "--sheet-map-handle-margin-bottom": "0.75rem",
       "--sheet-map-peek-balance-adjust": "-7px",
-      "--sheet-map-tab-bar-clearance": "0px",
     });
     expect(DEFAULT_PEEK_BALANCE_ADJUST_PX).toBe(-7);
   });
@@ -26,30 +25,27 @@ describe("buildSheetMapDrawerLayoutVars", () => {
         drawerHandleBarHeight: "0.5rem",
         drawerHandleMarginBottom: "1rem",
         peekBalanceAdjustPx: -4,
-        tabBarClearance: "calc(16px + 3rem)",
+        reserveFloatingTabBar: true,
       }),
     ).toEqual({
       "--sheet-map-handle-margin-top": "12px",
       "--sheet-map-handle-bar-height": "0.5rem",
       "--sheet-map-handle-margin-bottom": "1rem",
       "--sheet-map-peek-balance-adjust": "-4px",
-      "--sheet-map-tab-bar-clearance": "calc(16px + 3rem)",
     });
   });
 });
 
-describe("hasTabBarClearance", () => {
-  it("returns false for default and zero clearance", () => {
-    expect(hasTabBarClearance()).toBe(false);
-    expect(hasTabBarClearance({ tabBarClearance: 0 })).toBe(false);
-    expect(hasTabBarClearance({ tabBarClearance: "0px" })).toBe(false);
+describe("reservesFloatingTabBar", () => {
+  it("returns false by default", () => {
+    expect(reservesFloatingTabBar()).toBe(false);
+    expect(reservesFloatingTabBar({ reserveFloatingTabBar: false })).toBe(
+      false,
+    );
   });
 
-  it("returns true when clearance is set", () => {
-    expect(hasTabBarClearance({ tabBarClearance: 48 })).toBe(true);
-    expect(hasTabBarClearance({ tabBarClearance: "calc(16px + 3rem)" })).toBe(
-      true,
-    );
+  it("returns true when reserveFloatingTabBar is enabled", () => {
+    expect(reservesFloatingTabBar({ reserveFloatingTabBar: true })).toBe(true);
   });
 });
 
@@ -66,7 +62,6 @@ describe("buildSheetMapDrawerStyle", () => {
         "--sheet-map-handle-bar-height": "0.25rem",
         "--sheet-map-handle-margin-bottom": "0.75rem",
         "--sheet-map-peek-balance-adjust": "-5px",
-        "--sheet-map-tab-bar-clearance": "0px",
         backgroundColor: "white",
       },
       drawerHandle: {},

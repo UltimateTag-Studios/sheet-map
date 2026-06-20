@@ -57,7 +57,17 @@ function MyListScreen() {
 }
 ```
 
-`peek` is the **header row** at every snap; `expanded` is the **scroll body below it** (shell adds handle spacers between them). Style peek/expanded however your app styles UI.
+`peek` is the **header row** at every snap; `expanded` is the **body below the divider** (shell adds handle spacers between them). Style peek/expanded however your app styles UI.
+
+**Do not add `overflow-y-auto` to expanded content.** The shell owns scroll:
+
+| Snap | Gestures on content |
+|------|---------------------|
+| `collapsed`, `half` | Sheet drag only — scroll disabled |
+| `full` | Unified scroll (peek + divider + body scroll together) |
+| `full` + scrolled to top + swipe down | Sheet drag resumes (collapse / snap down) |
+
+Use padding wrappers (e.g. app `BottomSheetBody`) for spacing only — not an inner scroller. Floating tab bar reserve uses the same bottom padding as `AppScrollArea` (`tabBarScrollAreaPaddingBottom` / `tabBarCollapsedAreaPaddingBottom` from `@siegetag/ui`), driven by `layout.reserveFloatingTabBar`.
 
 ## Configuration (`MapShellConfig`)
 
@@ -66,7 +76,7 @@ function MyListScreen() {
 | Option | Default | Description |
 |--------|---------|-------------|
 | `fixedChromeInsets` | — | Extra obscured map area (tab bar, top nav) in px |
-| `collapsedBottomInsetPx` | `0` | Extra snap inset without DOM (prefer `layout.tabBarClearance`) |
+| `collapsedBottomInsetPx` | `0` | Extra snap inset without DOM (prefer `layout.reserveFloatingTabBar`) |
 | `halfSnapFraction` | `0.5` | Vaul fraction snap between collapsed and full |
 | `initialZoom` | `15` | Zoom on first camera fly only |
 | `smoothFlyDurationMs` | `600` | Duration for smooth flies |
@@ -76,7 +86,7 @@ function MyListScreen() {
 
 ### Layout (`config.layout`) — geometry only
 
-Spacing, handle size, tab bar clearance. Defaults work out of the box.
+Spacing, handle size, floating tab bar reserves. Defaults work out of the box.
 
 | Option | Default | Description |
 |--------|---------|-------------|
@@ -84,16 +94,18 @@ Spacing, handle size, tab bar clearance. Defaults work out of the box.
 | `drawerHandleBarHeight` | `0.25rem` | Handle pill height |
 | `drawerHandleMarginBottom` | `0.75rem` | Gap between handle and your peek content |
 | `peekBalanceAdjustPx` | `-7` | Optical trim on handle spacer under peek |
-| `tabBarClearance` | `0` | Tab bar stack height (safe area added automatically) |
+| `reserveFloatingTabBar` | `false` | When true, sheet spacers use `@siegetag/ui` floating tab bar reserves (safe area added in CSS) |
 
-When `tabBarClearance` is non-zero, a tab bar spacer renders below the handle spacer on collapsed peek. Pass a pixel number from your app chrome constants.
+When enabled, collapsed and scroll-end reserves come from `@siegetag/ui` layout helpers — no manual constant imports.
+
+After changing `styles/sheet-map.css`, run `pnpm --filter @siegetag/sheet-map build:styles` so `dist/styles.css` picks up new semantic classes.
 
 ```tsx
-import { TAB_BAR_PEEK_CLEARANCE_PX } from "@siegetag/ui";
-
 <MapLayout
   config={{
-    layout: { tabBarClearance: TAB_BAR_PEEK_CLEARANCE_PX },
+    layout: {
+      reserveFloatingTabBar: true,
+    },
   }}
   …
 />
@@ -114,6 +126,8 @@ Optional `drawer` / `drawerHandle` `CSSProperties` — escape hatch only. **Pref
 ## Behavior (fixed)
 
 - Collapsed snap height is **measured** from handle + your peek + structural spacers (ResizeObserver)
+- Below **full** snap, vertical swipes on content move the sheet (no inner scroll)
+- At **full** snap, one scroll root wraps peek + divider + body. `useVaulScrollHandoff` toggles Vaul's `data-vaul-no-drag` while scrolled; at scroll top Vaul owns pull-down drag. Drawer uses `scrollLockTimeout={0}`.
 - First fly after mount sets `initialZoom`; later flies preserve user zoom
 - Tap marker → fly to point + open sheet
 - Sheet resize → re-fly with updated center offset

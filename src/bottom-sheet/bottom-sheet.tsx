@@ -137,6 +137,8 @@ export function BottomSheet({
       modal={false}
       dismissible={false}
       fadeFromIndex={0}
+      /** Avoid 500ms drag lock after inner scroll — pairs with `useVaulScrollHandoff`. */
+      scrollLockTimeout={0}
       snapPoints={snapPoints}
       activeSnapPoint={activeSnapPoint}
       setActiveSnapPoint={(point) => {

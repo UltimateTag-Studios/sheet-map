@@ -34,36 +34,32 @@ function InteractiveSheet() {
       <p className="font-semibold text-lg text-white uppercase tracking-wide">
         Bounty Intel
       </p>
-      <p className="text-neutral-400 text-xs">Drag to expand</p>
+      <p className="text-neutral-400 text-xs">
+        Drag to expand — scroll at full
+      </p>
     </div>
   );
 
   const expanded = (
-    <>
-      <div className="shrink-0 border-white/10 border-b px-4 py-3">
-        <p className="font-semibold text-lg text-white uppercase tracking-wide">
-          Bounty Intel
-        </p>
-        <p className="text-neutral-400 text-xs">Snap: {snap}</p>
+    <div className="px-4 pb-4 pt-4">
+      <p className="mb-3 text-neutral-400 text-xs">Snap: {snap}</p>
+      <div className="space-y-3">
+        {Array.from({ length: 12 }, (_, index) => (
+          <div
+            key={`sheet-tag-${index + 1}`}
+            className="rounded-md border border-white/10 bg-neutral-900/50 p-3"
+          >
+            <p className="text-sm text-white uppercase">Tag {index + 1}</p>
+          </div>
+        ))}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-        <div className="space-y-3">
-          {Array.from({ length: 6 }, (_, index) => (
-            <div
-              key={`sheet-tag-${index + 1}`}
-              className="rounded-md border border-white/10 bg-neutral-900/50 p-3"
-            >
-              <p className="text-sm text-white uppercase">Tag {index + 1}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
+    </div>
   );
 
   return (
     <BottomSheet snap={snap} onSnapChange={setSnap}>
       <BottomSheetCollapsedLayers
+        sheetSnap={snap}
         isCollapsed={isCollapsed}
         revealExpandedWhileCollapsed={false}
         peek={peek}

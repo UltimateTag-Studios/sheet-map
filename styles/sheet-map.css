@@ -13,8 +13,6 @@
   );
   /** Trims half-leading under peek title/eyebrow for vertical balance. */
   --sheet-map-peek-balance-adjust: -7px;
-  /** Total bottom chrome to clear (e.g. tab bar gap + bar height). Safe area is added separately. */
-  --sheet-map-tab-bar-clearance: 0px;
 
   border-radius: 0.75rem;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -47,12 +45,5 @@
   height: calc(
     var(--sheet-map-handle-height) +
     var(--sheet-map-peek-balance-adjust)
-  );
-}
-
-.sheet-map-tab-bar-spacer {
-  height: calc(
-    env(safe-area-inset-bottom) +
-    var(--sheet-map-tab-bar-clearance)
   );
 }

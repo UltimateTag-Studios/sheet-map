@@ -6,7 +6,6 @@ export const DEFAULT_DRAWER_HANDLE_MARGIN_TOP = "0.75rem";
 export const DEFAULT_DRAWER_HANDLE_BAR_HEIGHT = "0.25rem";
 export const DEFAULT_DRAWER_HANDLE_MARGIN_BOTTOM = "0.75rem";
 export const DEFAULT_PEEK_BALANCE_ADJUST_PX = -7;
-export const DEFAULT_TAB_BAR_CLEARANCE = "0px";
 
 function toCssLength(
   value: number | string | undefined,
@@ -19,19 +18,9 @@ function toCssLength(
   return typeof value === "number" ? `${value}px` : value;
 }
 
-/** Whether layout config requests a tab bar clearance spacer. */
-export function hasTabBarClearance(layout: MapSheetLayout = {}): boolean {
-  const clearance = layout.tabBarClearance;
-  if (clearance === undefined) {
-    return false;
-  }
-
-  if (typeof clearance === "number") {
-    return clearance !== 0;
-  }
-
-  const trimmed = clearance.trim();
-  return trimmed !== "0" && trimmed !== "0px";
+/** Whether layout config requests floating tab bar bottom padding. */
+export function reservesFloatingTabBar(layout: MapSheetLayout = {}): boolean {
+  return layout.reserveFloatingTabBar === true;
 }
 
 /** Layout tokens as CSS custom properties on `.sheet-map-drawer`. */
@@ -52,10 +41,6 @@ export function buildSheetMapDrawerLayoutVars(
       DEFAULT_DRAWER_HANDLE_MARGIN_BOTTOM,
     ),
     "--sheet-map-peek-balance-adjust": `${layout.peekBalanceAdjustPx ?? DEFAULT_PEEK_BALANCE_ADJUST_PX}px`,
-    "--sheet-map-tab-bar-clearance": toCssLength(
-      layout.tabBarClearance,
-      DEFAULT_TAB_BAR_CLEARANCE,
-    ),
   } as CSSProperties;
 }
 
