@@ -16,8 +16,8 @@ import type {
   MapShellSlots,
   MapUserLocationCoords,
 } from "./config";
-import { reservesFloatingTabBar } from "./drawer-layout-vars";
 import { MapSheetLayout } from "./map-sheet-layout";
+import { reservesFloatingTabBar } from "./sheet-layout-vars";
 
 const MAP_VIEWPORT_CLASS = "h-full min-h-[100dvh]";
 
@@ -76,8 +76,10 @@ export function MapShellContent({
 }: MapShellContentProps) {
   const myLocationAriaLabel = config.myLocationAriaLabel ?? "Focus my location";
   const layout = config.layout ?? {};
-  const { drawer: drawerStyle, drawerHandle: drawerHandleStyle } =
-    buildSheetStyle(layout, config.styles);
+  const { sheet: sheetStyle, sheetHandle: sheetHandleStyle } = buildSheetStyle(
+    layout,
+    config.styles,
+  );
   const reserveFloatingTabBar = reservesFloatingTabBar(layout);
 
   return (
@@ -141,8 +143,8 @@ export function MapShellContent({
         onDragInteractionChange={onDragInteractionChange}
         collapsedBottomInsetPx={config.collapsedBottomInsetPx}
         halfSnapFraction={config.halfSnapFraction}
-        drawerStyle={drawerStyle}
-        drawerHandleStyle={drawerHandleStyle}
+        sheetStyle={sheetStyle}
+        sheetHandleStyle={sheetHandleStyle}
         onSnapHeightsChange={onSnapHeightsChange}
       >
         <MapSheetLayout

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildSheetMapDrawerLayoutVars,
-  buildSheetMapDrawerStyle,
+  buildMapSheetLayoutVars,
+  buildMapSheetStyle,
   reservesFloatingTabBar,
-} from "./drawer-layout-vars";
+} from "./sheet-layout-vars";
 
-describe("buildSheetMapDrawerLayoutVars", () => {
+describe("buildMapSheetLayoutVars", () => {
   it("applies package defaults when layout is omitted", () => {
-    expect(buildSheetMapDrawerLayoutVars()).toEqual({
+    expect(buildMapSheetLayoutVars()).toEqual({
       "--sheet-handle-margin-top": "0.75rem",
       "--sheet-handle-bar-height": "0.25rem",
       "--sheet-handle-margin-bottom": "0.75rem",
@@ -17,10 +17,10 @@ describe("buildSheetMapDrawerLayoutVars", () => {
 
   it("overrides layout tokens from props", () => {
     expect(
-      buildSheetMapDrawerLayoutVars({
-        drawerHandleMarginTop: 12,
-        drawerHandleBarHeight: "0.5rem",
-        drawerHandleMarginBottom: "1rem",
+      buildMapSheetLayoutVars({
+        sheetHandleMarginTop: 12,
+        sheetHandleBarHeight: "0.5rem",
+        sheetHandleMarginBottom: "1rem",
       }),
     ).toEqual({
       "--sheet-handle-margin-top": "12px",
@@ -43,21 +43,21 @@ describe("reservesFloatingTabBar", () => {
   });
 });
 
-describe("buildSheetMapDrawerStyle", () => {
+describe("buildMapSheetStyle", () => {
   it("merges visual styles after layout vars", () => {
     expect(
-      buildSheetMapDrawerStyle(
-        { drawerHandleMarginTop: 10 },
-        { drawer: { backgroundColor: "white" } },
+      buildMapSheetStyle(
+        { sheetHandleMarginTop: 10 },
+        { sheet: { backgroundColor: "white" } },
       ),
     ).toEqual({
-      drawer: {
+      sheet: {
         "--sheet-handle-margin-top": "10px",
         "--sheet-handle-bar-height": "0.25rem",
         "--sheet-handle-margin-bottom": "0.75rem",
         backgroundColor: "white",
       },
-      drawerHandle: {},
+      sheetHandle: {},
     });
   });
 });

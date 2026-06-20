@@ -1,4 +1,4 @@
 /*
- * Map-specific sheet-map surfaces — app themes override `.sheet-drawer` via sheet-map-theme.css.
- * Base drawer chrome lives in @siegetag/sheet/styles.css.
+ * Map-specific sheet-map surfaces — app themes override `.sheet` via sheet-map-theme.css.
+ * Base sheet chrome lives in @siegetag/sheet/styles.css.
  */

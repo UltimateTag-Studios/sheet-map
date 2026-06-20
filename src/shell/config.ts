@@ -5,28 +5,28 @@ import { DEFAULT_HALF_SNAP_FRACTION } from "./normalize-half-snap-fraction";
 
 export type MapChromeInsets = Partial<MapObscuredInsets>;
 
-/** Sheet drawer geometry — spacing and clearance. Visuals: theme CSS on `.sheet-drawer` classes. */
+/** Sheet geometry — spacing and clearance. Visuals: theme CSS on `.sheet` classes. */
 export type MapSheetGeometry = {
   /** Handle block top margin (default `0.75rem`). Number = px. */
-  drawerHandleMarginTop?: number | string;
+  sheetHandleMarginTop?: number | string;
   /** Handle bar height (default `0.25rem`). Number = px. */
-  drawerHandleBarHeight?: number | string;
+  sheetHandleBarHeight?: number | string;
   /** Gap between handle bar and header content (default `0.75rem`). Number = px. */
-  drawerHandleMarginBottom?: number | string;
+  sheetHandleMarginBottom?: number | string;
   /** When true, sheet spacers use @siegetag/ui floating tab bar reserves (safe area added in CSS). */
   reserveFloatingTabBar?: boolean;
 };
 
-/** Optional visual overrides merged onto drawer surfaces. */
+/** Optional visual overrides merged onto sheet surfaces. */
 export type MapSheetStyles = {
-  drawer?: CSSProperties;
-  drawerHandle?: CSSProperties;
+  sheet?: CSSProperties;
+  sheetHandle?: CSSProperties;
 };
 
 export type MapShellConfig = {
-  /** Sheet drawer geometry — defaults work out of the box. */
+  /** Sheet geometry — defaults work out of the box. */
   layout?: MapSheetGeometry;
-  /** Optional drawer/handle visual overrides (colors, shadows, …). */
+  /** Optional sheet/handle visual overrides (colors, shadows, …). */
   styles?: MapSheetStyles;
   /** Extra obscured area (tab bar, top nav). Combined with sheet insets. */
   fixedChromeInsets?: MapChromeInsets;

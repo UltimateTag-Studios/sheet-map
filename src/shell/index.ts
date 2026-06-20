@@ -11,14 +11,6 @@ export type {
   UserLocationSlotProps,
 } from "./config";
 export { defaultMapShellConfig } from "./config";
-export {
-  buildSheetMapDrawerLayoutVars,
-  buildSheetMapDrawerStyle,
-  DEFAULT_DRAWER_HANDLE_BAR_HEIGHT,
-  DEFAULT_DRAWER_HANDLE_MARGIN_BOTTOM,
-  DEFAULT_DRAWER_HANDLE_MARGIN_TOP,
-  reservesFloatingTabBar,
-} from "./drawer-layout-vars";
 export type { MapLayoutProps } from "./layout";
 export { MapLayout } from "./layout";
 export type { MapInstanceStore } from "./map-instance-store";
@@ -40,6 +32,14 @@ export {
   DEFAULT_HALF_SNAP_FRACTION,
   normalizeHalfSnapFraction,
 } from "./normalize-half-snap-fraction";
+export {
+  buildMapSheetLayoutVars,
+  buildMapSheetStyle,
+  DEFAULT_SHEET_HANDLE_BAR_HEIGHT,
+  DEFAULT_SHEET_HANDLE_MARGIN_BOTTOM,
+  DEFAULT_SHEET_HANDLE_MARGIN_TOP,
+  reservesFloatingTabBar,
+} from "./sheet-layout-vars";
 export type { UseMapShellOptions } from "./use-map-shell";
 export { useMapShell } from "./use-map-shell";
 export { useRegisterMapRoute } from "./use-register-map-route";
