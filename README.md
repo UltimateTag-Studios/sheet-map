@@ -73,6 +73,32 @@ function MyListScreen() {
 
 **`overlay`** fills the visible map rectangle and resizes automatically as the sheet snaps — put legend, corner art, and top actions there. The shell positions the frame; your app owns all chrome inside it.
 
+### Overlay controls (taps after sheet drag)
+
+The visible-map overlay uses **`pointer-events: none`** on containers and **`pointer-events: auto`** only on interactive elements. Do not wrap controls in extra positioning `<div>`s that also set `pointer-events: auto` — touches can land on the wrapper on `pointerdown` and the button on `pointerup`, and Android will skip `click`.
+
+For any button or control in the overlay (or floating above the map):
+
+1. Put **`pointer-events: auto`** on the control itself (see `.sheet-map-my-location-button--positioned`).
+2. Spread **`useTouchClickActivation(onPress)`** from `@siegetag/sheet` onto the element — same pattern as sheet body buttons after a drag.
+
+```tsx
+import { useTouchClickActivation } from "@siegetag/sheet";
+
+function MyMapControl({ onPress }: { onPress: () => void }) {
+  const touch = useTouchClickActivation(onPress);
+  return (
+    <button type="button" className="my-control my-control--positioned" {...touch}>
+      …
+    </button>
+  );
+}
+```
+
+`MapMyLocationButton` and `MapBackButton` already use this hook. Custom `renderMyLocationButton` slots should too.
+
+**`overlay`** content from `useRegisterMapRoute` should follow the same rules if it includes tappable UI.
+
 **Do not add `overflow-y-auto` to body content.** `@siegetag/sheet` owns scroll on the body root.
 
 | Zone / snap | Gestures |

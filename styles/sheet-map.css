@@ -45,6 +45,7 @@
   position: fixed;
 }
 
+/* Overlay containers: none. Interactive controls: auto on the control itself. */
 .sheet-map-visible-area {
   position: relative;
   width: 100%;

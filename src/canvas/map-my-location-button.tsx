@@ -1,4 +1,4 @@
-import { type MouseEvent, useRef } from "react";
+import { useTouchClickActivation } from "@siegetag/sheet";
 
 import { MyLocationIcon } from "../icons/my-location-icon";
 
@@ -12,13 +12,6 @@ export type MapMyLocationButtonProps = {
   className?: string;
 };
 
-function isTouchPointerEvent(event: MouseEvent<HTMLButtonElement>): boolean {
-  return (
-    event.nativeEvent instanceof PointerEvent &&
-    event.nativeEvent.pointerType === "touch"
-  );
-}
-
 /** Google Maps–style floating control to recenter on the user location. */
 export function MapMyLocationButton({
   ariaLabel,
@@ -27,42 +20,14 @@ export function MapMyLocationButton({
   positioned = false,
   className = "",
 }: MapMyLocationButtonProps) {
-  const touchTapRef = useRef(false);
+  const touchActivation = useTouchClickActivation(onPress);
 
   return (
     <button
       type="button"
       aria-label={ariaLabel}
       aria-pressed={focused}
-      onPointerDown={(event) => {
-        if (event.pointerType === "touch" && event.button === 0) {
-          touchTapRef.current = true;
-        }
-      }}
-      onPointerUp={(event) => {
-        if (
-          event.pointerType !== "touch" ||
-          event.button !== 0 ||
-          !touchTapRef.current
-        ) {
-          return;
-        }
-
-        touchTapRef.current = false;
-        // Android often skips click after sheet drags; mirror sheet body activation.
-        requestAnimationFrame(() => {
-          onPress();
-        });
-      }}
-      onPointerCancel={() => {
-        touchTapRef.current = false;
-      }}
-      onClick={(event) => {
-        if (isTouchPointerEvent(event)) {
-          return;
-        }
-        onPress();
-      }}
+      {...touchActivation}
       className={`sheet-map-my-location-button${positioned ? " sheet-map-my-location-button--positioned" : ""}${className ? ` ${className}` : ""}`}
     >
       <MyLocationIcon size={22} />
