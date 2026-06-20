@@ -9,47 +9,51 @@ import type { BottomSheetSnap } from "./bottom-sheet";
 import { SheetMapDivider } from "./divider";
 import { usePeekMeasureRef } from "./peek-measure-context";
 import { SheetMapHandleSpacer } from "./peek-spacers";
+import { useSheetBodySnapPan } from "./sheet-body-snap-pan";
 import {
-  isSheetScrollEnabled,
-  SHEET_DRAG_ROOT_CLASS,
-  SHEET_SCROLL_ROOT_CLASS,
-} from "./sheet-scroll-mode";
+  useCanBodyScroll,
+  useShowCollapsedTabBarPeekPadding,
+} from "./sheet-drag-context";
+import { sheetBodyRootClass } from "./sheet-scroll-mode";
 import { useVaulScrollHandoff } from "./vaul-scroll-handoff";
 
 export type BottomSheetCollapsedLayersProps = {
   sheetSnap: BottomSheetSnap;
-  /** Sheet is resting at the collapsed snap. */
-  isCollapsed: boolean;
-  /** User is dragging while collapsed — reveal expanded content under the peek. */
-  revealExpandedWhileCollapsed: boolean;
   peek: ReactNode;
   expanded: ReactNode;
   /** Floating tab bar bottom padding (`config.layout.reserveFloatingTabBar`). */
   reserveFloatingTabBar?: boolean;
 };
 
+function mergeRefs<T>(
+  ...refs: Array<(node: T | null) => void>
+): (node: T | null) => void {
+  return (node) => {
+    for (const ref of refs) {
+      ref(node);
+    }
+  };
+}
+
 /**
- * Keeps peek layout in flow at the collapsed snap while expanded content stays
- * mounted in an overlay. Toggle visibility with opacity only so Vaul keeps
- * pointer capture during drag.
- *
- * At full snap one scroll root wraps peek + divider + body. See
- * `useVaulScrollHandoff` for Vaul drag vs scroll at scroll top.
+ * Fixed peek header (Vaul-only) + always-mounted body scroll root below the divider.
+ * Collapsed tab bar reserve is peek padding (live height gated); body gets scroll-end padding when expanded.
  */
 export function BottomSheetCollapsedLayers({
   sheetSnap,
-  isCollapsed,
-  revealExpandedWhileCollapsed,
   peek,
   expanded,
   reserveFloatingTabBar = false,
 }: BottomSheetCollapsedLayersProps) {
   const onPeekMeasure = usePeekMeasureRef();
-  const scrollEnabled = isSheetScrollEnabled(
+  const canBodyScroll = useCanBodyScroll(sheetSnap);
+  const showCollapsedTabBarPeekPadding = useShowCollapsedTabBarPeekPadding(
     sheetSnap,
-    revealExpandedWhileCollapsed,
+    reserveFloatingTabBar,
   );
-  const { scrollRootRef } = useVaulScrollHandoff(scrollEnabled);
+  const { scrollRootRef } = useVaulScrollHandoff(canBodyScroll);
+  const { bodyRootRef } = useSheetBodySnapPan(canBodyScroll);
+  const bodyRootMergedRef = mergeRefs(scrollRootRef, bodyRootRef);
 
   const peekMeasureRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -58,81 +62,27 @@ export function BottomSheetCollapsedLayers({
     [onPeekMeasure],
   );
 
-  const showCollapsedPeek = isCollapsed && !revealExpandedWhileCollapsed;
-  const collapsedPeekPadding = reserveFloatingTabBar
+  const peekPadding = showCollapsedTabBarPeekPadding
     ? { paddingBottom: tabBarCollapsedAreaPaddingBottom() }
     : undefined;
-  const scrollRootPadding = reserveFloatingTabBar
+  const innerPadding = reserveFloatingTabBar
     ? { paddingBottom: tabBarScrollAreaPaddingBottom() }
     : undefined;
 
-  const collapsedPeek = (
-    <div style={collapsedPeekPadding}>
-      {peek}
-      <SheetMapHandleSpacer />
-    </div>
-  );
-
-  const openPeek = (
-    <div className="shrink-0">
-      {peek}
-      <SheetMapHandleSpacer />
-    </div>
-  );
-
-  const openSheetContent = scrollEnabled ? (
-    <div
-      ref={scrollRootRef}
-      className={SHEET_SCROLL_ROOT_CLASS}
-      data-sheet-scroll-root
-      style={scrollRootPadding}
-    >
-      {openPeek}
-      <SheetMapDivider />
-      {expanded}
-    </div>
-  ) : (
-    <div className={SHEET_DRAG_ROOT_CLASS}>
-      {openPeek}
-      <SheetMapDivider />
-      <div className="flex min-h-0 flex-1 flex-col">{expanded}</div>
-    </div>
-  );
-
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col">
-      <div
-        ref={peekMeasureRef}
-        aria-hidden
-        className="pointer-events-none invisible absolute top-0 w-full"
-      >
-        {collapsedPeek}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div ref={peekMeasureRef} className="shrink-0" style={peekPadding}>
+        {peek}
+        <SheetMapHandleSpacer />
       </div>
-
-      {isCollapsed ? (
-        <>
-          <div
-            className={
-              showCollapsedPeek
-                ? "w-full shrink-0"
-                : "pointer-events-none opacity-0"
-            }
-            aria-hidden={!showCollapsedPeek}
-          >
-            {collapsedPeek}
-          </div>
-          <div
-            className={`sheet-map-expanded-overlay absolute inset-x-0 top-0 z-10 flex min-h-0 flex-col ${
-              showCollapsedPeek ? "pointer-events-none opacity-0" : ""
-            }`.trim()}
-            aria-hidden={showCollapsedPeek}
-          >
-            {openSheetContent}
-          </div>
-        </>
-      ) : (
-        openSheetContent
-      )}
+      <SheetMapDivider />
+      <div
+        ref={bodyRootMergedRef}
+        className={sheetBodyRootClass(canBodyScroll)}
+        data-sheet-scroll-root
+      >
+        <div style={innerPadding}>{expanded}</div>
+      </div>
     </div>
   );
 }

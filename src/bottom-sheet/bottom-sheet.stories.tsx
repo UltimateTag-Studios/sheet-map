@@ -27,7 +27,6 @@ type Story = StoryObj<typeof meta>;
 
 function InteractiveSheet() {
   const [snap, setSnap] = useState<BottomSheetSnap>("half");
-  const isCollapsed = snap === "collapsed";
 
   const peek = (
     <div className="shrink-0 px-4 py-3">
@@ -60,8 +59,6 @@ function InteractiveSheet() {
     <BottomSheet snap={snap} onSnapChange={setSnap}>
       <BottomSheetCollapsedLayers
         sheetSnap={snap}
-        isCollapsed={isCollapsed}
-        revealExpandedWhileCollapsed={false}
         peek={peek}
         expanded={expanded}
       />

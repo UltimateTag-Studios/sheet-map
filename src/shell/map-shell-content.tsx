@@ -36,7 +36,6 @@ export type MapShellContentProps = {
     collapsedHeightPx: number;
     fullHeightPx: number;
   }) => void;
-  isDraggingSheet: boolean;
   onDragInteractionChange: (isDragging: boolean) => void;
   userLocation?: MapUserLocationCoords;
   isUserLocationFocused: boolean;
@@ -64,7 +63,6 @@ export function MapShellContent({
   sheetSnap,
   onSheetSnapChange,
   onSnapHeightsChange,
-  isDraggingSheet,
   onDragInteractionChange,
   userLocation,
   isUserLocationFocused,
@@ -82,7 +80,6 @@ export function MapShellContent({
   config = {},
   slots = {},
 }: MapShellContentProps) {
-  const isCollapsed = sheetSnap === "collapsed";
   const myLocationAriaLabel = config.myLocationAriaLabel ?? "Focus my location";
   const layout = config.layout ?? {};
   const { drawer: drawerStyle, drawerHandle: drawerHandleStyle } =
@@ -156,8 +153,6 @@ export function MapShellContent({
       >
         <BottomSheetCollapsedLayers
           sheetSnap={sheetSnap}
-          isCollapsed={isCollapsed}
-          revealExpandedWhileCollapsed={isDraggingSheet}
           peek={peekContent}
           expanded={expandedContent}
           reserveFloatingTabBar={reserveFloatingTabBar}

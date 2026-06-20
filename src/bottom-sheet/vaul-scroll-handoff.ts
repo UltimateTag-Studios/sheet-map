@@ -13,26 +13,38 @@ function clampScrollTop(el: HTMLDivElement) {
   }
 }
 
-/** Vaul: block sheet drag while inner content is scrolled (`data-vaul-no-drag`). */
-function syncVaulDragGate(el: HTMLDivElement) {
+/** Toggle Vaul drag gate from scroll position only — never from touchstart defaults. */
+export function syncVaulDragGate(el: HTMLDivElement, canBodyScroll: boolean) {
   clampScrollTop(el);
+
+  if (!canBodyScroll) {
+    el.removeAttribute(VAUL_NO_DRAG_ATTR);
+    if (el.scrollTop > 0) {
+      el.scrollTop = 0;
+    }
+    return;
+  }
+
   if (el.scrollTop > SCROLL_TOP_EPSILON_PX) {
     el.setAttribute(VAUL_NO_DRAG_ATTR, "");
     return;
   }
+
   el.removeAttribute(VAUL_NO_DRAG_ATTR);
 }
 
 /**
- * Full-snap unified scroll + Vaul pull-down at scroll top.
- * All listeners are passive — no touchmove preventDefault.
+ * Body-only scroll + Vaul pull-down at scroll top (Google Maps style mid-drag handoff).
  */
 export function useVaulScrollHandoff(
-  scrollEnabled: boolean,
+  canBodyScroll: boolean,
 ): VaulScrollHandoff {
   const scrollElRef = useRef<HTMLDivElement | null>(null);
-  const wasScrollEnabledRef = useRef(scrollEnabled);
+  const wasCanBodyScrollRef = useRef(canBodyScroll);
+  const canBodyScrollRef = useRef(canBodyScroll);
   const cleanupRef = useRef<(() => void) | null>(null);
+
+  canBodyScrollRef.current = canBodyScroll;
 
   const detachListeners = useCallback(() => {
     cleanupRef.current?.();
@@ -42,29 +54,20 @@ export function useVaulScrollHandoff(
   const attachListeners = useCallback(
     (el: HTMLDivElement) => {
       detachListeners();
-      syncVaulDragGate(el);
 
-      const onTouchStart = () => {
-        syncVaulDragGate(el);
+      const sync = () => {
+        syncVaulDragGate(el, canBodyScrollRef.current);
       };
 
-      const onTouchMove = () => {
-        if (el.scrollTop <= SCROLL_TOP_EPSILON_PX) {
-          syncVaulDragGate(el);
-        }
-      };
+      sync();
 
       const onScroll = () => {
-        syncVaulDragGate(el);
+        sync();
       };
 
-      el.addEventListener("touchstart", onTouchStart, { passive: true });
-      el.addEventListener("touchmove", onTouchMove, { passive: true });
       el.addEventListener("scroll", onScroll, { passive: true });
 
       cleanupRef.current = () => {
-        el.removeEventListener("touchstart", onTouchStart);
-        el.removeEventListener("touchmove", onTouchMove);
         el.removeEventListener("scroll", onScroll);
         el.removeAttribute(VAUL_NO_DRAG_ATTR);
       };
@@ -76,20 +79,26 @@ export function useVaulScrollHandoff(
     (node: HTMLDivElement | null) => {
       detachListeners();
       scrollElRef.current = node;
-      if (node && scrollEnabled) {
+      if (node) {
         attachListeners(node);
       }
     },
-    [scrollEnabled, attachListeners, detachListeners],
+    [attachListeners, detachListeners],
   );
 
   useEffect(() => {
-    if (wasScrollEnabledRef.current && !scrollEnabled) {
+    if (scrollElRef.current) {
+      syncVaulDragGate(scrollElRef.current, canBodyScroll);
+    }
+  }, [canBodyScroll]);
+
+  useEffect(() => {
+    if (wasCanBodyScrollRef.current && !canBodyScroll) {
       scrollElRef.current?.scrollTo(0, 0);
       scrollElRef.current?.removeAttribute(VAUL_NO_DRAG_ATTR);
     }
-    wasScrollEnabledRef.current = scrollEnabled;
-  }, [scrollEnabled]);
+    wasCanBodyScrollRef.current = canBodyScroll;
+  }, [canBodyScroll]);
 
   useEffect(() => () => detachListeners(), [detachListeners]);
 

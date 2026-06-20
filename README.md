@@ -61,11 +61,13 @@ function MyListScreen() {
 
 **Do not add `overflow-y-auto` to expanded content.** The shell owns scroll:
 
-| Snap | Gestures on content |
-|------|---------------------|
-| `collapsed`, `half` | Sheet drag only — scroll disabled |
-| `full` | Unified scroll (peek + divider + body scroll together) |
-| `full` + scrolled to top + swipe down | Sheet drag resumes (collapse / snap down) |
+| Zone / snap | Gestures |
+|------|-----|
+| Handle + peek header | Always sheet drag (Vaul) — all snaps |
+| Body below divider at `collapsed` / `half` | Sheet drag only — `useSheetBodySnapPan` drives live px height (no inner scroll) |
+| Body at **live full height** (mid-drag or resting `full`) | Overflow scroll when scrolled; at scroll top, drag **down** collapses via snap pan, drag **up** scrolls content |
+
+Collapsed floating tab bar clearance uses **`tabBarCollapsedAreaPaddingBottom()` on the peek** while the sheet is at collapsed height (removed live during expand so body content does not gap). Scroll-end reserve uses **`tabBarScrollAreaPaddingBottom()`** on the body inner wrapper only.
 
 Use padding wrappers (e.g. app `BottomSheetBody`) for spacing only — not an inner scroller. Floating tab bar reserve uses the same bottom padding as `AppScrollArea` (`tabBarScrollAreaPaddingBottom` / `tabBarCollapsedAreaPaddingBottom` from `@siegetag/ui`), driven by `layout.reserveFloatingTabBar`.
 
@@ -126,8 +128,9 @@ Optional `drawer` / `drawerHandle` `CSSProperties` — escape hatch only. **Pref
 ## Behavior (fixed)
 
 - Collapsed snap height is **measured** from handle + your peek + structural spacers (ResizeObserver)
-- Below **full** snap, vertical swipes on content move the sheet (no inner scroll)
-- At **full** snap, one scroll root wraps peek + divider + body. `useVaulScrollHandoff` toggles Vaul's `data-vaul-no-drag` while scrolled; at scroll top Vaul owns pull-down drag. Drawer uses `scrollLockTimeout={0}`.
+- Handle and peek header stay **fixed** outside the body scroller — only the list below the divider scrolls at full height
+- Below **live full height**, vertical swipes on the body move the sheet via `useSheetBodySnapPan` (Vaul cannot expand upward on scrollable nodes). Mid-drag handoff: one continuous gesture can expand the sheet then scroll content when max height is reached
+- At full height, body uses `overflow-y-auto`; `useVaulScrollHandoff` sets `data-vaul-no-drag` only while scrolled (`scrollTop > 0`). At scroll top, pull-down drag moves the sheet. Drawer uses `scrollLockTimeout={0}`.
 - First fly after mount sets `initialZoom`; later flies preserve user zoom
 - Tap marker → fly to point + open sheet
 - Sheet resize → re-fly with updated center offset
@@ -154,7 +157,6 @@ Import `@siegetag/sheet-map` in JS — structural CSS loads automatically. No Ta
 | `.sheet-map-drawer` | Bottom sheet surface |
 | `.sheet-map-drawer-handle` | Drag handle |
 | `.sheet-map-divider` | Line between peek and expanded body |
-| `.sheet-map-expanded-overlay` | Expanded content during collapsed drag |
 | `.sheet-map-peek-eyebrow` | Optional peek label typography |
 | `.sheet-map-peek-title` | Optional peek title typography |
 

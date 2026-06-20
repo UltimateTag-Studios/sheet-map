@@ -3,7 +3,23 @@ import { DEFAULT_HALF_SNAP_FRACTION } from "../shell/normalize-half-snap-fractio
 export const FALLBACK_COLLAPSED_HEIGHT_PX = 150;
 export const FALLBACK_FULL_HEIGHT_PX = 700;
 
-/** Vaul snap point string for a fixed pixel sheet height. */
+/** Visible drawer height from viewport intersection (handles Vaul translate). */
+export function readVisibleDrawerHeightPx(el: HTMLElement): number {
+  if (typeof window === "undefined") {
+    return 0;
+  }
+
+  const rect = el.getBoundingClientRect();
+  const viewport = window.visualViewport;
+  const viewportHeight =
+    viewport && viewport.height > 0 ? viewport.height : window.innerHeight;
+  const viewportTop = viewport?.offsetTop ?? 0;
+  const viewportBottom = viewportTop + viewportHeight;
+
+  const visibleTop = Math.max(rect.top, viewportTop);
+  const visibleBottom = Math.min(rect.bottom, viewportBottom);
+  return Math.max(0, visibleBottom - visibleTop);
+}
 export function bottomSheetSnapPointPx(heightPx: number): string {
   return `${Math.round(heightPx)}px`;
 }

@@ -2,41 +2,83 @@ import { describe, expect, it } from "vitest";
 
 import type { BottomSheetSnap } from "./bottom-sheet";
 import {
-  isSheetScrollEnabled,
-  SHEET_DRAG_ROOT_CLASS,
+  canBodyScroll,
+  SHEET_BODY_DRAG_CLASS,
+  SHEET_BODY_ROOT_BASE_CLASS,
+  SHEET_BODY_SCROLLABLE_CLASS,
   SHEET_SCROLL_ROOT_CLASS,
+  sheetBodyRootClass,
 } from "./sheet-scroll-mode";
 
-describe("isSheetScrollEnabled", () => {
-  const snaps: BottomSheetSnap[] = ["collapsed", "half", "full"];
-
-  it("is false for collapsed and half", () => {
-    expect(isSheetScrollEnabled("collapsed", false)).toBe(false);
-    expect(isSheetScrollEnabled("half", false)).toBe(false);
+describe("canBodyScroll", () => {
+  it("is false for collapsed and half when idle", () => {
+    expect(
+      canBodyScroll({
+        sheetSnap: "collapsed",
+        canBodyScrollLive: false,
+        isDragging: false,
+      }),
+    ).toBe(false);
+    expect(
+      canBodyScroll({
+        sheetSnap: "half",
+        canBodyScrollLive: false,
+        isDragging: false,
+      }),
+    ).toBe(false);
   });
 
-  it("is true only at full when not drag-revealing collapsed overlay", () => {
-    expect(isSheetScrollEnabled("full", false)).toBe(true);
+  it("is true at full snap when idle", () => {
+    expect(
+      canBodyScroll({
+        sheetSnap: "full",
+        canBodyScrollLive: false,
+        isDragging: false,
+      }),
+    ).toBe(true);
   });
 
-  it("is false at full while collapsed drag overlay is shown", () => {
-    expect(isSheetScrollEnabled("full", true)).toBe(false);
+  it("uses live height while dragging", () => {
+    expect(
+      canBodyScroll({
+        sheetSnap: "half",
+        canBodyScrollLive: false,
+        isDragging: true,
+      }),
+    ).toBe(false);
+    expect(
+      canBodyScroll({
+        sheetSnap: "half",
+        canBodyScrollLive: true,
+        isDragging: true,
+      }),
+    ).toBe(true);
   });
 
-  it("is false for collapsed/half even when drag-revealing", () => {
-    for (const snap of snaps) {
-      if (snap === "full") {
-        continue;
-      }
-      expect(isSheetScrollEnabled(snap, true)).toBe(false);
+  it("ignores resting snap while dragging", () => {
+    const snaps: BottomSheetSnap[] = ["collapsed", "half", "full"];
+    for (const sheetSnap of snaps) {
+      expect(
+        canBodyScroll({
+          sheetSnap,
+          canBodyScrollLive: true,
+          isDragging: true,
+        }),
+      ).toBe(true);
     }
   });
 });
 
-describe("sheet scroll surface classes", () => {
-  it("exports distinct drag vs scroll root classes", () => {
+describe("sheet body root classes", () => {
+  it("uses overflow auto only when body scroll is enabled", () => {
+    expect(sheetBodyRootClass(true)).toContain(SHEET_BODY_SCROLLABLE_CLASS);
+    expect(sheetBodyRootClass(false)).toContain(SHEET_BODY_DRAG_CLASS);
+    expect(sheetBodyRootClass(false)).not.toContain("overflow-y-auto");
+  });
+
+  it("exports shared base classes", () => {
+    expect(SHEET_SCROLL_ROOT_CLASS).toContain(SHEET_BODY_ROOT_BASE_CLASS);
     expect(SHEET_SCROLL_ROOT_CLASS).toContain("overflow-y-auto");
     expect(SHEET_SCROLL_ROOT_CLASS).toContain("overscroll-y-none");
-    expect(SHEET_DRAG_ROOT_CLASS).toContain("overflow-hidden");
   });
 });
