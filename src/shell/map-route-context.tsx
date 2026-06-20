@@ -7,8 +7,8 @@ import type { useMapShell } from "./use-map-shell";
 
 export type MapRouteContent = {
   mapLayers: ReactNode;
-  peek: ReactNode;
-  expanded: ReactNode;
+  header: ReactNode;
+  body: ReactNode;
   overlayTopLeft?: ReactNode;
   overlayTopRight?: ReactNode;
   onMarkerPress?: (markerId: string) => void;

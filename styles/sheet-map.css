@@ -1,44 +1,4 @@
 /*
- * Semantic sheet-map surfaces — override in your app with plain CSS.
- * Layout (position, flex, z-index) stays in compiled Tailwind utilities.
+ * Map-specific sheet-map surfaces — app themes override `.sheet-drawer` via sheet-map-theme.css.
+ * Base drawer chrome lives in @siegetag/sheet/styles.css.
  */
-.sheet-map-drawer {
-  --sheet-map-handle-margin-top: 0.75rem;
-  --sheet-map-handle-bar-height: 0.25rem;
-  --sheet-map-handle-margin-bottom: 0.75rem;
-  --sheet-map-handle-height: calc(
-    var(--sheet-map-handle-margin-top) +
-    var(--sheet-map-handle-bar-height) +
-    var(--sheet-map-handle-margin-bottom)
-  );
-  /** Trims half-leading under peek title/eyebrow for vertical balance. */
-  --sheet-map-peek-balance-adjust: -7px;
-
-  border-radius: 0.75rem;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-bottom: none;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(24px);
-}
-
-.sheet-map-drawer-handle {
-  margin-top: var(--sheet-map-handle-margin-top);
-  margin-bottom: var(--sheet-map-handle-margin-bottom);
-  height: var(--sheet-map-handle-bar-height);
-  width: 2.5rem;
-  border-radius: 9999px;
-  background: rgba(0, 0, 0, 0.15);
-}
-
-.sheet-map-divider {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-/** Mirrors handle block below user peek for vertical balance. */
-.sheet-map-handle-spacer {
-  height: calc(
-    var(--sheet-map-handle-height) +
-    var(--sheet-map-peek-balance-adjust)
-  );
-}

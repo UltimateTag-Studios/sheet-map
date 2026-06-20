@@ -49,8 +49,8 @@ export function MapShell({
         onDragInteractionChange={shell.setIsDraggingSheet}
         userLocation={shell.userLocation}
         mapChildren={routeContent?.mapLayers ?? null}
-        peekContent={routeContent?.peek ?? null}
-        expandedContent={routeContent?.expanded ?? null}
+        header={routeContent?.header ?? null}
+        body={routeContent?.body ?? null}
         overlayTopLeft={routeContent?.overlayTopLeft}
         overlayTopRight={routeContent?.overlayTopRight}
         onMarkerPress={routeContent?.onMarkerPress}

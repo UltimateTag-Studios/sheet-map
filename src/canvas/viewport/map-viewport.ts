@@ -1,4 +1,5 @@
-import type { BottomSheetSnap } from "../../bottom-sheet/bottom-sheet";
+import type { SheetSnap } from "@siegetag/sheet";
+
 import { DEFAULT_HALF_SNAP_FRACTION } from "../../shell/normalize-half-snap-fraction";
 
 export type PixelSize = {
@@ -151,7 +152,7 @@ export function obscuredInsetsForCollapsedSheet(
 }
 
 function sheetObscuredHeightFromViewportBottom(
-  snap: BottomSheetSnap,
+  snap: SheetSnap,
   viewportHeight: number,
   collapsedHeightPx: number,
   fullHeightPx: number,
@@ -179,7 +180,7 @@ export type MapCanvasScreenGeometry = {
 
 /** Mapbox canvas padding matching viewport-fixed UI (sheet, safe areas). */
 export function obscuredInsetsFromScreenGeometry(
-  snap: BottomSheetSnap,
+  snap: SheetSnap,
   collapsedHeightPx: number,
   fullHeightPx: number,
   geometry: MapCanvasScreenGeometry,
@@ -211,7 +212,7 @@ export function obscuredInsetsFromScreenGeometry(
 
 /** Visible map bounds in viewport/client pixels (for debug overlays). */
 export function visibleClientRectFromScreenGeometry(
-  snap: BottomSheetSnap,
+  snap: SheetSnap,
   collapsedHeightPx: number,
   fullHeightPx: number,
   geometry: MapCanvasScreenGeometry,
@@ -276,7 +277,7 @@ export function readMapCanvasScreenGeometry(
 /** Single resolver for visible map bounds, flyTo offset, and whether to move the camera. */
 export function resolveMapVisibleViewport(
   canvas: HTMLCanvasElement,
-  snap: BottomSheetSnap,
+  snap: SheetSnap,
   collapsedHeightPx: number,
   fullHeightPx: number,
   extraObscuredInsets: MapObscuredInsets = {

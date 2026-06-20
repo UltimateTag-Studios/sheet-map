@@ -1,7 +1,7 @@
+import type { SheetSnap } from "@siegetag/sheet";
 import { useEffect, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import type { BottomSheetSnap } from "../../bottom-sheet/bottom-sheet";
 import { normalizeHalfSnapFraction } from "../../shell/normalize-half-snap-fraction";
 import {
   type MapObscuredInsets,
@@ -24,7 +24,7 @@ const EMPTY_VIEWPORT: MapViewportSyncState = {
 
 function readViewport(
   mapRef: MapRef,
-  sheetSnap: BottomSheetSnap,
+  sheetSnap: SheetSnap,
   collapsedHeightPx: number,
   fullHeightPx: number,
   halfSnapFraction: number,
@@ -91,7 +91,7 @@ function viewportEquals(
 
 export type UseMapViewportSyncOptions = {
   mapRef: MapRef | null;
-  sheetSnap: BottomSheetSnap;
+  sheetSnap: SheetSnap;
   collapsedHeightPx: number;
   fullHeightPx: number;
   halfSnapFraction?: number;

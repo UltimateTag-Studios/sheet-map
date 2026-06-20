@@ -5,16 +5,14 @@ import { DEFAULT_HALF_SNAP_FRACTION } from "./normalize-half-snap-fraction";
 
 export type MapChromeInsets = Partial<MapObscuredInsets>;
 
-/** Sheet drawer geometry — spacing and clearance. Visuals: theme CSS on `.sheet-map-*` classes. */
-export type MapSheetLayout = {
+/** Sheet drawer geometry — spacing and clearance. Visuals: theme CSS on `.sheet-drawer` classes. */
+export type MapSheetGeometry = {
   /** Handle block top margin (default `0.75rem`). Number = px. */
   drawerHandleMarginTop?: number | string;
   /** Handle bar height (default `0.25rem`). Number = px. */
   drawerHandleBarHeight?: number | string;
-  /** Gap between handle bar and peek content (default `0.75rem`). Number = px. */
+  /** Gap between handle bar and header content (default `0.75rem`). Number = px. */
   drawerHandleMarginBottom?: number | string;
-  /** Optical trim on handle spacer under peek (default `-7`). */
-  peekBalanceAdjustPx?: number;
   /** When true, sheet spacers use @siegetag/ui floating tab bar reserves (safe area added in CSS). */
   reserveFloatingTabBar?: boolean;
 };
@@ -27,14 +25,14 @@ export type MapSheetStyles = {
 
 export type MapShellConfig = {
   /** Sheet drawer geometry — defaults work out of the box. */
-  layout?: MapSheetLayout;
+  layout?: MapSheetGeometry;
   /** Optional drawer/handle visual overrides (colors, shadows, …). */
   styles?: MapSheetStyles;
   /** Extra obscured area (tab bar, top nav). Combined with sheet insets. */
   fixedChromeInsets?: MapChromeInsets;
-  /** Extra pixels added below measured peek for collapsed snap (e.g. floating tab bar). */
+  /** Extra pixels added below measured header for collapsed snap (e.g. floating tab bar). */
   collapsedBottomInsetPx?: number;
-  /** Vaul fraction snap between collapsed and full (default 0.5). */
+  /** Fraction snap between collapsed and full (default 0.5). */
   halfSnapFraction?: number;
   initialZoom?: number;
   smoothFlyDurationMs?: number;

@@ -1,1 +1,1 @@
-import "../dist/styles.css";
+import "@siegetag/sheet/styles.css";

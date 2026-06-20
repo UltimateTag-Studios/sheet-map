@@ -1,12 +1,8 @@
+import { buildSheetStyle, Sheet, type SheetSnap } from "@siegetag/sheet";
 import type { GeoJsonProperties } from "geojson";
 import type { ReactNode } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import {
-  BottomSheet,
-  type BottomSheetSnap,
-} from "../bottom-sheet/bottom-sheet";
-import { BottomSheetCollapsedLayers } from "../bottom-sheet/bottom-sheet-collapsed-layers";
 import {
   MapCanvas,
   MapMyLocationButton,
@@ -20,18 +16,16 @@ import type {
   MapShellSlots,
   MapUserLocationCoords,
 } from "./config";
-import {
-  buildSheetMapDrawerStyle,
-  reservesFloatingTabBar,
-} from "./drawer-layout-vars";
+import { reservesFloatingTabBar } from "./drawer-layout-vars";
+import { MapSheetLayout } from "./map-sheet-layout";
 
 const MAP_VIEWPORT_CLASS = "h-full min-h-[100dvh]";
 
 export type MapShellContentProps = {
   mapToken: string;
   publishMapInstance: (map: MapRef | null) => void;
-  sheetSnap: BottomSheetSnap;
-  onSheetSnapChange: (snap: BottomSheetSnap) => void;
+  sheetSnap: SheetSnap;
+  onSheetSnapChange: (snap: SheetSnap) => void;
   onSnapHeightsChange: (heights: {
     collapsedHeightPx: number;
     fullHeightPx: number;
@@ -47,8 +41,8 @@ export type MapShellContentProps = {
     properties: GeoJsonProperties,
   ) => void;
   mapChildren: ReactNode;
-  peekContent: ReactNode;
-  expandedContent: ReactNode;
+  header: ReactNode;
+  body: ReactNode;
   overlayTopLeft?: ReactNode;
   overlayTopRight?: ReactNode;
   myLocationButton?: boolean;
@@ -71,8 +65,8 @@ export function MapShellContent({
   extraInteractiveLayerIds,
   onLayerFeaturePress,
   mapChildren,
-  peekContent,
-  expandedContent,
+  header,
+  body,
   overlayTopLeft,
   overlayTopRight,
   myLocationButton = true,
@@ -83,7 +77,7 @@ export function MapShellContent({
   const myLocationAriaLabel = config.myLocationAriaLabel ?? "Focus my location";
   const layout = config.layout ?? {};
   const { drawer: drawerStyle, drawerHandle: drawerHandleStyle } =
-    buildSheetMapDrawerStyle(layout, config.styles);
+    buildSheetStyle(layout, config.styles);
   const reserveFloatingTabBar = reservesFloatingTabBar(layout);
 
   return (
@@ -140,7 +134,7 @@ export function MapShellContent({
         <MapVisibleAreaDebug clientRect={viewport.clientRect} />
       ) : null}
 
-      <BottomSheet
+      <Sheet
         snap={sheetSnap}
         defaultSnap="collapsed"
         onSnapChange={onSheetSnapChange}
@@ -151,13 +145,13 @@ export function MapShellContent({
         drawerHandleStyle={drawerHandleStyle}
         onSnapHeightsChange={onSnapHeightsChange}
       >
-        <BottomSheetCollapsedLayers
+        <MapSheetLayout
           sheetSnap={sheetSnap}
-          peek={peekContent}
-          expanded={expandedContent}
+          header={header}
+          body={body}
           reserveFloatingTabBar={reserveFloatingTabBar}
         />
-      </BottomSheet>
+      </Sheet>
     </div>
   );
 }

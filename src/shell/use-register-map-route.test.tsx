@@ -10,8 +10,8 @@ const shellStub = {} as MapShellState;
 
 const baseContent: MapRouteContent = {
   mapLayers: null,
-  peek: "peek",
-  expanded: "expanded",
+  header: "header",
+  body: "body",
   isUserLocationFocused: false,
   onUserLocationPress: vi.fn(),
 };
@@ -63,7 +63,7 @@ describe("useRegisterMapRoute", () => {
     const harness = mountRegisterRoute(baseContent);
     const nextContent: MapRouteContent = {
       ...baseContent,
-      peek: "next-peek",
+      header: "next-header",
     };
 
     harness.updateContent(nextContent);

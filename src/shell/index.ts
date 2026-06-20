@@ -2,7 +2,7 @@ import "../import-sheet-map-styles";
 
 export type {
   MapChromeInsets,
-  MapSheetLayout,
+  MapSheetGeometry,
   MapSheetStyles,
   MapShellConfig,
   MapShellSlots,
@@ -17,7 +17,6 @@ export {
   DEFAULT_DRAWER_HANDLE_BAR_HEIGHT,
   DEFAULT_DRAWER_HANDLE_MARGIN_BOTTOM,
   DEFAULT_DRAWER_HANDLE_MARGIN_TOP,
-  DEFAULT_PEEK_BALANCE_ADJUST_PX,
   reservesFloatingTabBar,
 } from "./drawer-layout-vars";
 export type { MapLayoutProps } from "./layout";

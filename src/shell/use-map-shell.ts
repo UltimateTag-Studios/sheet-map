@@ -1,10 +1,10 @@
-import { useCallback, useState, useSyncExternalStore } from "react";
-
-import type { BottomSheetSnap } from "../bottom-sheet/bottom-sheet";
 import {
   FALLBACK_COLLAPSED_HEIGHT_PX,
   FALLBACK_FULL_HEIGHT_PX,
-} from "../bottom-sheet/snap-heights";
+  type SheetSnap,
+} from "@siegetag/sheet";
+import { useCallback, useState, useSyncExternalStore } from "react";
+
 import type { MapCameraAnchor } from "../camera/map-camera-anchor";
 import type { MapCameraIntent } from "../camera/map-camera-intent";
 import { resetUserCameraMotionOnFulfilled } from "../camera/reset-user-camera-motion-on-fulfilled";
@@ -34,7 +34,7 @@ export function useMapShell({
   const resolvedConfig = { ...defaultMapShellConfig, ...config };
   const debug = config.debug === true;
 
-  const [sheetSnap, setSheetSnapState] = useState<BottomSheetSnap>("collapsed");
+  const [sheetSnap, setSheetSnapState] = useState<SheetSnap>("collapsed");
   const [isDraggingSheet, setIsDraggingSheet] = useState(false);
   const [collapsedHeightPx, setCollapsedHeightPx] = useState(
     FALLBACK_COLLAPSED_HEIGHT_PX,
@@ -89,7 +89,7 @@ export function useMapShell({
     [],
   );
 
-  const handleSheetSnapChange = useCallback((snap: BottomSheetSnap) => {
+  const handleSheetSnapChange = useCallback((snap: SheetSnap) => {
     setSheetSnapState(snap);
   }, []);
 

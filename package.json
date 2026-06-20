@@ -41,10 +41,10 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@siegetag/sheet": "workspace:*",
     "@siegetag/ui": "workspace:*",
     "mapbox-gl": "^3.24.1",
-    "react-map-gl": "^8.1.1",
-    "vaul": "^1.1.2"
+    "react-map-gl": "^8.1.1"
   },
   "peerDependencies": {
     "react": "^19.0.0",
