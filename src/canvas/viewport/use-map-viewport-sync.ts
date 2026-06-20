@@ -1,8 +1,8 @@
 import type { SheetSnap } from "@siegetag/sheet";
+import { normalizeHalfSnapFraction } from "@siegetag/sheet";
 import { useEffect, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import { normalizeHalfSnapFraction } from "../../shell/normalize-half-snap-fraction";
 import {
   type MapObscuredInsets,
   type PixelPoint,

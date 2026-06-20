@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  buildMapSheetLayoutVars,
-  buildMapSheetStyle,
-} from "./sheet-layout-vars";
+import { buildMapSheetLayoutVars, buildMapSheetStyle } from "./index";
 
 describe("buildMapSheetLayoutVars", () => {
   it("applies package defaults when layout is omitted", () => {

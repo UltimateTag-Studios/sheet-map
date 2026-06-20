@@ -1,7 +1,7 @@
+import { DEFAULT_HALF_SNAP_FRACTION } from "@siegetag/sheet";
 import type { CSSProperties, ReactNode } from "react";
 
 import type { MapObscuredInsets } from "../canvas/viewport/map-viewport";
-import { DEFAULT_HALF_SNAP_FRACTION } from "./normalize-half-snap-fraction";
 
 export type MapChromeInsets = Partial<MapObscuredInsets>;
 

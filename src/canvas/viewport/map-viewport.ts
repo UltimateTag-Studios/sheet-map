@@ -1,6 +1,5 @@
 import type { SheetSnap } from "@siegetag/sheet";
-
-import { DEFAULT_HALF_SNAP_FRACTION } from "../../shell/normalize-half-snap-fraction";
+import { DEFAULT_HALF_SNAP_FRACTION } from "@siegetag/sheet";
 
 export type PixelSize = {
   width: number;
