@@ -142,7 +142,6 @@ export function MapShellContent({
         onSnapHeightsChange={onSnapHeightsChange}
       >
         <MapSheetLayout
-          sheetSnap={sheetSnap}
           header={header}
           body={body}
           bottomChromeReserve={layout.bottomChromeReserve}

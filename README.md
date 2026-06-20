@@ -104,7 +104,7 @@ See package source [`src/shell/config.ts`](src/shell/config.ts) for full options
 
 ## Theming
 
-Override `.sheet`, `.sheet-handle`, and `.sheet-divider` from `@siegetag/sheet/styles.css`. Map-specific header typography uses classes from `@siegetag/sheet-map/styles.css`. See app example [`apps/capacitor/src/screens/map/sheet-map-theme.css`](../../apps/capacitor/src/screens/map/sheet-map-theme.css).
+Override `.sheet-slide`, `.sheet-handle`, and `.sheet-divider` from `@siegetag/sheet/styles.css`. Map-specific header typography uses classes from `@siegetag/sheet-map/styles.css`. See app example [`apps/capacitor/src/screens/map/sheet-map-theme.css`](../../apps/capacitor/src/screens/map/sheet-map-theme.css).
 
 ## Build
 

@@ -33,6 +33,11 @@
 .sheet-map-canvas-layer {
   position: absolute;
   inset: 0;
+  isolation: isolate;
+}
+
+.sheet-map-canvas-layer .mapboxgl-control-container {
+  z-index: 0;
 }
 
 .sheet-map-visible-area-overlay {
