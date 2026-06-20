@@ -52,7 +52,7 @@
   pointer-events: none;
 }
 
-.sheet-map-overlay-slot--bottom-left {
+.sheet-map-my-location-button--positioned {
   pointer-events: auto;
   position: absolute;
   bottom: 0.75rem;

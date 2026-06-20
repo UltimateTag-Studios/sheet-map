@@ -115,13 +115,12 @@ export function MapShellContent({
               onPress: onUserLocationPress,
               focused: isUserLocationFocused,
             }) ?? (
-              <div className="sheet-map-overlay-slot--bottom-left">
-                <MapMyLocationButton
-                  ariaLabel={myLocationAriaLabel}
-                  onPress={onUserLocationPress}
-                  focused={isUserLocationFocused}
-                />
-              </div>
+              <MapMyLocationButton
+                ariaLabel={myLocationAriaLabel}
+                onPress={onUserLocationPress}
+                focused={isUserLocationFocused}
+                positioned
+              />
             ))
           : null}
       </MapVisibleAreaOverlay>

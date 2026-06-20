@@ -58,13 +58,12 @@ export const VisibleAreaOverlay: Story = {
         className="sheet-map-story-overlay-preview sheet-map-visible-area"
         style={{ height: "65%" }}
       >
-        <div className="sheet-map-overlay-slot--bottom-left">
-          <MapMyLocationButton
-            ariaLabel="Focus on my location"
-            focused
-            onPress={() => undefined}
-          />
-        </div>
+        <MapMyLocationButton
+          ariaLabel="Focus on my location"
+          focused
+          positioned
+          onPress={() => undefined}
+        />
       </div>
       <div className="sheet-map-story-sheet-preview" />
     </div>

@@ -1,6 +1,6 @@
 import type { SheetSnap } from "@siegetag/sheet";
 import { normalizeHalfSnapFraction } from "@siegetag/sheet";
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import {
@@ -118,7 +118,7 @@ export function useMapViewportSync({
   const [viewport, setViewport] =
     useState<MapViewportSyncState>(EMPTY_VIEWPORT);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!mapRef) {
       setViewport(EMPTY_VIEWPORT);
       return;

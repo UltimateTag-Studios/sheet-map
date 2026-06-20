@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 
+import { notifyMapTouchProbeLocationPress } from "../debug/use-map-touch-probe";
 import type { MapShellSlots } from "./config";
 import { MapLoadingState } from "./map-loading-state";
 import type { MapRouteContentStore } from "./map-route-content-store";
@@ -56,7 +57,12 @@ export function MapShell({
         extraInteractiveLayerIds={routeContent?.extraInteractiveLayerIds}
         onLayerFeaturePress={routeContent?.onLayerFeaturePress}
         isUserLocationFocused={routeContent?.isUserLocationFocused ?? false}
-        onUserLocationPress={routeContent?.onUserLocationPress ?? (() => {})}
+        onUserLocationPress={() => {
+          if (shell.config.debug) {
+            notifyMapTouchProbeLocationPress();
+          }
+          routeContent?.onUserLocationPress();
+        }}
         viewport={shell.viewport}
         config={shell.config}
         slots={slots}

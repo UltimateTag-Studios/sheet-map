@@ -11,6 +11,7 @@ import { resetUserCameraMotionOnFulfilled } from "../camera/reset-user-camera-mo
 import { useMapUserLocationFollow } from "../camera/use-map-user-location-follow";
 import type { MapViewportSyncState } from "../canvas/viewport/use-map-viewport-sync";
 import { useMapViewportSync } from "../canvas/viewport/use-map-viewport-sync";
+import { useMapTouchProbe } from "../debug/use-map-touch-probe";
 import {
   defaultMapShellConfig,
   type MapShellConfig,
@@ -79,6 +80,13 @@ export function useMapShell({
     settled: viewportSettled,
     fixedChromeInsets: config.fixedChromeInsets,
     debug,
+  });
+
+  useMapTouchProbe({
+    enabled: debug,
+    sheetSnap,
+    isDraggingSheet,
+    viewportClientRect: viewport.clientRect,
   });
 
   const handleSnapHeightsChange = useCallback(
