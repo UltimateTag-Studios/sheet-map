@@ -3,6 +3,19 @@
  * Import once: import "@siegetag/sheet-map/styles.css"
  */
 
+.sheet-map-shell {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+}
+
+.sheet-map-viewport {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .sheet-map-canvas-root {
   position: relative;
   height: 100%;
