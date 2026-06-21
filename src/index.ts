@@ -1,6 +1,15 @@
 /** Rebuild-in-progress marker for demo + CI. Bump when a phase lands. */
-export const SHEET_MAP_REBUILD_PHASE = 1 as const;
+export const SHEET_MAP_REBUILD_PHASE = 2 as const;
 
+export {
+  MAP_CANVAS_ROOT_CLASS,
+  MapCanvas,
+  type MapCanvasProps,
+  MapInstanceProvider,
+  MapInstancePublisherLayer,
+  type PublishMapInstance,
+  resolveMapRef,
+} from "./canvas";
 export {
   areMapViewportsEqual,
   type MapCanvasScreenGeometry,
