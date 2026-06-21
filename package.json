@@ -1,10 +1,10 @@
 {
   "name": "@siegetag/sheet-map",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "type": "module",
-  "description": "Generic Mapbox map + bottom sheet shell for React web apps",
+  "description": "Mapbox map + bottom sheet shell for React (rebuild)",
   "repository": {
     "type": "git",
     "url": "https://github.com/UltimateTag-Studios/sheet-map.git"
@@ -14,15 +14,7 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./styles.css": "./dist/style.css",
-    "./shell": {
-      "types": "./src/shell/index.ts",
-      "default": "./src/shell/index.ts"
-    },
-    "./camera": {
-      "types": "./src/camera/index.ts",
-      "default": "./src/camera/index.ts"
-    }
+    "./styles.css": "./dist/style.css"
   },
   "files": [
     "LICENSE",
@@ -44,10 +36,6 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {
-    "mapbox-gl": "^3.24.1",
-    "react-map-gl": "^8.1.1"
-  },
   "peerDependencies": {
     "@siegetag/sheet": "^0.1.0",
     "react": "^19.0.0",
@@ -56,11 +44,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.14",
-    "@napi-rs/canvas": "^1.0.0",
     "@siegetag/sheet": "workspace:*",
     "@testing-library/react": "^16.3.2",
-    "@types/geojson": "^7946.0.16",
-    "@types/mapbox-gl": "^3.5.0",
     "@types/react": "^19.1.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.7.0",
