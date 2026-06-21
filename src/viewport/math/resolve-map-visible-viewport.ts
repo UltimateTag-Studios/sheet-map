@@ -46,8 +46,9 @@ export function resolveMapVisibleViewport(
   };
   const hasVisibleArea = clientRect.height > 0 && clientRect.width > 0;
 
-  const targetX = clientRect.x + clientRect.width / 2 - geometry.canvasLeft;
-  const targetY = clientRect.y + clientRect.height / 2 - geometry.canvasTop;
+  const canvasRect = canvas.getBoundingClientRect();
+  const targetX = clientRect.x + clientRect.width / 2 - canvasRect.left;
+  const targetY = clientRect.y + clientRect.height / 2 - canvasRect.top;
 
   return {
     clientRect,

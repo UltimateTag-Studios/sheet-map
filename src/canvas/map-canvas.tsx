@@ -1,13 +1,10 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef } from "react";
+import type { MapRef } from "react-map-gl/mapbox";
 import GlMap from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 
-import {
-  MapInstanceProvider,
-  MapInstancePublisherLayer,
-  type PublishMapInstance,
-} from "./instance";
+import type { PublishMapInstance } from "./instance";
 
 export const MAP_CANVAS_ROOT_CLASS = "sheet-map-canvas-root";
 
@@ -18,7 +15,7 @@ export type MapCanvasProps = {
   initialLongitude?: number;
   initialLatitude?: number;
   initialZoom?: number;
-  /** Shell store callback; map instance is published from in-map layers via useMap(). */
+  /** Shell store callback; map instance is published from the Map ref + onLoad. */
   publishMapInstance?: PublishMapInstance | null;
   /** Keep the Mapbox instance between unmounts. */
   reuseMaps?: boolean;
@@ -38,13 +35,20 @@ export function MapCanvas({
 }: MapCanvasProps) {
   const publishRef = useRef(publishMapInstance);
   publishRef.current = publishMapInstance;
+  const mapRefHolder = useRef<MapRef | null>(null);
 
-  const handlePublishMapInstance = useCallback(
-    (mapRef: Parameters<NonNullable<PublishMapInstance>>[0]) => {
-      publishRef.current?.(mapRef);
-    },
-    [],
-  );
+  const publishCurrentMapRef = useCallback(() => {
+    publishRef.current?.(mapRefHolder.current);
+  }, []);
+
+  const handleMapRef = useCallback((next: MapRef | null) => {
+    mapRefHolder.current = next;
+    publishRef.current?.(next);
+  }, []);
+
+  const handleLoad = useCallback(() => {
+    publishCurrentMapRef();
+  }, [publishCurrentMapRef]);
 
   useEffect(() => {
     return () => {
@@ -59,6 +63,7 @@ export function MapCanvas({
   return (
     <div className={rootClassName}>
       <GlMap
+        ref={handleMapRef}
         mapboxAccessToken={accessToken}
         mapStyle={styleUrl}
         initialViewState={{
@@ -72,11 +77,9 @@ export function MapCanvas({
         pitchWithRotate={false}
         dragRotate={false}
         touchPitch={false}
+        onLoad={handleLoad}
       >
-        <MapInstanceProvider publishMapInstance={handlePublishMapInstance}>
-          <MapInstancePublisherLayer />
-          {children}
-        </MapInstanceProvider>
+        {children}
       </GlMap>
     </div>
   );

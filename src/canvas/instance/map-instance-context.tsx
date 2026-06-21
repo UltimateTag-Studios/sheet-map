@@ -1,4 +1,4 @@
-import { createContext, useContext, useLayoutEffect } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 import { useMap } from "react-map-gl/mapbox";
 
@@ -27,19 +27,38 @@ export function MapInstanceProvider({
 function MapCanvasInstancePublisher() {
   const publish = useContext(MapCanvasInstanceContext);
   const maps = useMap();
+  const mapRef = resolveMapRef(maps);
 
   useLayoutEffect(() => {
     if (!publish) {
       return;
     }
 
-    const mapRef = resolveMapRef(maps);
-    if (mapRef) {
-      publish(mapRef);
-    }
-  });
+    publish(mapRef);
 
-  return null;
+    return () => {
+      publish(null);
+    };
+  }, [publish, mapRef]);
+
+  useEffect(() => {
+    if (!publish || !mapRef) {
+      return;
+    }
+
+    const map = mapRef.getMap();
+    const republish = () => {
+      publish(mapRef);
+    };
+
+    map.on("load", republish);
+    map.on("idle", republish);
+
+    return () => {
+      map.off("load", republish);
+      map.off("idle", republish);
+    };
+  }, [publish, mapRef]);
 }
 
 export function MapInstancePublisherLayer() {

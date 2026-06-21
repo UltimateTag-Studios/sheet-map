@@ -1,39 +1,71 @@
 import { render, screen } from "@testing-library/react";
+import { forwardRef, useEffect } from "react";
+import type { MapRef } from "react-map-gl/mapbox";
 import { describe, expect, it, vi } from "vitest";
 
 import { MAP_CANVAS_ROOT_CLASS, MapCanvas } from "./map-canvas";
 
 vi.mock("mapbox-gl/dist/mapbox-gl.css", () => ({}));
 
+const mockMapRef = {
+  getMap: () => ({
+    isStyleLoaded: () => true,
+    on: vi.fn(),
+    off: vi.fn(),
+  }),
+} as MapRef;
+
 vi.mock("react-map-gl/mapbox", () => {
-  const GlMap = ({
-    children,
-    style,
-    mapboxAccessToken,
-    mapStyle,
-    initialViewState,
-  }: {
-    children?: React.ReactNode;
-    style?: React.CSSProperties;
-    mapboxAccessToken?: string;
-    mapStyle?: string;
-    initialViewState?: {
-      longitude: number;
-      latitude: number;
-      zoom: number;
-    };
-  }) => (
-    <div
-      data-testid="gl-map"
-      data-token={mapboxAccessToken}
-      data-style={mapStyle}
-      data-longitude={initialViewState?.longitude}
-      data-latitude={initialViewState?.latitude}
-      data-zoom={initialViewState?.zoom}
-      style={style}
-    >
-      {children}
-    </div>
+  const GlMap = forwardRef<
+    MapRef,
+    {
+      children?: React.ReactNode;
+      style?: React.CSSProperties;
+      mapboxAccessToken?: string;
+      mapStyle?: string;
+      initialViewState?: {
+        longitude: number;
+        latitude: number;
+        zoom: number;
+      };
+      onLoad?: () => void;
+    }
+  >(
+    (
+      {
+        children,
+        style,
+        mapboxAccessToken,
+        mapStyle,
+        initialViewState,
+        onLoad,
+      },
+      ref,
+    ) => {
+      useEffect(() => {
+        if (typeof ref === "function") {
+          ref(mockMapRef);
+        } else if (ref) {
+          ref.current = mockMapRef;
+        }
+
+        onLoad?.();
+      }, [onLoad, ref]);
+
+      return (
+        <div
+          data-testid="gl-map"
+          data-token={mapboxAccessToken}
+          data-style={mapStyle}
+          data-longitude={initialViewState?.longitude}
+          data-latitude={initialViewState?.latitude}
+          data-zoom={initialViewState?.zoom}
+          style={style}
+        >
+          {children}
+        </div>
+      );
+    },
   );
 
   return {
@@ -69,5 +101,18 @@ describe("MapCanvas", () => {
     expect(map.getAttribute("data-zoom")).toBe("9");
     expect(map.style.width).toBe("100%");
     expect(map.style.height).toBe("100%");
+  });
+
+  it("publishes the map ref when publishMapInstance is provided", () => {
+    const publishMapInstance = vi.fn();
+
+    render(
+      <MapCanvas
+        accessToken="test-token"
+        publishMapInstance={publishMapInstance}
+      />,
+    );
+
+    expect(publishMapInstance).toHaveBeenCalledWith(mockMapRef);
   });
 });
