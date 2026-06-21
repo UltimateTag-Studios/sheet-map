@@ -1,5 +1,4 @@
-import { useTouchClickActivation } from "@siegetag/sheet";
-
+import { useTouchClickActivation } from "../gesture/use-touch-click-activation";
 import { MyLocationIcon } from "../icons/my-location-icon";
 
 export type MapMyLocationButtonProps = {

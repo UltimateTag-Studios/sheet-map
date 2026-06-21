@@ -1,5 +1,4 @@
-import { useTouchClickActivation } from "@siegetag/sheet";
-
+import { useTouchClickActivation } from "../gesture/use-touch-click-activation";
 import { CloseIcon } from "../icons/close-icon";
 
 export type MapDismissSelectionButtonProps = {
