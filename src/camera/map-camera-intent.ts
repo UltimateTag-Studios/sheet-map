@@ -8,7 +8,7 @@ export type MapCameraIntent = {
 
 type MapPoint = {
   id: string;
-  location?: { lng: number; lat: number } | null;
+  location?: { lng: number; lat: number };
 };
 
 function isInstantUserMotion(anchor: MapCameraAnchor): boolean {

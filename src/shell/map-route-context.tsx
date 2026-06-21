@@ -7,7 +7,7 @@ import type { useMapShell } from "./use-map-shell";
 
 export type MapSelectablePoint = {
   id: string;
-  location?: { lng: number; lat: number } | null;
+  location?: { lng: number; lat: number };
 };
 
 export type MapRouteContent = {

@@ -18,11 +18,7 @@ describe("pressSelectableMapFeature", () => {
   it("focuses without location when the point has no coordinates", () => {
     const focusPoint = vi.fn();
 
-    pressSelectableMapFeature(
-      "abc",
-      [{ id: "abc", location: null }],
-      focusPoint,
-    );
+    pressSelectableMapFeature("abc", [{ id: "abc" }], focusPoint);
 
     expect(focusPoint).toHaveBeenCalledWith("abc", false);
   });
