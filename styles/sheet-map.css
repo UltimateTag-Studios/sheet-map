@@ -35,7 +35,6 @@
 .sheet-map-visible-area-debug {
   pointer-events: none;
   position: fixed;
-  z-index: 50;
   border: 2px dashed #f59e0b;
   background: rgba(245, 158, 11, 0.1);
 }
@@ -74,7 +73,6 @@
 .sheet-map-visible-area-overlay {
   pointer-events: none;
   position: fixed;
-  z-index: 40;
 }
 
 .sheet-map-visible-area {
