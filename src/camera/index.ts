@@ -25,6 +25,12 @@ export {
   computeMapPadding,
   type MapPaddingOptions,
 } from "./compute-map-padding";
+export {
+  createInitialMapFollowState,
+  type MapFollowEvent,
+  type MapFollowState,
+  reduceMapFollow,
+} from "./follow";
 export { releaseMapInstanceCameraState } from "./map-instance-camera-state";
 export type { MapPosition } from "./map-position";
 export { mergeMapAnchorPosition, positionKey } from "./map-position";

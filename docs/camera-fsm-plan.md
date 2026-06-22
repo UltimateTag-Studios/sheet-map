@@ -304,7 +304,7 @@ There is **no single “layout settled forever”** signal for padding. Padding 
 | My-location button | `navigateTo` (same as boot path, not `repositionCamera`) |
 | Snap-back | `navigateTo` at gesture settle (≤40px) |
 
-**Geolocation (demo):** Browsers may block `watchPosition` without user gesture. App should still get location via `getCurrentPosition` + error fallback, or boot waits until location exists — **no padding/boot without location for follow mode**.
+**Geolocation (app layer):** See [`phase-5-parts.md`](phase-5-parts.md) — request on map mount; boot only when `userLocation` is non-null; **no boot on deny**; no fake fallback coords in product code. Capacitor uses `@capacitor/geolocation` + OS settings when permanently denied.
 
 ---
 

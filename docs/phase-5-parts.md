@@ -8,6 +8,32 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 ---
 
+## User location contract (app layer — not `@siegetag/sheet-map`)
+
+`@siegetag/sheet-map` **never** calls `navigator.geolocation` or Capacitor APIs. It receives `userLocation: { lat, lng, accuracyMeters? } | null` from the app.
+
+| Rule | Behavior |
+| ---- | -------- |
+| **Boot fly** | Only when `userLocation !== null` + `mapPaddingReady` + style loaded + boot latch clear |
+| **Permission denied** | `userLocation` stays `null` → **no boot fly**; map still works (pan, sheet, manual controls) |
+| **No fake coords** | No silent fallback city in product code — wait or show UI |
+| **Deep link / cold start** | Same as in-app navigation: request location on map mount; boot waits for grant + fix |
+| **My-location button** | `navigateTo` fly when coords exist; if denied, show UI — do not assume the system prompt appears again |
+
+### Web demo (`apps/sheet-map-demo`)
+
+- `useDemoUserLocation`: `getCurrentPosition` on mount (+ `watchPosition` for updates).
+- On error or deny: leave `location` as `null` (remove Kanarraville fallback when porting from reference).
+- Optional dev-only fallback behind an explicit env flag if needed for local testing without GPS.
+
+### Capacitor (`apps/capacitor`)
+
+- Reuse `requestCaptureLocationPermission` + `@capacitor/geolocation` (see `use-map-user-location.ts`, `get-capture-location.ts`).
+- `needsSettings: true` → user must enable location in **OS app settings** (not browser chrome); offer Open Settings.
+- Denied → `userLocation` undefined → no boot fly.
+
+---
+
 ## Prerequisites (phase 4 — done)
 
 - `useMapAnchor`: padding, sessions, `navigateTo`, single `moveend` dispatcher
@@ -16,7 +42,7 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 ---
 
-## Part 5A — Follow reducer (current)
+## Part 5A — Follow reducer ✅
 
 **Goal:** `reduceMapFollow` + tests only. **No hooks.**
 
@@ -28,12 +54,12 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 **You verify:**
 
-- [ ] `reduce-map-follow.test.ts` passes
-- [ ] No changes to `useMapAnchor` yet
+- [x] `reduce-map-follow.test.ts` passes
+- [x] No changes to `useMapAnchor` yet
 
 ---
 
-## Part 5B — `repositionCamera` + per-map boot latches
+## Part 5B — `repositionCamera` + per-map boot latches (current)
 
 **Goal:** Instant GPS jump API and boot latch on map instance (separate from React follow state).
 
@@ -58,7 +84,7 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 | Module | Notes |
 | ------ | ----- |
 | `try-boot-fly.ts` | Pure gate: `mapPaddingReady && styleLoaded && userLocation && !hasBootFlownForMapInstance` → `navigateTo` once |
-| `use-map-follow-user.ts` | Composes `useMapAnchor`; auto `startFollowUser` when GPS available; calls `tryBootFly` |
+| `use-map-follow-user.ts` | Composes `useMapAnchor`; `startFollowUser` when coords arrive; calls `tryBootFly` |
 | Wire `applyMapPadding` | Pass `followUser` + `followTarget` from hook when following |
 
 **Invariants:**
@@ -66,15 +92,19 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 - Boot runs **only** from `tryBootFly` — never from `syncMapPaddingFromCanvas` or `applyMapPadding`
 - Mark boot on **issue** of boot `navigateTo` (WeakMap + `bootFlown` reducer event)
 - `onMapInstanceReleased` → `resetBoot` + clear WeakMap (already in 5B)
+- **No boot when `userLocation` is null** (permission denied or still loading)
 
 **Demo:**
 
-- Swap `/sheet` to `useMapFollowUser` + `useDemoUserLocation` (keep manual fly button optional for debug)
-- Load / refresh: padding → boot fly → `isFollowFocused` true (blue button in 5E; can log boot in 5C)
+- Port `useDemoUserLocation` to `hooks/` — **no fallback** on deny (see User location contract)
+- Swap `/sheet` to `useMapFollowUser` + location hook (keep manual fly button optional for debug)
+- Load with permission granted: padding → boot fly → `hasBootFlown` true
+- Load with permission denied: map works, no boot fly
 
 **You verify:**
 
-- [ ] Refresh ×5: exactly one boot fly per map instance
+- [ ] Grant location: refresh ×5 → exactly one boot fly per map instance
+- [ ] Deny location: no boot fly; no crash
 - [ ] Strict Mode / remount: boot runs again on fresh map (latch cleared)
 - [ ] No stack overflow (boot not triggered from padding path)
 - [ ] `use-map-follow-user.test.ts` (boot-once cases) passes
@@ -118,10 +148,15 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 | `use-map-follow-user.test.ts` | GPS jump, my-location uses `navigateTo`, no double boot |
 | Demo `/sheet` | Full parity with reference screen |
 
+**My-location button (web + Capacitor):**
+
+- Coords available → smooth `navigateTo` fly
+- No coords → retry permission request; if permanently denied, show settings guidance (Capacitor `needsSettings`; web: browser/site permissions)
+
 **You verify:**
 
 - [ ] GPS while following: instant jump (`repositionCamera`), session stays `idle`
-- [ ] My-location button: smooth `navigateTo` fly
+- [ ] My-location button: smooth `navigateTo` fly when coords exist
 - [ ] §11 manual checklist in `camera-fsm-plan.md` passes with `VITE_SHEET_MAP_DEBUG=true`
 - [ ] All tests pass
 - [ ] `SHEET_MAP_REBUILD_PHASE = 5`; remove `SHEET_MAP_PHASE_5_PART`
@@ -131,7 +166,7 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 ## Part dependency graph
 
 ```
-5A reduceMapFollow
+5A reduceMapFollow ✅
  └─► 5B repositionCamera + boot latches
       └─► 5C tryBootFly + useMapFollowUser (boot)
            └─► 5D gesture settle + threshold
@@ -146,4 +181,5 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 - Defer/coalesce padding to preserve pan momentum
 - GPS updates via `navigateTo` (use `repositionCamera` only)
 - Snap-back or threshold checks on every sheet padding tick (settle only)
+- Silent fallback coordinates when location is denied (demo dev flag only if ever)
 - Bundle unrelated parts in one PR — land and verify each part before the next

@@ -221,7 +221,7 @@ Extend `/sheet` screens:
 
 ## Phase 5 — Follow user
 
-**Incremental guide:** [`phase-5-parts.md`](phase-5-parts.md) — verify each part before the next.
+**Incremental guide:** [`phase-5-parts.md`](phase-5-parts.md) — verify each part before the next (includes **user location contract** for web + Capacitor).
 
 **Goal:** Boot fly, GPS reposition, my-location button, 40px snap-back — full camera FSM.
 
