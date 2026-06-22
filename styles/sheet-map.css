@@ -3,6 +3,22 @@
  * Import once: import "@siegetag/sheet-map/styles.css"
  */
 
+.sheet-map-canvas-root {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.sheet-map-canvas-layer {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+}
+
+.sheet-map-canvas-layer .mapboxgl-control-container {
+  z-index: 0;
+}
+
 .sheet-map-visible-area-debug {
   pointer-events: none;
   position: fixed;
