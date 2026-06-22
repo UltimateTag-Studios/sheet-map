@@ -2,7 +2,7 @@ import type { MapRef } from "react-map-gl/mapbox";
 
 import { applyMapAnchorCamera } from "./anchor/apply-map-anchor-camera";
 import type { MapAnchorState } from "./anchor/state";
-import { mergeMapAnchorPosition } from "./map-position";
+import { type MapPosition, mergeMapAnchorPosition } from "./map-position";
 
 export type ApplyMapPaddingInput = {
   mapRef: MapRef;
@@ -10,14 +10,17 @@ export type ApplyMapPaddingInput = {
   paddingChanged: boolean;
   /** When false, only sync padding — no camera realign. Used before programmatic navigateTo. */
   realign?: boolean;
-  /** When false during navigating, skip jump — sheet geometry is stable (no drag/settle). */
+  /** True while sheet phase is dragging or settling. */
   sheetMotionActive?: boolean;
+  /** Phase 5: jump to user when idle + following. */
+  followUser?: boolean;
+  followTarget?: MapPosition | null;
   debug?: boolean;
 };
 
 /**
  * Optional camera realign after Mapbox padding changed.
- * Phase 4D: navigating session only. Full matrix lands in 4E.
+ * Matrix: [`camera-fsm-plan.md` §3](../../docs/camera-fsm-plan.md).
  */
 export function applyMapPadding({
   mapRef,
@@ -25,17 +28,15 @@ export function applyMapPadding({
   paddingChanged,
   realign = true,
   sheetMotionActive = false,
+  followUser = false,
+  followTarget = null,
   debug = false,
 }: ApplyMapPaddingInput): void {
-  if (!paddingChanged || !realign) {
+  if (!paddingChanged || !realign || !sheetMotionActive) {
     return;
   }
 
   if (state.session === "navigating" && state.navigationIntent !== null) {
-    if (!sheetMotionActive) {
-      return;
-    }
-
     const target = mergeMapAnchorPosition(
       state.anchor,
       state.navigationIntent.target,
@@ -44,5 +45,22 @@ export function applyMapPadding({
       console.info("[map-padding] realign during navigation", { target });
     }
     applyMapAnchorCamera(mapRef, target, { duration: 0 });
+    return;
   }
+
+  // userGesture includes pan momentum — setPadding only, never jumpTo.
+  if (state.session === "userGesture") {
+    return;
+  }
+
+  if (state.session === "idle" && followUser && followTarget !== null) {
+    if (debug) {
+      console.info("[map-padding] realign to follow target", {
+        target: followTarget,
+      });
+    }
+    applyMapAnchorCamera(mapRef, followTarget, { duration: 0 });
+  }
+
+  // idle + follow off: none (Mapbox keeps center stable).
 }

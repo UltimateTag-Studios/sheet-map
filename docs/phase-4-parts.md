@@ -1,8 +1,8 @@
-# Phase 4 — incremental parts (verify each before the next)
+# Phase 4 — incremental parts (complete)
 
-Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md). Do **not** bump `SHEET_MAP_REBUILD_PHASE` to `4` until **Part 4E** lands.
+Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md). `SHEET_MAP_REBUILD_PHASE = 4`.
 
-Track progress via `SHEET_MAP_PHASE_4_PART` in `src/index.ts`.
+Historical incremental guide — all parts landed.
 
 ---
 
@@ -14,41 +14,32 @@ Track progress via `SHEET_MAP_PHASE_4_PART` in `src/index.ts`.
 
 ## Part 4A — Padding sync only ✅
 
-**Frozen** — primitives in `sync-map-padding.ts`, `read-map-padding-from-canvas.ts`, etc. Later parts compose these; do not change 4A behavior.
+**Frozen** — primitives in `sync-map-padding.ts`, `read-map-padding-from-canvas.ts`, etc.
 
 ---
 
 ## Part 4B — Anchor reducer ✅
 
-**Goal:** `reduceMapAnchor` + tests. No hook wiring.
-
-**You verify:** `reduce-map-anchor.test.ts` passes.
+`reduceMapAnchor` + tests.
 
 ---
 
 ## Part 4C — Pan gesture + anchor commit ✅
 
-**Goal:** `useMapAnchor` (partial): padding (4A primitives) + `moveend` dispatcher + `userGesture` + anchor commit at settle. **No `navigateTo` yet** (4D).
+Padding (4A) + `moveend` dispatcher + `userGesture` + anchor commit at settle.
 
 ---
 
-## Part 4D — `navigateTo` + `navigating` session (current)
+## Part 4D — `navigateTo` + `navigating` session ✅
 
-**Goal:** Programmatic fly/jump; `beginProgrammaticNavigation`; padding before nav with `realign: false`.
+Programmatic fly/jump; `beginProgrammaticNavigation`; padding before nav with `realign: false`.
 
-**Demo:** “Fly to demo point” button on `/sheet`.
-
-**You verify:**
-
-- [ ] `navigateTo` → `session: navigating` → settles to `idle`
-- [ ] Sheet drag during nav → padding + jump to target (duration 0)
+Demo: “Fly to demo point” on `/sheet`.
 
 ---
 
-## Part 4E — Full padding matrix + phase complete
+## Part 4E — Full padding matrix + phase complete ✅
 
-**Goal:** `applyMapPadding` realign rules; `padding-anchor.integration.test.ts`.
+`applyMapPadding` realign rules; `padding-anchor.integration.test.ts`; `SHEET_MAP_REBUILD_PHASE = 4`.
 
-**Bump:** `SHEET_MAP_REBUILD_PHASE = 4`, `SHEET_MAP_PHASE_4_PART` removed or set to `5`.
-
-**You verify:** rebuild-phases.md phase 4 done checklist.
+**Next:** Phase 5 — follow user, boot fly, GPS, snap-back ([`rebuild-phases.md`](rebuild-phases.md)).

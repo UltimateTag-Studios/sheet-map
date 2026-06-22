@@ -210,12 +210,12 @@ Extend `/sheet` screens:
 
 ### Done when
 
-- [ ] Padding tracks sheet drag (may log twice: 0 → measured on first load — OK)
-- [ ] Pan settles → anchor commits at `idle`
-- [ ] `navigateTo` enters `navigating`, jumps while sheet moves
-- [ ] Refresh ×5: padding applies reliably
-- [ ] Tests pass
-- [ ] `SHEET_MAP_REBUILD_PHASE = 4`
+- [x] Padding tracks sheet drag (may log twice: 0 → measured on first load — OK)
+- [x] Pan settles → anchor commits at `idle`
+- [x] `navigateTo` enters `navigating`, jumps while sheet moves
+- [x] Refresh ×5: padding applies reliably
+- [x] Tests pass
+- [x] `SHEET_MAP_REBUILD_PHASE = 4`
 
 ---
 
