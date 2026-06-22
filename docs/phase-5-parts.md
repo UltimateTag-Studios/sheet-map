@@ -59,14 +59,13 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 ## Part 5B — `repositionCamera` + per-map boot latches ✅
 
-**Goal:** Instant GPS jump API and boot latch on map instance (separate from React follow state).
+**Goal:** Instant GPS jump API and boot latch on map instance.
 
 | Module | Notes |
 | ------ | ----- |
-| `reposition-camera.ts` | `jumpTo` only; session stays `idle`; no padding sync |
-| `map-instance-camera-state.ts` | Add `hasBootFlownForMapInstance`, `markBootFlownForMapInstance`; release on unmount |
-| `map-instance-camera-state.test.ts` | Refresh / unmount clears boot latch |
-| `reposition-camera.test.ts` | Does not enter `navigating` |
+| `movement/reposition-camera.ts` | `jumpTo` only; session stays `idle`; no padding sync |
+| `map-instance-camera-state.ts` | Boot + follow latches; release on unmount |
+| `movement/reposition-camera.test.ts` | Does not enter `navigating` |
 
 **You verify:**
 
@@ -148,6 +147,25 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 ---
 
+## Part 5F — Movement layer + unified `navigateTo` ✅
+
+**Goal:** One public camera API; decouple Mapbox moves from session/follow policy.
+
+| Module | Notes |
+| ------ | ----- |
+| `movement/reposition-camera.ts` | GPS / padding instant jump |
+| `movement/programmatic.ts` | `map.stop()` + fly/jump for `navigateTo` |
+| `navigate.ts` | `retainFollow`; sole programmatic path |
+| `padding/apply.ts` | Uses `moveCameraInstant`; syncs anchor on realign |
+
+**Manual verify (re-run phase 5 checklist):**
+
+- [ ] Boot fly + padding
+- [ ] GPS follow while idle
+- [ ] Pan threshold + snap-back
+- [ ] Fly to demo point **releases** follow (gray button); sheet drag does not snap back to user
+- [ ] My-location re-enables follow (blue button)
+
 ## Part dependency graph
 
 ```
@@ -156,6 +174,7 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
       └─► 5C boot fly — see phase-5c-slices.md (5C-1 … 5C-4)
            └─► 5D gesture settle + threshold
                 └─► 5E GPS + UI + bump ✅
+                     └─► 5F movement layer + unified navigateTo ✅
 ```
 
 ---
@@ -164,7 +183,7 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 - Boot or `navigateTo` from inside `syncMapPaddingFromCanvas`
 - Defer/coalesce padding to preserve pan momentum
-- GPS updates via `navigateTo` (use `repositionCamera` only)
+- GPS updates via `repositionCamera` only — not `navigateTo`
 - Snap-back or threshold checks on every sheet padding tick (settle only)
 - Silent fallback coordinates when location is denied (demo dev flag only if ever)
 - Bundle unrelated parts in one PR — land and verify each part before the next

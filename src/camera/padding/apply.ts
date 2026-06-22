@@ -1,7 +1,7 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
 import type { MapAnchorState } from "../anchor";
-import { applyMapAnchorCamera } from "../anchor";
+import { repositionCamera } from "../movement";
 import {
   type MapPosition,
   mergeMapAnchorPosition,
@@ -18,6 +18,8 @@ export type ApplyMapPaddingInput = {
   /** Phase 5: jump to user when idle + following. */
   followUser?: boolean;
   followTarget?: MapPosition | null;
+  /** Keeps stored anchor in sync when padding triggers an instant realign. */
+  onRealignAnchor?: (position: MapPosition) => void;
   debug?: boolean;
 };
 
@@ -33,6 +35,7 @@ export function applyMapPadding({
   sheetMotionActive = false,
   followUser = false,
   followTarget = null,
+  onRealignAnchor,
   debug = false,
 }: ApplyMapPaddingInput): void {
   if (!paddingChanged || !realign || !sheetMotionActive) {
@@ -47,7 +50,12 @@ export function applyMapPadding({
     if (debug) {
       console.info("[map-padding] realign during navigation", { target });
     }
-    applyMapAnchorCamera(mapRef, target, { duration: 0 });
+    repositionCamera({
+      mapRef,
+      position: target,
+      currentAnchor: state.anchor,
+      updateAnchor: onRealignAnchor,
+    });
     return;
   }
 
@@ -62,7 +70,12 @@ export function applyMapPadding({
         target: followTarget,
       });
     }
-    applyMapAnchorCamera(mapRef, followTarget, { duration: 0 });
+    repositionCamera({
+      mapRef,
+      position: followTarget,
+      currentAnchor: state.anchor,
+      updateAnchor: onRealignAnchor,
+    });
   }
 
   // idle + follow off: none (Mapbox keeps center stable).

@@ -159,6 +159,34 @@ describe("useMapAnchor", () => {
     harness.unmount();
   });
 
+  it("navigateTo without retainFollow calls onReleaseFollow", () => {
+    const onReleaseFollow = vi.fn();
+    const harness = mountAnchor({ onReleaseFollow });
+
+    act(() => {
+      harness.latest.navigateTo({ lat: 3, lng: 4 }, { duration: 500 });
+    });
+
+    expect(onReleaseFollow).toHaveBeenCalledTimes(1);
+
+    harness.unmount();
+  });
+
+  it("repositionCamera jumps without entering navigating session", () => {
+    const harness = mountAnchor();
+
+    act(() => {
+      harness.latest.repositionCamera({ lat: 3, lng: 4, zoom: 16 });
+    });
+
+    expect(harness.latest.session).toBe("idle");
+    expect(harness.map.jumpTo).toHaveBeenCalled();
+    expect(harness.map.stop).not.toHaveBeenCalled();
+    expect(harness.map.flyTo).not.toHaveBeenCalled();
+
+    harness.unmount();
+  });
+
   it("navigateTo stops inertial map motion before flying", () => {
     const harness = mountAnchorWithMapRef(createTestMapRef({ isMoving: true }));
 

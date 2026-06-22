@@ -51,7 +51,7 @@ export function useMapPaddingSync({
   followTarget = null,
   onPaddingReady,
 }: UseMapPaddingSyncInput): MapPaddingSyncHandle {
-  const { stateRef, sheetPhaseRef } = session;
+  const { stateRef, sheetPhaseRef, dispatch } = session;
 
   const [mapPadding, setMapPadding] = useState<MapPaddingOptions | null>(null);
   const [mapPaddingReady, setMapPaddingReady] = useState(
@@ -96,6 +96,9 @@ export function useMapPaddingSync({
           sheetMotionActive,
           followUser: followUserRef.current,
           followTarget: followTargetRef.current,
+          onRealignAnchor: (position) => {
+            dispatch({ type: "setAnchor", position });
+          },
           debug: mapPaddingDebug,
         });
       }
@@ -116,6 +119,7 @@ export function useMapPaddingSync({
       mapPaddingDebug,
       stateRef,
       sheetPhaseRef,
+      dispatch,
     ],
   );
 

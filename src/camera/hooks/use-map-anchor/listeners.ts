@@ -125,6 +125,7 @@ export function useMapAnchorListeners({
       if (outcome.kind === "snapBackToUser") {
         navigateToRef.current(outcome.target, {
           duration: smoothFlyDurationMsRef.current,
+          retainFollow: true,
         });
         return;
       }

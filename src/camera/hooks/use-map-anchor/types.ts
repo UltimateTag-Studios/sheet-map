@@ -7,8 +7,18 @@ import type { MapPosition } from "../../shared/map-position";
 export type { MapAnchorFollowConfig } from "../../anchor";
 
 export type NavigateToMapAnchorOptions = {
-  /** ms. 0 or omitted = jump; >0 = fly when sheet is idle. Jump when sheet is dragging or settling. */
+  /**
+   * ms. 0 or omitted = jump; >0 = fly when sheet is idle.
+   * Jump when sheet is dragging or settling.
+   *
+   * Not for GPS ticks — use `repositionCamera` (no session, no `map.stop()`).
+   */
   duration?: number;
+  /**
+   * Keep GPS follow enabled after this move. Boot, snap-back, and recenter pass `true`.
+   * Default `false` releases follow (e.g. fly to a map item or demo point).
+   */
+  retainFollow?: boolean;
 };
 
 export type UseMapAnchorOptions = {

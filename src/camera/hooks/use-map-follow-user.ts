@@ -4,6 +4,13 @@ import type { MapRef } from "react-map-gl/mapbox";
 import type { MapObscuredInsets, SheetMotionPhase } from "../../viewport";
 import type { PixelPoint } from "../../viewport/types/pixel";
 import { createInitialMapFollowState, reduceMapFollow } from "../follow";
+import {
+  clearFollowReleasedForMapInstance,
+  hasFollowAutoStartedForMapInstance,
+  hasFollowReleasedForMapInstance,
+  markFollowAutoStartedForMapInstance,
+  markFollowReleasedForMapInstance,
+} from "../instance/camera-state";
 import { type MapPosition, positionKey } from "../shared/map-position";
 import { useMapAnchor } from "./use-map-anchor";
 import type { NavigateToMapAnchorOptions } from "./use-map-anchor/types";
@@ -64,7 +71,6 @@ export function useMapFollowUser({
     createInitialMapFollowState,
   );
 
-  const hasStartedFollowRef = useRef(false);
   const lastGpsPositionKeyRef = useRef<string | null>(null);
 
   /** Boot uses the first GPS fix only — watchPosition updates must not retrigger boot. */
@@ -75,7 +81,6 @@ export function useMapFollowUser({
       return null;
     }
 
-    // Lat/lng only — omit zoom so navigateTo / repositionCamera preserve the current level.
     return {
       lat: userLocationLat,
       lng: userLocationLng,
@@ -95,13 +100,21 @@ export function useMapFollowUser({
   );
 
   useEffect(() => {
-    if (!hasUserLocation || hasStartedFollowRef.current) {
+    if (!hasUserLocation || !mapRef) {
       return;
     }
 
-    hasStartedFollowRef.current = true;
+    const map = mapRef.getMap();
+    if (hasFollowReleasedForMapInstance(map)) {
+      return;
+    }
+
+    if (!hasFollowAutoStartedForMapInstance(map)) {
+      markFollowAutoStartedForMapInstance(map);
+    }
+
     followDispatch({ type: "startFollowUser" });
-  }, [hasUserLocation]);
+  }, [hasUserLocation, mapRef]);
 
   useEffect(() => {
     if (!hasUserLocation || bootTarget !== null) {
@@ -123,7 +136,6 @@ export function useMapFollowUser({
 
   const onMapInstanceReleased = useCallback(() => {
     followDispatch({ type: "resetBoot" });
-    hasStartedFollowRef.current = false;
     lastGpsPositionKeyRef.current = null;
     setBootTarget(null);
     onMapInstanceReleasedOption?.();
@@ -138,8 +150,11 @@ export function useMapFollowUser({
   }, [buildUserPosition, rememberGpsPosition]);
 
   const stopFollowingUser = useCallback(() => {
+    if (mapRef) {
+      markFollowReleasedForMapInstance(mapRef.getMap());
+    }
     followDispatch({ type: "stopFollowUser" });
-  }, []);
+  }, [mapRef]);
 
   const followTarget: MapPosition | null = hasUserLocation
     ? { lat: userLocationLat, lng: userLocationLng }
@@ -182,6 +197,16 @@ export function useMapFollowUser({
   navigateToRef.current = navigateTo;
   repositionCameraRef.current = repositionCamera;
 
+  const navigateToWithFollowPolicy = useCallback(
+    (position: MapPosition, options?: NavigateToMapAnchorOptions) => {
+      if (!options?.retainFollow) {
+        stopFollowingUser();
+      }
+      return navigateToRef.current(position, options);
+    },
+    [stopFollowingUser],
+  );
+
   const recenterOnUser = useCallback(
     (options?: RecenterOnUserOptions) => {
       const position = buildUserPosition();
@@ -194,11 +219,17 @@ export function useMapFollowUser({
           ? { ...position, zoom: options.zoom }
           : position;
 
+      if (mapRef) {
+        clearFollowReleasedForMapInstance(mapRef.getMap());
+      }
       followDispatch({ type: "startFollowUser" });
       rememberGpsPosition(position);
-      navigateToRef.current(target, { duration: smoothFlyDurationMs });
+      navigateToRef.current(target, {
+        duration: smoothFlyDurationMs,
+        retainFollow: true,
+      });
     },
-    [buildUserPosition, rememberGpsPosition, smoothFlyDurationMs],
+    [buildUserPosition, rememberGpsPosition, smoothFlyDurationMs, mapRef],
   );
 
   useEffect(() => {
@@ -260,7 +291,8 @@ export function useMapFollowUser({
     anchor,
     session,
     setAnchor,
-    navigateTo,
+    navigateTo: navigateToWithFollowPolicy,
+    repositionCamera,
     tracking: followState.followUser,
     followUser: followState.followUser,
     hasBootFlown: followState.hasBootFlown,

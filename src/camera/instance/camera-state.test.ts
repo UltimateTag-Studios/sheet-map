@@ -4,7 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import { hasSyncedMapPadding, syncMapPadding } from "../padding/sync";
 import {
   hasBootFlownForMapInstance,
+  hasFollowAutoStartedForMapInstance,
+  hasFollowReleasedForMapInstance,
   markBootFlownForMapInstance,
+  markFollowAutoStartedForMapInstance,
+  markFollowReleasedForMapInstance,
   releaseMapInstanceCameraState,
 } from "./camera-state";
 
@@ -22,20 +26,26 @@ function createMap() {
 }
 
 describe("map instance camera state", () => {
-  it("clears boot and padding latches so a released map can boot again", () => {
+  it("clears boot, follow, and padding latches so a released map can boot again", () => {
     const map = createMap();
     const nextPadding = { top: 0, left: 0, right: 0, bottom: 152 };
 
     syncMapPadding(map, nextPadding);
     markBootFlownForMapInstance(map);
+    markFollowAutoStartedForMapInstance(map);
+    markFollowReleasedForMapInstance(map);
 
     expect(hasSyncedMapPadding(map)).toBe(true);
     expect(hasBootFlownForMapInstance(map)).toBe(true);
+    expect(hasFollowAutoStartedForMapInstance(map)).toBe(true);
+    expect(hasFollowReleasedForMapInstance(map)).toBe(true);
 
     releaseMapInstanceCameraState(map);
 
     expect(hasSyncedMapPadding(map)).toBe(false);
     expect(hasBootFlownForMapInstance(map)).toBe(false);
+    expect(hasFollowAutoStartedForMapInstance(map)).toBe(false);
+    expect(hasFollowReleasedForMapInstance(map)).toBe(false);
     expect(syncMapPadding(map, nextPadding)).toBe(true);
   });
 });

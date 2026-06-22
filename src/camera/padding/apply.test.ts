@@ -113,12 +113,14 @@ describe("applyMapPadding", () => {
 
   it("navigating + sheet moves: jumps to navigation target", () => {
     const { mapRef, map } = createMapRefMock();
+    const onRealignAnchor = vi.fn();
 
     applyMapPadding({
       mapRef,
       state: navigatingState,
       paddingChanged: true,
       sheetMotionActive: true,
+      onRealignAnchor,
     });
 
     expect(map.jumpTo).toHaveBeenCalledWith(
@@ -127,6 +129,11 @@ describe("applyMapPadding", () => {
         zoom: 16,
       }),
     );
+    expect(onRealignAnchor).toHaveBeenCalledWith({
+      lat: 3,
+      lng: 4,
+      zoom: 16,
+    });
   });
 
   it("navigating + sheet idle: no jump", () => {

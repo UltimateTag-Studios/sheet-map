@@ -4,7 +4,6 @@ export {
   flyToMapAnchor,
   jumpToMapAnchor,
 } from "./apply-camera";
-export { beginProgrammaticNavigation } from "./begin-programmatic-navigation";
 export {
   evaluateFollowAtGestureSettle,
   type GestureSettleOutcome,

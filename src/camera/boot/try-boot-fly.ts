@@ -96,6 +96,7 @@ export function tryBootFly(input: TryBootFlyInput): TryBootFlyResult {
 
   const applied = navigateTo(bootTarget, {
     duration: bootDurationMs ?? smoothFlyDurationMs,
+    retainFollow: true,
   });
   if (!applied) {
     return blocked("navigate_rejected", debug);

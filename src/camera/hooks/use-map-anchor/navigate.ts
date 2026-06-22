@@ -1,13 +1,8 @@
 import { type RefObject, useCallback, useRef } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import {
-  applyMapAnchorCamera,
-  beginProgrammaticNavigation,
-  type NavigationIntent,
-  reduceMapAnchor,
-} from "../../anchor";
-import { canNavigateMap } from "../../shared/can-navigate-map";
+import type { NavigationIntent } from "../../anchor";
+import { moveCameraProgrammatic } from "../../movement";
 import {
   type MapPosition,
   mergeMapAnchorPosition,
@@ -26,6 +21,7 @@ export type UseMapAnchorNavigateInput = {
     (options?: RefreshMapPaddingFromCanvasOptions) => boolean
   >;
   followThresholdExceededRef: RefObject<boolean>;
+  onReleaseFollow?: () => void;
 };
 
 export type MapAnchorNavigateHandle = {
@@ -44,8 +40,12 @@ export function useMapAnchorNavigate({
   session,
   refreshMapPaddingFromCanvasRef,
   followThresholdExceededRef,
+  onReleaseFollow,
 }: UseMapAnchorNavigateInput): MapAnchorNavigateHandle {
-  const { stateRef, dispatch, sheetPhaseRef } = session;
+  const { dispatch, sheetPhaseRef } = session;
+
+  const onReleaseFollowRef = useRef(onReleaseFollow);
+  onReleaseFollowRef.current = onReleaseFollow;
 
   const navigateToRef = useRef<
     (position: MapPosition, options?: NavigateToMapAnchorOptions) => boolean
@@ -56,11 +56,13 @@ export function useMapAnchorNavigate({
       position: MapPosition,
       options: NavigateToMapAnchorOptions = {},
     ): boolean => {
-      if (!canNavigateMap(mapRef)) {
+      if (!mapRef) {
         return false;
       }
 
-      const map = mapRef.getMap();
+      if (!options.retainFollow) {
+        onReleaseFollowRef.current?.();
+      }
 
       const requestedDuration = options.duration ?? 0;
       const sheetMoving = sheetPhaseRef.current !== "idle";
@@ -77,36 +79,29 @@ export function useMapAnchorNavigate({
       }
 
       const anchorPosition = mergeMapAnchorPosition(
-        stateRef.current.anchor,
+        session.stateRef.current.anchor,
         position,
       );
       const intent: NavigationIntent = { target: position };
-
-      let nextState = reduceMapAnchor(stateRef.current, {
-        type: "setAnchor",
-        position: anchorPosition,
-      });
-      nextState = reduceMapAnchor(nextState, {
-        type: "navigationStarted",
-        intent,
-      });
-      stateRef.current = nextState;
 
       dispatch({ type: "setAnchor", position: anchorPosition });
       dispatch({ type: "navigationStarted", intent });
 
       followThresholdExceededRef.current = false;
 
-      beginProgrammaticNavigation(map, () => {
-        refreshMapPaddingFromCanvasRef.current({ realign: false });
+      return moveCameraProgrammatic({
+        mapRef,
+        position,
+        duration,
+        onBeforeCamera: () => {
+          refreshMapPaddingFromCanvasRef.current({ realign: false });
+        },
       });
-      applyMapAnchorCamera(mapRef, position, { duration });
-      return true;
     },
     [
       mapRef,
       mapPaddingDebug,
-      stateRef,
+      session.stateRef,
       dispatch,
       sheetPhaseRef,
       refreshMapPaddingFromCanvasRef,

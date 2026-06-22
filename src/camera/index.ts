@@ -1,7 +1,6 @@
 export {
   type ApplyMapAnchorCameraOptions,
   applyMapAnchorCamera,
-  beginProgrammaticNavigation,
   createInitialMapAnchorState,
   flyToMapAnchor,
   isAtMapAnchorPosition,
@@ -41,6 +40,11 @@ export {
   markBootFlownForMapInstance,
   releaseMapInstanceCameraState,
 } from "./instance";
+export type {
+  MoveCameraProgrammaticInput,
+  RepositionCameraInput,
+} from "./movement";
+export { moveCameraProgrammatic, repositionCamera } from "./movement";
 export type { ApplyMapPaddingInput } from "./padding";
 export {
   applyMapPadding,
@@ -63,6 +67,5 @@ export type { MapPosition } from "./shared";
 export {
   mergeMapAnchorPosition,
   positionKey,
-  repositionCamera,
   whenMapStyleReady,
 } from "./shared";

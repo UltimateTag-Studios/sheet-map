@@ -61,7 +61,10 @@ describe("tryBootFly", () => {
     });
 
     expect(result).toEqual({ issued: true });
-    expect(navigateTo).toHaveBeenCalledWith(target, { duration: 500 });
+    expect(navigateTo).toHaveBeenCalledWith(target, {
+      duration: 500,
+      retainFollow: true,
+    });
     expect(onBootIssued).toHaveBeenCalledTimes(1);
     expect(hasBootFlownForMapInstance(mapRef.getMap())).toBe(true);
   });

@@ -1,3 +1,4 @@
+import { renderHook } from "@testing-library/react";
 import { act, createElement, StrictMode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
@@ -542,5 +543,51 @@ describe("useMapFollowUser", () => {
     expect(harness.map.flyTo.mock.calls[0]?.[0]).not.toHaveProperty("zoom");
 
     harness.unmount();
+  });
+
+  it("navigateTo away from user releases tracking", () => {
+    stubViewport();
+    const fixture = mountSheetHostFixture(
+      mockCanvas,
+      {},
+      {
+        top: 800 - 152,
+        bottom: 800,
+        height: 152,
+        y: 800 - 152,
+      },
+    );
+
+    const harness = createTestMapRef({
+      canvas: fixture.canvas,
+      initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
+    });
+
+    const { result } = renderHook(
+      () =>
+        useMapFollowUser({
+          mapRef: harness.mapRef,
+          userLocation,
+          liveSheetObscuredBottomPx: 152,
+        }),
+      {
+        wrapper: ({ children }) => createElement(StrictMode, null, children),
+      },
+    );
+
+    expect(result.current.tracking).toBe(true);
+
+    act(() => {
+      result.current.navigateTo(
+        { lat: 37.28, lng: -113.05, zoom: 13 },
+        { duration: 1200 },
+      );
+    });
+
+    expect(harness.map.flyTo).toHaveBeenCalledTimes(2);
+    expect(result.current.followUser).toBe(false);
+    expect(result.current.tracking).toBe(false);
+
+    fixture.remove();
   });
 });

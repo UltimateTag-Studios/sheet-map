@@ -59,24 +59,25 @@ Recenter while following during a gesture happens at **gesture settle** (mandato
 
 ---
 
-## Rule 2 — Programmatic navigation (`navigateTo`)
+## Rule 2 — Camera moves: `navigateTo` vs `repositionCamera`
 
-All programmatic moves: **`navigateTo`** → `navigationStarted` → session `navigating` → `navigationSettled`.
+Two public APIs — different session ownership. Implementation: [`movement/`](../src/camera/movement/).
 
-| Trigger | Camera | Session after |
-| ------- | ------ | ------------- |
-| Boot | smooth fly + zoom | `navigating` → `idle` when settled |
-| My-location button | smooth fly | `navigating` → `idle` |
-| Gesture settle snap-back (≤40px, still following) | smooth fly | `navigating` → `idle` |
-| Future map-item focus | smooth fly | `navigating` → `idle` |
+| API | `map.stop()` | Session | Use |
+| --- | ------------ | ------- | --- |
+| **`navigateTo`** | yes | → `navigating` → settle → `idle` | Boot, my-location, snap-back, demo fly, map items |
+| **`repositionCamera`** | no | stays as-is (usually `idle`) | Live GPS ticks; padding realign (internal) |
 
-**Not** `navigateTo`:
+**Do not use `navigateTo({ duration: 0 })` for GPS** — that still claims the session and stops momentum.
 
-| Trigger | API | Session |
-| ------- | --- | ------- |
-| GPS tick while following | `repositionCamera` (instant jump) | stays `idle` |
+### `navigateTo` options
 
-`beginProgrammaticNavigation` calls `map.stop()` before fly/jump — intentional; programmatic moves preempt user momentum.
+| Option | Default | Meaning |
+| ------ | ------- | ------- |
+| `duration` | `0` (jump) | Fly ms when sheet idle; forced jump while sheet moves |
+| `retainFollow` | `false` | Keep GPS follow. Boot, snap-back, recenter pass `true`. Demo fly releases follow. |
+
+`navigateTo` → `map.stop()` → padding sync (`realign: false`) → fly/jump → `navigationStarted` → `navigationSettled`.
 
 While **`navigating`** + sheet geometry changes: after `setPadding`, **jump** to `navigationIntent.target` (duration 0 if sheet is moving).
 
@@ -119,7 +120,7 @@ The sheet package owns snap heights, drag phase, and `sheetObscuredBottomPx`. Th
 | Session | Follow | Sheet moves | Camera after `setPadding` |
 | ------- | ------ | ----------- | ------------------------- |
 | `idle` | off | yes | none (Mapbox keeps center stable) |
-| `idle` | on | yes | jump to user (`repositionCamera`-style jump) |
+| `idle` | on | yes | jump to user (`repositionCamera`) |
 | `userGesture` | off | yes | no jumpTo/flyTo from our code (`setPadding` only; coast may end — plan §3.1) |
 | `userGesture` | on | yes | no jumpTo/flyTo from our code; snap-back at pan settle |
 | `navigating` | * | yes | jump to `navigationIntent.target` |
@@ -134,8 +135,9 @@ Entry point: [`padding/apply.ts`](../src/camera/padding/apply.ts).
 - **`tracking`:** alias for `followUser` (gray button when false, blue when true).
 - **Dot halo `focused`:** `tracking && hasBootFlown` (brighter halo after boot).
 - GPS updates: `repositionCamera` only when `session === "idle"`.
-- My-location button: `recenterOnUser` → `navigateTo` fly (even when already tracking).
-- Snap-back at gesture settle: `navigateTo` (same path as my-location).
+- My-location button: `recenterOnUser` → `navigateTo` fly with `retainFollow: true`.
+- Fly to another place (demo point, map item): `navigateTo` without `retainFollow` → follow released, button turns gray.
+- Snap-back at gesture settle: `navigateTo` with `retainFollow: true`.
 - **Debug:** with `VITE_SHEET_MAP_DEBUG=true`, GPS repositions log `[map-follow-gps] reposition`; skipped ticks while non-idle log `[map-follow-gps] skipped`.
 
 **Demo padding logs:** set `VITE_SHEET_MAP_DEBUG=true` in `apps/sheet-map-demo/.env` to see `[map-padding-from-canvas] setPadding` in the console.
