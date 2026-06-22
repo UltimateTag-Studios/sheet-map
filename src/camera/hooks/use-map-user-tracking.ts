@@ -108,7 +108,6 @@ export function useMapUserTracking({
   }, [hasUserLocation, userLocationLat, userLocationLng, bootZoom, bootTarget]);
 
   const onMapInstanceReleased = useCallback(() => {
-    trackingDispatch({ type: "resetBoot" });
     lastGpsPositionKeyRef.current = null;
     setBootTarget(null);
     onMapInstanceReleasedOption?.();
@@ -119,7 +118,7 @@ export function useMapUserTracking({
     if (position) {
       rememberGpsPosition(position);
     }
-    trackingDispatch({ type: "bootFlown" });
+    trackingDispatch({ type: "bootIssued" });
   }, [buildUserPosition, rememberGpsPosition]);
 
   const stopTracking = useCallback(() => {

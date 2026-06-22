@@ -7,7 +7,6 @@ describe("reduceMapFollow", () => {
   it("starts with tracking when requested", () => {
     const state = createInitialMapFollowState({ tracking: true });
     expect(state.tracking).toBe(true);
-    expect(state.hasBootFlown).toBe(false);
   });
 
   it("stops tracking on pan commit", () => {
@@ -16,20 +15,9 @@ describe("reduceMapFollow", () => {
     expect(next.tracking).toBe(false);
   });
 
-  it("records boot jump once and starts tracking", () => {
+  it("starts tracking when boot is issued", () => {
     const state = createInitialMapFollowState({ tracking: false });
-    const next = reduceMapFollow(state, { type: "bootFlown" });
-    expect(next.hasBootFlown).toBe(true);
-    expect(next.tracking).toBe(true);
-  });
-
-  it("resets boot when the map instance changes", () => {
-    const booted = reduceMapFollow(
-      createInitialMapFollowState({ tracking: false }),
-      { type: "bootFlown" },
-    );
-    const next = reduceMapFollow(booted, { type: "resetBoot" });
-    expect(next.hasBootFlown).toBe(false);
+    const next = reduceMapFollow(state, { type: "bootIssued" });
     expect(next.tracking).toBe(true);
   });
 });

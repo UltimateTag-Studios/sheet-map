@@ -1,6 +1,5 @@
 export type MapFollowState = {
   tracking: boolean;
-  hasBootFlown: boolean;
 };
 
 export function createInitialMapFollowState(options: {
@@ -8,6 +7,5 @@ export function createInitialMapFollowState(options: {
 }): MapFollowState {
   return {
     tracking: options.tracking ?? false,
-    hasBootFlown: false,
   };
 }

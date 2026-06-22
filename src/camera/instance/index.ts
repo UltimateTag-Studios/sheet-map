@@ -1,9 +1,9 @@
 export {
   clearFollowReleasedForMapInstance,
-  hasBootFlownForMapInstance,
+  hasBootIssuedForMapInstance,
   hasFollowAutoStartedForMapInstance,
   hasFollowReleasedForMapInstance,
-  markBootFlownForMapInstance,
+  markBootIssuedForMapInstance,
   markFollowAutoStartedForMapInstance,
   markFollowReleasedForMapInstance,
   releaseMapInstanceCameraState,

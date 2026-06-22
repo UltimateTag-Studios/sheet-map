@@ -104,7 +104,10 @@ export function useMapAnchorListeners({
     };
 
     const beginUserGesture = (
-      event: MapEventOf<"dragstart"> | MapEventOf<"zoomstart">,
+      event:
+        | MapEventOf<"dragstart">
+        | MapEventOf<"zoomstart">
+        | MapEventOf<"wheel">,
     ) => {
       if (!isUserMapGestureEvent(event)) {
         return;
@@ -181,6 +184,7 @@ export function useMapAnchorListeners({
       bootAnchor();
       map.on("dragstart", beginUserGesture);
       map.on("zoomstart", beginUserGesture);
+      map.on("wheel", beginUserGesture);
       map.on("move", checkFollowThresholdDuringGesture);
       map.on("moveend", handleMoveEnd);
       map.on("idle", handleMapIdle);
@@ -196,6 +200,7 @@ export function useMapAnchorListeners({
       map.off("load", attachListeners);
       map.off("dragstart", beginUserGesture);
       map.off("zoomstart", beginUserGesture);
+      map.off("wheel", beginUserGesture);
       map.off("move", checkFollowThresholdDuringGesture);
       map.off("moveend", handleMoveEnd);
       map.off("idle", handleMapIdle);

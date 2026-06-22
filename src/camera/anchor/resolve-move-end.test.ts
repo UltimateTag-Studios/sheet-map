@@ -28,6 +28,17 @@ describe("resolveMoveEnd", () => {
     ).toEqual({ kind: "userGestureSettled", position });
   });
 
+  it("settles flying after padding moveend when the map stopped", () => {
+    expect(
+      resolveMoveEnd({
+        paddingMoveEnd: true,
+        isMoving: false,
+        session: "flying",
+        readPosition,
+      }),
+    ).toEqual({ kind: "trySettleFlying" });
+  });
+
   it("settles userGesture on a normal moveend when idle momentum finished", () => {
     expect(
       resolveMoveEnd({

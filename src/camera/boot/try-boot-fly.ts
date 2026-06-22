@@ -1,8 +1,8 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
 import {
-  hasBootFlownForMapInstance,
-  markBootFlownForMapInstance,
+  hasBootIssuedForMapInstance,
+  markBootIssuedForMapInstance,
 } from "../instance/camera-state";
 import type { MapPosition } from "../shared/map-position";
 
@@ -11,7 +11,7 @@ export type BootFlyBlockReason =
   | "no_target"
   | "no_map"
   | "padding_not_ready"
-  | "already_flown"
+  | "already_issued"
   | "navigate_rejected";
 
 export type TryBootFlyResult =
@@ -34,7 +34,7 @@ export type TryBootFlyInput = {
 };
 
 const silentBlockReasons = new Set<BootFlyBlockReason>([
-  "already_flown",
+  "already_issued",
   "no_target",
   "padding_not_ready",
 ]);
@@ -87,8 +87,8 @@ export function tryBootFly(input: TryBootFlyInput): TryBootFlyResult {
 
   const map = mapRef.getMap();
 
-  if (hasBootFlownForMapInstance(map)) {
-    return blocked("already_flown", debug);
+  if (hasBootIssuedForMapInstance(map)) {
+    return blocked("already_issued", debug);
   }
   if (!mapPaddingReady) {
     return blocked("padding_not_ready", debug);
@@ -102,7 +102,7 @@ export function tryBootFly(input: TryBootFlyInput): TryBootFlyResult {
     return blocked("navigate_rejected", debug);
   }
 
-  markBootFlownForMapInstance(map);
+  markBootIssuedForMapInstance(map);
   onBootIssued?.();
 
   if (debug) {

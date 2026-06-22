@@ -29,6 +29,9 @@ export function resolveMoveEnd(input: {
         position: input.readPosition(),
       };
     }
+    if (!input.isMoving && input.session === "flying") {
+      return { kind: "trySettleFlying" };
+    }
     return { kind: "noop", reason: "padding_only" };
   }
 

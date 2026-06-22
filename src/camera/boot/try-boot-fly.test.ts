@@ -2,8 +2,8 @@ import type { MapRef } from "react-map-gl/mapbox";
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  hasBootFlownForMapInstance,
-  markBootFlownForMapInstance,
+  hasBootIssuedForMapInstance,
+  markBootIssuedForMapInstance,
 } from "../instance/camera-state";
 import { areBootFlyGatesReady, tryBootFly } from "./try-boot-fly";
 
@@ -66,12 +66,12 @@ describe("tryBootFly", () => {
       keepTracking: true,
     });
     expect(onBootIssued).toHaveBeenCalledTimes(1);
-    expect(hasBootFlownForMapInstance(mapRef.getMap())).toBe(true);
+    expect(hasBootIssuedForMapInstance(mapRef.getMap())).toBe(true);
   });
 
   it("skips when the boot latch is already set", () => {
     const mapRef = createMapRef();
-    markBootFlownForMapInstance(mapRef.getMap());
+    markBootIssuedForMapInstance(mapRef.getMap());
     const navigateTo = vi.fn(() => true);
 
     const result = tryBootFly({
@@ -83,7 +83,7 @@ describe("tryBootFly", () => {
       smoothFlyDurationMs: 600,
     });
 
-    expect(result).toEqual({ issued: false, reason: "already_flown" });
+    expect(result).toEqual({ issued: false, reason: "already_issued" });
     expect(navigateTo).not.toHaveBeenCalled();
   });
 
@@ -102,7 +102,7 @@ describe("tryBootFly", () => {
 
     expect(result).toEqual({ issued: false, reason: "no_target" });
     expect(navigateTo).not.toHaveBeenCalled();
-    expect(hasBootFlownForMapInstance(mapRef.getMap())).toBe(false);
+    expect(hasBootIssuedForMapInstance(mapRef.getMap())).toBe(false);
   });
 
   it("skips when map padding is not ready", () => {

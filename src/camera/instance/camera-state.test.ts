@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import { hasSyncedMapPadding, syncMapPadding } from "../padding/sync";
 import {
-  hasBootFlownForMapInstance,
+  hasBootIssuedForMapInstance,
   hasFollowAutoStartedForMapInstance,
   hasFollowReleasedForMapInstance,
-  markBootFlownForMapInstance,
+  markBootIssuedForMapInstance,
   markFollowAutoStartedForMapInstance,
   markFollowReleasedForMapInstance,
   releaseMapInstanceCameraState,
@@ -31,19 +31,19 @@ describe("map instance camera state", () => {
     const nextPadding = { top: 0, left: 0, right: 0, bottom: 152 };
 
     syncMapPadding(map, nextPadding);
-    markBootFlownForMapInstance(map);
+    markBootIssuedForMapInstance(map);
     markFollowAutoStartedForMapInstance(map);
     markFollowReleasedForMapInstance(map);
 
     expect(hasSyncedMapPadding(map)).toBe(true);
-    expect(hasBootFlownForMapInstance(map)).toBe(true);
+    expect(hasBootIssuedForMapInstance(map)).toBe(true);
     expect(hasFollowAutoStartedForMapInstance(map)).toBe(true);
     expect(hasFollowReleasedForMapInstance(map)).toBe(true);
 
     releaseMapInstanceCameraState(map);
 
     expect(hasSyncedMapPadding(map)).toBe(false);
-    expect(hasBootFlownForMapInstance(map)).toBe(false);
+    expect(hasBootIssuedForMapInstance(map)).toBe(false);
     expect(hasFollowAutoStartedForMapInstance(map)).toBe(false);
     expect(hasFollowReleasedForMapInstance(map)).toBe(false);
     expect(syncMapPadding(map, nextPadding)).toBe(true);

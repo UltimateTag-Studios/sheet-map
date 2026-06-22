@@ -2,7 +2,7 @@ import type { Map as MapboxMap } from "mapbox-gl";
 
 import { clearMapPaddingSyncState } from "../padding/sync";
 
-const bootFlownByMap = new WeakMap<MapboxMap, boolean>();
+const bootIssuedByMap = new WeakMap<MapboxMap, boolean>();
 
 type FollowMapLatch = {
   autoStarted: boolean;
@@ -23,16 +23,16 @@ function followLatch(map: MapboxMap): FollowMapLatch {
 /** Drop per-map camera latches when the map instance is released (unmount / swap). */
 export function releaseMapInstanceCameraState(map: MapboxMap): void {
   clearMapPaddingSyncState(map);
-  bootFlownByMap.delete(map);
+  bootIssuedByMap.delete(map);
   followLatchByMap.delete(map);
 }
 
-export function hasBootFlownForMapInstance(map: MapboxMap): boolean {
-  return bootFlownByMap.get(map) === true;
+export function hasBootIssuedForMapInstance(map: MapboxMap): boolean {
+  return bootIssuedByMap.get(map) === true;
 }
 
-export function markBootFlownForMapInstance(map: MapboxMap): void {
-  bootFlownByMap.set(map, true);
+export function markBootIssuedForMapInstance(map: MapboxMap): void {
+  bootIssuedByMap.set(map, true);
 }
 
 /** User or app released follow on this map (demo fly, pan threshold, etc.). */

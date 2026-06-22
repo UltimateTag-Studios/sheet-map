@@ -85,6 +85,8 @@ export function useMapAnchorNavigate({
       dispatch({ type: "setAnchor", position: anchorPosition });
       if (duration > 0) {
         dispatch({ type: "flyStarted" });
+      } else if (session.stateRef.current.session === "flying") {
+        dispatch({ type: "flySettled" });
       }
 
       followThresholdExceededRef.current = false;

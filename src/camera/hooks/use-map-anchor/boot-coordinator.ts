@@ -2,7 +2,7 @@ import { type RefObject, useCallback, useLayoutEffect, useRef } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import { areBootFlyGatesReady, tryBootFly } from "../../boot/try-boot-fly";
-import { hasBootFlownForMapInstance } from "../../instance/camera-state";
+import { hasBootIssuedForMapInstance } from "../../instance/camera-state";
 import type { MapPosition } from "../../shared/map-position";
 import type { NavigateToMapAnchorOptions } from "./types";
 
@@ -61,7 +61,7 @@ export function useBootFlyCoordinator({
     }
 
     const map = mapRef?.getMap();
-    if (map && hasBootFlownForMapInstance(map)) {
+    if (map && hasBootIssuedForMapInstance(map)) {
       return;
     }
 

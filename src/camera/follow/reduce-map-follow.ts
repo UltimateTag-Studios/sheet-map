@@ -3,8 +3,7 @@ import type { MapFollowState } from "./state";
 export type MapFollowEvent =
   | { type: "startTracking" }
   | { type: "stopTracking" }
-  | { type: "bootFlown" }
-  | { type: "resetBoot" };
+  | { type: "bootIssued" };
 
 export function reduceMapFollow(
   state: MapFollowState,
@@ -21,16 +20,10 @@ export function reduceMapFollow(
         ...state,
         tracking: false,
       };
-    case "bootFlown":
+    case "bootIssued":
       return {
         ...state,
-        hasBootFlown: true,
         tracking: true,
-      };
-    case "resetBoot":
-      return {
-        ...state,
-        hasBootFlown: false,
       };
   }
 }

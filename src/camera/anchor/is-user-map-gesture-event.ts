@@ -1,8 +1,11 @@
 import type { MapEventOf } from "mapbox-gl";
 
-export function isUserMapGestureEvent(
-  event: MapEventOf<"dragstart"> | MapEventOf<"zoomstart">,
-): boolean {
+type UserGestureMapEvent =
+  | MapEventOf<"dragstart">
+  | MapEventOf<"zoomstart">
+  | MapEventOf<"wheel">;
+
+export function isUserMapGestureEvent(event: UserGestureMapEvent): boolean {
   return (
     event != null &&
     typeof event === "object" &&

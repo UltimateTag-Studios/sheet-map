@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import { mockCanvas, stubViewport } from "../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../viewport/testing/mount-sheet-host-fixture";
 import {
-  hasBootFlownForMapInstance,
-  markBootFlownForMapInstance,
+  hasBootIssuedForMapInstance,
+  markBootIssuedForMapInstance,
 } from "./instance/camera-state";
 import { clearMapPaddingSyncState, syncMapPadding } from "./padding/sync";
 import {
@@ -133,7 +133,9 @@ describe("useMapAnchor", () => {
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
     expect(harness.map.stop).toHaveBeenCalledTimes(1);
     expect(harness.latest.session).toBe("flying");
-    expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(true);
+    expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
+      true,
+    );
 
     clearMapPaddingSyncState(asTestMapboxMap(harness.map));
     harness.unmount();
@@ -240,6 +242,52 @@ describe("useMapAnchor", () => {
     });
 
     expect(harness.map.jumpTo).not.toHaveBeenCalled();
+    expect(harness.latest.session).toBe("idle");
+
+    harness.unmount();
+  });
+
+  it("settles flying session on padding-flagged moveend when at target", () => {
+    const harness = mountAnchorWithMapRef(
+      createTestMapRef({
+        center: { lat: 3, lng: 4 },
+        zoom: 16,
+      }),
+    );
+    const destination = { lat: 3, lng: 4, zoom: 16 };
+
+    act(() => {
+      harness.latest.navigateTo(destination, { duration: 1000 });
+    });
+
+    expect(harness.latest.session).toBe("flying");
+
+    act(() => {
+      syncMapPadding(asTestMapboxMap(harness.map), harness.map.getPadding());
+      harness.map.emit("moveend");
+    });
+
+    expect(harness.latest.session).toBe("idle");
+
+    harness.unmount();
+  });
+
+  it("navigateTo jump clears a stuck flying session", () => {
+    const harness = mountAnchor();
+
+    act(() => {
+      harness.latest.navigateTo(
+        { lat: 3, lng: 4, zoom: 16 },
+        { duration: 1000 },
+      );
+    });
+
+    expect(harness.latest.session).toBe("flying");
+
+    act(() => {
+      harness.latest.navigateTo({ lat: 3, lng: 4, zoom: 16 });
+    });
+
     expect(harness.latest.session).toBe("idle");
 
     harness.unmount();
@@ -356,14 +404,16 @@ describe("useMapAnchor", () => {
       duration: 500,
     });
     expect(onBootIssued).toHaveBeenCalledTimes(1);
-    expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(true);
+    expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
+      true,
+    );
 
     harness.unmount();
   });
 
   it("skips boot fly when the latch is already set", () => {
     const harness = createTestMapRef();
-    markBootFlownForMapInstance(asTestMapboxMap(harness.map));
+    markBootIssuedForMapInstance(asTestMapboxMap(harness.map));
 
     const mounted = mountAnchorWithMapRef(harness, {
       bootTarget: { lat: 40, lng: -74, zoom: 12 },
@@ -380,7 +430,7 @@ describe("useMapAnchor", () => {
 
     expect(harness.latest.mapPaddingReady).toBe(true);
     expect(harness.map.flyTo).not.toHaveBeenCalled();
-    expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(
+    expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
       false,
     );
 
@@ -404,7 +454,7 @@ describe("useMapAnchor", () => {
 
       expect(harness.latest.mapPaddingReady).toBe(true);
       expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-      expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(
+      expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
         true,
       );
 
@@ -429,7 +479,7 @@ describe("useMapAnchor", () => {
           zoom: target.zoom,
         }),
       );
-      expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(
+      expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
         true,
       );
 
@@ -488,7 +538,7 @@ describe("useMapAnchor", () => {
 
       expect(mounted.latest.mapPaddingReady).toBe(true);
       expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
-      expect(hasBootFlownForMapInstance(asTestMapboxMap(mounted.map))).toBe(
+      expect(hasBootIssuedForMapInstance(asTestMapboxMap(mounted.map))).toBe(
         true,
       );
 
@@ -526,7 +576,7 @@ describe("useMapAnchor", () => {
       });
 
       expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-      expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(
+      expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
         true,
       );
 
@@ -607,6 +657,35 @@ describe("useMapAnchor", () => {
       expect(onReleaseTracking).toHaveBeenCalledTimes(1);
       expect(mounted.latest.anchor).toEqual({ lat: 11, lng: 21, zoom: 14 });
       expect(mounted.latest.session).toBe("idle");
+
+      mounted.unmount();
+    });
+
+    it("snaps back after scroll wheel via wheel event", () => {
+      const onReleaseTracking = vi.fn();
+      const harness = withProject(createTestMapRef(), () => ({
+        x: 220,
+        y: 320,
+      }));
+      const mounted = mountAnchorWithMapRef(harness, {
+        follow,
+        onReleaseTracking,
+        smoothFlyDurationMs: 600,
+      });
+
+      act(() => {
+        harness.map.emit("wheel", {
+          originalEvent: new WheelEvent("wheel"),
+        });
+      });
+
+      act(() => {
+        harness.map.emit("moveend");
+      });
+
+      expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+      expect(onReleaseTracking).not.toHaveBeenCalled();
+      expect(mounted.latest.session).toBe("flying");
 
       mounted.unmount();
     });
