@@ -62,6 +62,7 @@ export function useMapShellContext() {
     selectedItemId: shell.selectedItemId,
     selectItem: shell.selectItem,
     clearSelection: shell.clearSelection,
+    closeSheet: shell.closeSheet,
     navigateTo: shell.navigateTo,
     recenterOnUser: shell.recenterOnUser,
     tracking: shell.tracking,
