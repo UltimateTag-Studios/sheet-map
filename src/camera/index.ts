@@ -1,14 +1,24 @@
 export {
+  applyMapAnchorCamera,
+  beginProgrammaticNavigation,
   createInitialMapAnchorState,
+  flyToMapAnchor,
+  isAtMapAnchorPosition,
   isNavigationSession,
   isUserMapGestureEvent,
+  jumpToMapAnchor,
   type MapAnchorEvent,
   type MapAnchorSession,
   type MapAnchorState,
   type NavigationIntent,
   readMapAnchorPosition,
   reduceMapAnchor,
+  stopMapMotion,
+  trySettleNavigatingSession,
 } from "./anchor";
+export type { ApplyMapAnchorCameraOptions } from "./anchor/apply-map-anchor-camera";
+export type { ApplyMapPaddingInput } from "./apply-map-padding";
+export { applyMapPadding } from "./apply-map-padding";
 export {
   areMapPaddingOptionsEqual,
   type ComputeMapPaddingInput,
@@ -32,6 +42,9 @@ export type {
   SyncMapPaddingFromCanvasResult,
 } from "./sync-map-padding-from-canvas";
 export { syncMapPaddingFromCanvas } from "./sync-map-padding-from-canvas";
-export type { UseMapAnchorOptions } from "./use-map-anchor";
+export type {
+  NavigateToMapAnchorOptions,
+  UseMapAnchorOptions,
+} from "./use-map-anchor";
 export { useMapAnchor } from "./use-map-anchor";
 export { whenMapStyleReady } from "./when-map-style-ready";

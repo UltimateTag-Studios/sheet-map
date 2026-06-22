@@ -26,25 +26,17 @@ Track progress via `SHEET_MAP_PHASE_4_PART` in `src/index.ts`.
 
 ---
 
-## Part 4C — Pan gesture + anchor commit ✅ (current)
+## Part 4C — Pan gesture + anchor commit ✅
 
 **Goal:** `useMapAnchor` (partial): padding (4A primitives) + `moveend` dispatcher + `userGesture` + anchor commit at settle. **No `navigateTo` yet** (4D).
 
-**Demo:** show `session`, anchor lat/lng after pan settles.
-
-**You verify:**
-
-- [ ] Pan map → release → `session` returns `idle`, anchor updates
-- [ ] Padding still tracks sheet drag (4A behavior unchanged)
-- [ ] Pan coast + sheet drag → coast may stop (accepted — no coalesce/defer)
-
 ---
 
-## Part 4D — `navigateTo` + `navigating` session
+## Part 4D — `navigateTo` + `navigating` session (current)
 
 **Goal:** Programmatic fly/jump; `beginProgrammaticNavigation`; padding before nav with `realign: false`.
 
-**Demo:** dev button or console `navigateTo` — document in screen.
+**Demo:** “Fly to demo point” button on `/sheet`.
 
 **You verify:**
 

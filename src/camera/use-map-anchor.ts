@@ -4,14 +4,19 @@ import type { MapRef } from "react-map-gl/mapbox";
 
 import type { MapObscuredInsets } from "../viewport";
 import {
+  applyMapAnchorCamera,
+  beginProgrammaticNavigation,
   createInitialMapAnchorState,
   isUserMapGestureEvent,
+  type NavigationIntent,
   readMapAnchorPosition,
   reduceMapAnchor,
+  trySettleNavigatingSession,
 } from "./anchor";
+import { applyMapPadding } from "./apply-map-padding";
 import type { MapPaddingOptions } from "./compute-map-padding";
 import { releaseMapInstanceCameraState } from "./map-instance-camera-state";
-import type { MapPosition } from "./map-position";
+import { type MapPosition, mergeMapAnchorPosition } from "./map-position";
 import {
   consumePaddingSyncMoveEnd,
   drainPaddingSyncMoveEnd,
@@ -24,6 +29,11 @@ const mapListenerCleanupByMap = new WeakMap<
   () => void
 >();
 
+export type NavigateToMapAnchorOptions = {
+  /** ms. 0 or omitted = jump; >0 = fly. Ignored while sheet is moving — always jumps. */
+  duration?: number;
+};
+
 export type UseMapAnchorOptions = {
   mapRef: MapRef | null;
   enabled?: boolean;
@@ -34,7 +44,13 @@ export type UseMapAnchorOptions = {
   liveSheetObscuredBottomPx?: number;
   fixedChromeInsets?: Partial<MapObscuredInsets>;
   mapPaddingDebug?: boolean;
+  /** True while sheet phase is dragging or settling. */
+  sheetMotionActive?: boolean;
   onMapInstanceReleased?: () => void;
+};
+
+type RefreshMapPaddingFromCanvasOptions = {
+  realign?: boolean;
 };
 
 export function useMapAnchor({
@@ -43,6 +59,7 @@ export function useMapAnchor({
   liveSheetObscuredBottomPx,
   fixedChromeInsets,
   mapPaddingDebug = false,
+  sheetMotionActive = false,
   onMapInstanceReleased,
 }: UseMapAnchorOptions) {
   const mapPaddingFromCanvasEnabled = liveSheetObscuredBottomPx !== undefined;
@@ -62,43 +79,116 @@ export function useMapAnchor({
   stateRef.current = state;
   const onMapInstanceReleasedRef = useRef(onMapInstanceReleased);
   onMapInstanceReleasedRef.current = onMapInstanceReleased;
+  const sheetMotionActiveRef = useRef(sheetMotionActive);
+  sheetMotionActiveRef.current = sheetMotionActive;
+  const prevSheetMotionActiveRef = useRef(sheetMotionActive);
 
-  const refreshMapPaddingFromCanvasRef = useRef<() => boolean>(() => false);
+  const refreshMapPaddingFromCanvasRef = useRef<
+    (options?: RefreshMapPaddingFromCanvasOptions) => boolean
+  >(() => false);
+  const navigateToRef = useRef<
+    (position: MapPosition, options?: NavigateToMapAnchorOptions) => boolean
+  >(() => false);
 
-  const refreshMapPaddingFromCanvas = useCallback(() => {
-    if (!mapRef || !enabled || !mapPaddingFromCanvasEnabled) {
-      return false;
-    }
+  const refreshMapPaddingFromCanvas = useCallback(
+    (options: RefreshMapPaddingFromCanvasOptions = {}) => {
+      if (!mapRef || !enabled || !mapPaddingFromCanvasEnabled) {
+        return false;
+      }
 
-    const result = syncMapPaddingFromCanvas({
-      map: mapRef.getMap(),
+      const result = syncMapPaddingFromCanvas({
+        map: mapRef.getMap(),
+        fixedChromeInsets,
+        debug: mapPaddingDebug,
+      });
+
+      if (result.changed && result.padding) {
+        setMapPadding(result.padding);
+        applyMapPadding({
+          mapRef,
+          state: stateRef.current,
+          paddingChanged: true,
+          realign: options.realign,
+        });
+      }
+
+      if (result.mapPaddingSynced && !mapPaddingReadyRef.current) {
+        mapPaddingReadyRef.current = true;
+        setMapPaddingReady(true);
+      }
+
+      return result.changed;
+    },
+    [
+      mapRef,
+      enabled,
+      mapPaddingFromCanvasEnabled,
       fixedChromeInsets,
-      debug: mapPaddingDebug,
-    });
-
-    if (result.changed && result.padding) {
-      setMapPadding(result.padding);
-    }
-
-    if (result.mapPaddingSynced && !mapPaddingReadyRef.current) {
-      mapPaddingReadyRef.current = true;
-      setMapPaddingReady(true);
-    }
-
-    return result.changed;
-  }, [
-    mapRef,
-    enabled,
-    mapPaddingFromCanvasEnabled,
-    fixedChromeInsets,
-    mapPaddingDebug,
-  ]);
+      mapPaddingDebug,
+    ],
+  );
 
   refreshMapPaddingFromCanvasRef.current = refreshMapPaddingFromCanvas;
 
   const setAnchor = useCallback((position: MapPosition) => {
     dispatch({ type: "setAnchor", position });
   }, []);
+
+  const navigateTo = useCallback(
+    (
+      position: MapPosition,
+      options: NavigateToMapAnchorOptions = {},
+    ): boolean => {
+      if (!mapRef) {
+        return false;
+      }
+
+      const map = mapRef.getMap();
+      if (!map.isStyleLoaded()) {
+        return false;
+      }
+
+      const requestedDuration = options.duration ?? 0;
+      const duration = sheetMotionActiveRef.current ? 0 : requestedDuration;
+
+      if (
+        mapPaddingDebug &&
+        sheetMotionActiveRef.current &&
+        requestedDuration > 0
+      ) {
+        console.info("[map-navigate] jump (duration 0): sheet motion active", {
+          requestedDuration,
+        });
+      }
+      const anchorPosition = mergeMapAnchorPosition(
+        stateRef.current.anchor,
+        position,
+      );
+      const intent: NavigationIntent = { target: position };
+
+      let nextState = reduceMapAnchor(stateRef.current, {
+        type: "setAnchor",
+        position: anchorPosition,
+      });
+      nextState = reduceMapAnchor(nextState, {
+        type: "navigationStarted",
+        intent,
+      });
+      stateRef.current = nextState;
+
+      dispatch({ type: "setAnchor", position: anchorPosition });
+      dispatch({ type: "navigationStarted", intent });
+
+      beginProgrammaticNavigation(map, () => {
+        refreshMapPaddingFromCanvasRef.current({ realign: false });
+      });
+      applyMapAnchorCamera(mapRef, position, { duration });
+      return true;
+    },
+    [mapRef, mapPaddingDebug],
+  );
+
+  navigateToRef.current = navigateTo;
 
   useEffect(() => {
     if (!mapRef || !enabled || !mapPaddingFromCanvasEnabled) {
@@ -139,6 +229,22 @@ export function useMapAnchor({
 
     refreshMapPaddingFromCanvasRef.current();
   }, [mapPaddingFromCanvasEnabled, liveSheetObscuredBottomPx]);
+
+  useEffect(() => {
+    const wasSheetMotionActive = prevSheetMotionActiveRef.current;
+    prevSheetMotionActiveRef.current = sheetMotionActive;
+
+    if (!mapRef || !enabled || sheetMotionActive || !wasSheetMotionActive) {
+      return;
+    }
+
+    trySettleNavigatingSession(
+      mapRef.getMap(),
+      stateRef,
+      sheetMotionActiveRef,
+      dispatch,
+    );
+  }, [sheetMotionActive, mapRef, enabled]);
 
   useEffect(() => {
     if (!mapRef || !enabled) {
@@ -196,7 +302,10 @@ export function useMapAnchor({
           type: "userGestureSettled",
           position: readMapAnchorPosition(map),
         });
+        return;
       }
+
+      trySettleNavigatingSession(map, stateRef, sheetMotionActiveRef, dispatch);
     };
 
     const attachListeners = () => {
@@ -237,5 +346,6 @@ export function useMapAnchor({
     /** True after the first successful `setPadding` from measurable live DOM. */
     mapPaddingReady,
     setAnchor,
+    navigateTo,
   };
 }
