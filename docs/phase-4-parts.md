@@ -12,41 +12,23 @@ Track progress via `SHEET_MAP_PHASE_4_PART` in `src/index.ts`.
 
 ---
 
-## Part 4A — Padding sync only ✅ (current)
+## Part 4A — Padding sync only ✅
 
-**Goal:** Mapbox `setPadding` tracks live sheet DOM. No anchor session, no `navigateTo`, no camera moves from our code.
-
-| Deliverable | Notes |
-| ----------- | ----- |
-| `computeMapPadding` | `padding.bottom` from obscured px + chrome |
-| `syncMapPadding` | Deduped `setPadding`; `consumePaddingSyncMoveEnd` for later |
-| `whenMapStyleReady` | Style load + idle recovery |
-| `releaseMapInstanceCameraState` | Clear padding WeakMap on unmount |
-| `useMapPaddingSync` | Reads **live DOM at apply time**; skips when unmeasurable |
-
-**Padding model:** no React-state `0` → `setPadding`. `liveSheetObscuredBottomPx` is only a re-sync trigger. Padding tracks live sheet geometry continuously.
-
-**You verify:**
-
-- [ ] Drag sheet → `padding.bottom` matches obscured px (± rounding)
-- [ ] Map stays pannable; our code does not `jumpTo` / `flyTo` on padding (4A)
-- [ ] Refresh ×3 → no `setPadding { bottom: 0 }` when sheet is measurable
-- [ ] Pan coast + sheet drag → coast may stop (accepted)
-- [ ] `pnpm --filter @siegetag/sheet-map test` passes
+**Frozen** — primitives in `sync-map-padding.ts`, `read-map-padding-from-canvas.ts`, etc. Later parts compose these; do not change 4A behavior.
 
 ---
 
-## Part 4B — Anchor reducer (pure FSM)
+## Part 4B — Anchor reducer ✅
 
-**Goal:** `reduceMapAnchor` + tests. No hook wiring yet.
+**Goal:** `reduceMapAnchor` + tests. No hook wiring.
 
-**You verify:** unit tests only (`reduce-map-anchor.test.ts`).
+**You verify:** `reduce-map-anchor.test.ts` passes.
 
 ---
 
-## Part 4C — Pan gesture + anchor commit
+## Part 4C — Pan gesture + anchor commit ✅ (current)
 
-**Goal:** `useMapAnchor` (partial): `moveend` dispatcher, `userGesture` session, commit anchor at settle. Padding from 4A merged into same hook.
+**Goal:** `useMapAnchor` (partial): padding (4A primitives) + `moveend` dispatcher + `userGesture` + anchor commit at settle. **No `navigateTo` yet** (4D).
 
 **Demo:** show `session`, anchor lat/lng after pan settles.
 
