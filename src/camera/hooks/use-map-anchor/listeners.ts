@@ -171,6 +171,10 @@ export function useMapAnchorListeners({
       trySettleNavigatingSession(map, stateRef, sheetMotionActiveRef, dispatch);
     };
 
+    const handleMapIdle = () => {
+      trySettleNavigatingSession(map, stateRef, sheetMotionActiveRef, dispatch);
+    };
+
     const attachListeners = () => {
       drainPaddingSyncMoveEnd(map);
       bootAnchor();
@@ -178,6 +182,7 @@ export function useMapAnchorListeners({
       map.on("zoomstart", beginUserGesture);
       map.on("move", checkFollowThresholdDuringGesture);
       map.on("moveend", handleMoveEnd);
+      map.on("idle", handleMapIdle);
     };
 
     if (map.isStyleLoaded()) {
@@ -192,6 +197,7 @@ export function useMapAnchorListeners({
       map.off("zoomstart", beginUserGesture);
       map.off("move", checkFollowThresholdDuringGesture);
       map.off("moveend", handleMoveEnd);
+      map.off("idle", handleMapIdle);
     };
 
     mapListenerCleanupByMap.set(map, cleanup);

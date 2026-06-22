@@ -221,9 +221,9 @@ Extend `/sheet` screens:
 
 ---
 
-## Phase 5 — Follow user
+## Phase 5 — Follow user ✅
 
-**Incremental guide:** [`phase-5-parts.md`](phase-5-parts.md) — verify each part before the next (includes **user location contract** for web + Capacitor).
+**Incremental guide:** [`phase-5-parts.md`](phase-5-parts.md) — all parts landed (`SHEET_MAP_REBUILD_PHASE = 5`).
 
 **Goal:** Boot fly, GPS reposition, my-location button, 40px snap-back — full camera FSM.
 
@@ -236,7 +236,7 @@ Extend `/sheet` screens:
 | `reduceMapFollow` | `followUser`, `hasBootFlown` |
 | `useMapFollowUser` | Composes `useMapAnchor`; boot config; GPS via `repositionCamera` |
 | `repositionCamera` | Instant jump, session stays `idle` |
-| `MapUserLocation` + `MapMyLocationButton` | Dot + button; `isFollowFocused` = blue when boot issued |
+| `MapUserLocation` + `MapMyLocationControl` | Dot + button; `tracking` = blue when following |
 | `tryBootFly` | Separate from padding sync — after `mapPaddingReady` only |
 
 **Boot order:**
@@ -267,9 +267,9 @@ Reference: `screens/reference/sheet-on-map-screen.tsx`, `use-demo-user-location.
 
 ### Done when
 
-- [ ] §11 manual checklist in `camera-fsm-plan.md` passes
-- [ ] Tests pass
-- [ ] `SHEET_MAP_REBUILD_PHASE = 5`
+- [ ] §11 manual checklist in `camera-fsm-plan.md` passes (manual QA)
+- [x] Tests pass
+- [x] `SHEET_MAP_REBUILD_PHASE = 5`
 
 ---
 

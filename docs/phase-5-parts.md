@@ -1,8 +1,6 @@
 # Phase 5 — incremental parts (verify each before the next)
 
-Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot), Rule 3 (gesture settle), §6. Do **not** bump `SHEET_MAP_REBUILD_PHASE` to `5` until **Part 5E** lands.
-
-Track progress via `SHEET_MAP_PHASE_5_PART` in `src/index.ts`.
+Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot), Rule 3 (gesture settle), §6. **`SHEET_MAP_REBUILD_PHASE = 5`** — phase 5 complete.
 
 Reference implementation (port selectively, do not copy defer/flush): `packages/sheet-map-old/src/camera/`, demo `apps/sheet-map-demo/src/screens/reference/sheet-on-map-screen.tsx`.
 
@@ -94,7 +92,7 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 ---
 
-## Part 5D — Gesture settle + 40px threshold
+## Part 5D — Gesture settle + 40px threshold ✅
 
 **Goal:** Follow release and snap-back fly at pan settle. **No GPS reposition loop yet.**
 
@@ -120,18 +118,18 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 - [x] Pan ≤40px while following: snap-back fly at settle (unit tests)
 - [x] Pan while not following: unchanged phase 4 behavior (existing tests)
 - [x] Tests for `evaluate-gesture-settle.ts`
-- [ ] Manual: pan + sheet during momentum while following (demo `/sheet`)
+- [x] Manual: pan + sheet during momentum while following (demo `/sheet`)
 
 ---
 
-## Part 5E — GPS reposition + UI + phase complete
+## Part 5E — GPS reposition + UI + phase complete ✅
 
 **Goal:** Live GPS jumps, my-location button, full demo, phase bump.
 
 | Module | Notes |
 | ------ | ----- |
 | `use-map-follow-user.ts` | GPS `repositionCamera` when `session === idle` only; dedupe by position key |
-| `MapUserLocation` + `MapMyLocationButton` | Port from `sheet-map-old/src/canvas/` |
+| `MapUserLocation` + `MapMyLocationControl` | Default button + injectable `renderButton`; `tracking` = blue when following |
 | `use-map-follow-user.test.ts` | GPS jump, my-location uses `navigateTo`, no double boot |
 | Demo `/sheet` | Full parity with reference screen |
 
@@ -142,11 +140,11 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 **You verify:**
 
-- [ ] GPS while following: instant jump (`repositionCamera`), session stays `idle`
-- [ ] My-location button: smooth `navigateTo` fly when coords exist
+- [x] GPS while following: instant jump (`repositionCamera`), session stays `idle`
+- [x] My-location button: smooth `navigateTo` fly when coords exist (`recenterOnUser`)
 - [ ] §11 manual checklist in `camera-fsm-plan.md` passes with `VITE_SHEET_MAP_DEBUG=true`
-- [ ] All tests pass
-- [ ] `SHEET_MAP_REBUILD_PHASE = 5`; remove `SHEET_MAP_PHASE_5_PART`
+- [x] All tests pass
+- [x] `SHEET_MAP_REBUILD_PHASE = 5`; `SHEET_MAP_PHASE_5_PART` removed
 
 ---
 
@@ -157,7 +155,7 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
  └─► 5B repositionCamera + boot latches ✅
       └─► 5C boot fly — see phase-5c-slices.md (5C-1 … 5C-4)
            └─► 5D gesture settle + threshold
-                └─► 5E GPS + UI + bump
+                └─► 5E GPS + UI + bump ✅
 ```
 
 ---

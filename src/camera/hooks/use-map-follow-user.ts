@@ -4,8 +4,9 @@ import type { MapRef } from "react-map-gl/mapbox";
 import type { MapObscuredInsets, SheetMotionPhase } from "../../viewport";
 import type { PixelPoint } from "../../viewport/types/pixel";
 import { createInitialMapFollowState, reduceMapFollow } from "../follow";
-import type { MapPosition } from "../shared/map-position";
+import { type MapPosition, positionKey } from "../shared/map-position";
 import { useMapAnchor } from "./use-map-anchor";
+import type { NavigateToMapAnchorOptions } from "./use-map-anchor/types";
 
 export type MapUserLocationCoords = {
   lng: number;
@@ -14,6 +15,11 @@ export type MapUserLocationCoords = {
 };
 
 export const DEFAULT_FOLLOW_RELEASE_THRESHOLD_PX = 40;
+
+/** Optional zoom on my-location recenter; omit to preserve the current map level. */
+export type RecenterOnUserOptions = {
+  zoom?: number;
+};
 
 export type UseMapFollowUserOptions = {
   mapRef: MapRef | null;
@@ -25,6 +31,7 @@ export type UseMapFollowUserOptions = {
   sheetPhase?: SheetMotionPhase;
   /** Visible-area center offset for follow threshold + padding realign. */
   centerOffset?: PixelPoint;
+  /** Zoom for the one-shot boot fly only (`bootTarget.zoom`). */
   followZoom?: number;
   smoothFlyDurationMs?: number;
   /** Screen pixels before follow releases on user pan (demo default 40). */
@@ -58,9 +65,34 @@ export function useMapFollowUser({
   );
 
   const hasStartedFollowRef = useRef(false);
+  const lastGpsPositionKeyRef = useRef<string | null>(null);
 
   /** Boot uses the first GPS fix only — watchPosition updates must not retrigger boot. */
   const [bootTarget, setBootTarget] = useState<MapPosition | null>(null);
+
+  const buildUserPosition = useCallback((): MapPosition | null => {
+    if (!hasUserLocation) {
+      return null;
+    }
+
+    // Lat/lng only — omit zoom so navigateTo / repositionCamera preserve the current level.
+    return {
+      lat: userLocationLat,
+      lng: userLocationLng,
+    };
+  }, [hasUserLocation, userLocationLat, userLocationLng]);
+
+  const rememberGpsPosition = useCallback((position: MapPosition) => {
+    lastGpsPositionKeyRef.current = positionKey(position);
+  }, []);
+
+  const navigateToRef = useRef<
+    (position: MapPosition, options?: NavigateToMapAnchorOptions) => boolean
+  >(() => false);
+
+  const repositionCameraRef = useRef<(position: MapPosition) => boolean>(
+    () => false,
+  );
 
   useEffect(() => {
     if (!hasUserLocation || hasStartedFollowRef.current) {
@@ -92,20 +124,25 @@ export function useMapFollowUser({
   const onMapInstanceReleased = useCallback(() => {
     followDispatch({ type: "resetBoot" });
     hasStartedFollowRef.current = false;
+    lastGpsPositionKeyRef.current = null;
     setBootTarget(null);
     onMapInstanceReleasedOption?.();
   }, [onMapInstanceReleasedOption]);
 
   const onBootIssued = useCallback(() => {
+    const position = buildUserPosition();
+    if (position) {
+      rememberGpsPosition(position);
+    }
     followDispatch({ type: "bootFlown" });
-  }, []);
+  }, [buildUserPosition, rememberGpsPosition]);
 
   const stopFollowingUser = useCallback(() => {
     followDispatch({ type: "stopFollowUser" });
   }, []);
 
   const followTarget: MapPosition | null = hasUserLocation
-    ? { lat: userLocationLat, lng: userLocationLng, zoom: followZoom }
+    ? { lat: userLocationLat, lng: userLocationLng }
     : null;
 
   const follow =
@@ -117,7 +154,14 @@ export function useMapFollowUser({
         }
       : null;
 
-  const anchor = useMapAnchor({
+  const {
+    anchor,
+    session,
+    setAnchor,
+    navigateTo,
+    repositionCamera,
+    ...anchorRest
+  } = useMapAnchor({
     mapRef,
     enabled,
     liveSheetObscuredBottomPx,
@@ -135,9 +179,91 @@ export function useMapFollowUser({
     followTarget,
   });
 
+  navigateToRef.current = navigateTo;
+  repositionCameraRef.current = repositionCamera;
+
+  const recenterOnUser = useCallback(
+    (options?: RecenterOnUserOptions) => {
+      const position = buildUserPosition();
+      if (!position) {
+        return;
+      }
+
+      const target =
+        options?.zoom !== undefined
+          ? { ...position, zoom: options.zoom }
+          : position;
+
+      followDispatch({ type: "startFollowUser" });
+      rememberGpsPosition(position);
+      navigateToRef.current(target, { duration: smoothFlyDurationMs });
+    },
+    [buildUserPosition, rememberGpsPosition, smoothFlyDurationMs],
+  );
+
+  useEffect(() => {
+    if (
+      !followState.followUser ||
+      !followState.hasBootFlown ||
+      !hasUserLocation ||
+      !mapRef ||
+      session !== "idle"
+    ) {
+      if (
+        mapPaddingDebug &&
+        hasUserLocation &&
+        followState.followUser &&
+        followState.hasBootFlown &&
+        session !== "idle"
+      ) {
+        console.info("[map-follow-gps] skipped", {
+          reason: "session",
+          session,
+        });
+      }
+      return;
+    }
+
+    const position = buildUserPosition();
+    if (!position) {
+      return;
+    }
+
+    const nextKey = positionKey(position);
+    if (lastGpsPositionKeyRef.current === nextKey) {
+      return;
+    }
+
+    lastGpsPositionKeyRef.current = nextKey;
+    const applied = repositionCameraRef.current(position);
+    if (mapPaddingDebug) {
+      console.info("[map-follow-gps] reposition", {
+        lat: position.lat,
+        lng: position.lng,
+        applied,
+      });
+    }
+  }, [
+    followState.followUser,
+    followState.hasBootFlown,
+    hasUserLocation,
+    userLocationLat,
+    userLocationLng,
+    mapRef,
+    session,
+    mapPaddingDebug,
+    buildUserPosition,
+  ]);
+
   return {
-    ...anchor,
+    ...anchorRest,
+    anchor,
+    session,
+    setAnchor,
+    navigateTo,
+    tracking: followState.followUser,
     followUser: followState.followUser,
     hasBootFlown: followState.hasBootFlown,
+    recenterOnUser,
   };
 }

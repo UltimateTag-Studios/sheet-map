@@ -131,9 +131,12 @@ Entry point: [`padding/apply.ts`](../src/camera/padding/apply.ts).
 ## Follow-user (`useMapFollowUser`)
 
 - Auto-starts follow when GPS available.
-- **`isFollowFocused`:** `followUser && hasBootFlown` (blue only after boot `navigateTo` succeeds).
+- **`tracking`:** alias for `followUser` (gray button when false, blue when true).
+- **Dot halo `focused`:** `tracking && hasBootFlown` (brighter halo after boot).
 - GPS updates: `repositionCamera` only when `session === "idle"`.
+- My-location button: `recenterOnUser` → `navigateTo` fly (even when already tracking).
 - Snap-back at gesture settle: `navigateTo` (same path as my-location).
+- **Debug:** with `VITE_SHEET_MAP_DEBUG=true`, GPS repositions log `[map-follow-gps] reposition`; skipped ticks while non-idle log `[map-follow-gps] skipped`.
 
 **Demo padding logs:** set `VITE_SHEET_MAP_DEBUG=true` in `apps/sheet-map-demo/.env` to see `[map-padding-from-canvas] setPadding` in the console.
 

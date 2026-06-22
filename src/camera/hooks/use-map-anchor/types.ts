@@ -1,8 +1,8 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
+import type { MapObscuredInsets, SheetMotionPhase } from "../../../viewport";
 import type { MapAnchorFollowConfig } from "../../anchor";
 import type { MapPosition } from "../../shared/map-position";
-import type { MapObscuredInsets, SheetMotionPhase } from "../../../viewport";
 
 export type { MapAnchorFollowConfig } from "../../anchor";
 

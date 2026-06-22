@@ -83,3 +83,47 @@
   height: 100%;
   pointer-events: none;
 }
+
+.sheet-map-overlay-slot--bottom-left {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+}
+
+.sheet-map-my-location-button {
+  pointer-events: auto;
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(23, 23, 23, 0.9);
+  color: rgb(212, 212, 212);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.sheet-map-my-location-button:hover {
+  background: rgba(38, 38, 38, 0.9);
+}
+
+.sheet-map-my-location-button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.sheet-map-my-location-button[aria-pressed="true"] {
+  border-color: #1a73e8;
+  background: #1a73e8;
+  color: #fff;
+}
+
+.sheet-map-my-location-button[aria-pressed="true"]:hover {
+  background: #1558b0;
+}

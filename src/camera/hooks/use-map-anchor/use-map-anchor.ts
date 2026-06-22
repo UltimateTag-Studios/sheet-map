@@ -6,6 +6,7 @@ import {
   reduceMapAnchor,
 } from "../../anchor";
 import type { MapPosition } from "../../shared/map-position";
+import { repositionCamera as applyRepositionCamera } from "../../shared/reposition-camera";
 import { useBootFlyCoordinator } from "./boot-coordinator";
 import { useMapInstanceRelease } from "./instance-release";
 import { useMapAnchorListeners } from "./listeners";
@@ -130,6 +131,22 @@ export function useMapAnchor({
     [dispatchAnchor],
   );
 
+  const repositionCamera = useCallback(
+    (position: MapPosition): boolean => {
+      if (!mapRef) {
+        return false;
+      }
+
+      return applyRepositionCamera(
+        mapRef,
+        position,
+        stateRef.current.anchor,
+        setAnchor,
+      );
+    },
+    [mapRef, setAnchor],
+  );
+
   return {
     anchor: state.anchor,
     session: state.session,
@@ -140,5 +157,6 @@ export function useMapAnchor({
     mapPaddingReady: padding.mapPaddingReady,
     setAnchor,
     navigateTo,
+    repositionCamera,
   };
 }

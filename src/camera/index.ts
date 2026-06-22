@@ -32,6 +32,7 @@ export type {
 export { useMapAnchor } from "./hooks/use-map-anchor";
 export type {
   MapUserLocationCoords,
+  RecenterOnUserOptions,
   UseMapFollowUserOptions,
 } from "./hooks/use-map-follow-user";
 export { useMapFollowUser } from "./hooks/use-map-follow-user";

@@ -40,7 +40,7 @@ describe("repositionCamera", () => {
     expect(map.flyTo).not.toHaveBeenCalled();
   });
 
-  it("returns false when the map style is not loaded", () => {
+  it("jumps when the map style is still loading tiles", () => {
     const { mapRef, map } = createMapRefMock(false);
     const setAnchor = vi.fn();
 
@@ -51,8 +51,8 @@ describe("repositionCamera", () => {
       setAnchor,
     );
 
-    expect(applied).toBe(false);
-    expect(setAnchor).not.toHaveBeenCalled();
-    expect(map.jumpTo).not.toHaveBeenCalled();
+    expect(applied).toBe(true);
+    expect(setAnchor).toHaveBeenCalled();
+    expect(map.jumpTo).toHaveBeenCalled();
   });
 });
