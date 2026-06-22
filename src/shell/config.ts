@@ -37,6 +37,7 @@ export type MapShellConfig = {
   trackingReleaseThresholdPx?: number;
   debug?: boolean;
   myLocationAriaLabel?: string;
+  closeSheetAriaLabel?: string;
 };
 
 export type MapUserLocationCoords = {
@@ -62,6 +63,7 @@ export type MapShellSlots = {
     tracking: boolean,
     ariaLabel: string,
   ) => ReactNode;
+  renderCloseButton?: (onPress: () => void, ariaLabel: string) => ReactNode;
   renderUserLocation?: (
     tracking: boolean,
     accuracyMeters?: number,
@@ -79,6 +81,7 @@ export const defaultMapShellConfig: Required<
     | "smoothFlyDurationMs"
     | "trackingReleaseThresholdPx"
     | "myLocationAriaLabel"
+    | "closeSheetAriaLabel"
     | "halfSnapFraction"
   >
 > = {
@@ -86,5 +89,6 @@ export const defaultMapShellConfig: Required<
   smoothFlyDurationMs: 600,
   trackingReleaseThresholdPx: 40,
   myLocationAriaLabel: "Focus my location",
+  closeSheetAriaLabel: "Close sheet",
   halfSnapFraction: DEFAULT_HALF_SNAP_FRACTION,
 };

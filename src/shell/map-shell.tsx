@@ -12,6 +12,7 @@ import {
   resolveRouteBody,
   resolveRouteHeader,
   resolveRouteOverlay,
+  resolveRouteTopRightChrome,
 } from "./resolve-route-chrome";
 
 export type MapShellProps = {
@@ -43,6 +44,7 @@ export function MapShell({
     viewport,
     selectItem,
     recenterOnUser,
+    closeSheet,
     userTracking,
     config,
     tracking,
@@ -88,6 +90,11 @@ export function MapShell({
   const header = resolveRouteHeader(routeContent, slots);
   const defaultBody = <div className="sheet-map-sheet-body-placeholder" />;
   const body = resolveRouteBody(routeContent, slots, defaultBody);
+  const topRightChrome = resolveRouteTopRightChrome(routeContent, slots, {
+    sheetSnap,
+    closeSheet,
+    closeAriaLabel: config.closeSheetAriaLabel,
+  });
 
   return (
     <MapScreenErrorBoundary>
@@ -105,6 +112,7 @@ export function MapShell({
         header={header}
         body={body}
         overlay={overlay ?? undefined}
+        topRightChrome={topRightChrome}
         onMarkerPress={handleMarkerPress}
         extraInteractiveLayerIds={routeContent?.extraInteractiveLayerIds}
         onLayerFeaturePress={

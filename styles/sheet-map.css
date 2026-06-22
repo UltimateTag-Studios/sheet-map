@@ -91,6 +91,33 @@
   left: 0.75rem;
 }
 
+.sheet-map-overlay-slot--top-right {
+  pointer-events: auto;
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.sheet-map-close-sheet-button {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  padding: 0.25rem;
+  color: #fff;
+}
+
+.sheet-map-close-sheet-button:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sheet-map-close-sheet-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
 .sheet-map-my-location-button {
   pointer-events: auto;
   display: flex;

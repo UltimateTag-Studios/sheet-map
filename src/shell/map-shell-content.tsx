@@ -39,6 +39,7 @@ export type MapShellContentProps = {
   header: ReactNode;
   body: ReactNode;
   overlay?: ReactNode;
+  topRightChrome?: ReactNode;
   myLocationButton?: boolean;
   viewport: MapViewportSyncState;
   config?: MapShellConfig;
@@ -62,6 +63,7 @@ export function MapShellContent({
   header,
   body,
   overlay,
+  topRightChrome,
   myLocationButton = true,
   viewport,
   config = {},
@@ -104,6 +106,11 @@ export function MapShellContent({
 
       <MapVisibleAreaOverlay clientRect={viewport.clientRect}>
         {overlay}
+        {topRightChrome ? (
+          <div className="sheet-map-overlay-slot--top-right">
+            {topRightChrome}
+          </div>
+        ) : null}
         {myLocationButton && userLocation && mapPaddingReady
           ? (slots.renderMyLocationButton?.(
               recenterOnUser,

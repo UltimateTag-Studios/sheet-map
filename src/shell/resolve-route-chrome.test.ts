@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { MapRouteContent } from "./map-route-context";
 import {
   resolveRouteHeader,
   resolveRouteOverlay,
+  resolveRouteTopRightChrome,
 } from "./resolve-route-chrome";
 
 describe("resolveRouteChrome", () => {
@@ -47,5 +48,51 @@ describe("resolveRouteChrome", () => {
     );
 
     expect(overlay).toBe("route-overlay");
+  });
+
+  it("shows default close button when the sheet is open", () => {
+    const node = resolveRouteTopRightChrome(
+      null,
+      {},
+      {
+        sheetSnap: "half",
+        closeSheet: vi.fn(),
+        closeAriaLabel: "Close sheet",
+      },
+    );
+
+    expect(node).toBeTruthy();
+  });
+
+  it("shows collapsedTopRight when the sheet is collapsed", () => {
+    const node = resolveRouteTopRightChrome(
+      { collapsedTopRight: "back" },
+      {},
+      {
+        sheetSnap: "collapsed",
+        closeSheet: vi.fn(),
+        closeAriaLabel: "Close sheet",
+      },
+    );
+
+    expect(node).toBe("back");
+  });
+
+  it("prefers route renderCloseButton over default close", () => {
+    const node = resolveRouteTopRightChrome(
+      {
+        slots: {
+          renderCloseButton: () => "custom-close",
+        },
+      },
+      {},
+      {
+        sheetSnap: "full",
+        closeSheet: vi.fn(),
+        closeAriaLabel: "Close sheet",
+      },
+    );
+
+    expect(node).toBe("custom-close");
   });
 });

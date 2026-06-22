@@ -1,8 +1,14 @@
-import type { ReactNode } from "react";
+import type { SheetSnap } from "@siegetag/sheet";
+import { createElement, type ReactNode } from "react";
 
 import type { MapSheetHeaderProps, MapShellSlots } from "./config";
 import { DefaultMapSheetHeader } from "./default-map-sheet-header";
+import { MapCloseSheetButton } from "./map-close-sheet-button";
 import type { MapRouteContent } from "./map-route-context";
+
+function isSheetOpen(snap: SheetSnap): boolean {
+  return snap !== "collapsed";
+}
 
 export function resolveRouteHeader(
   routeContent: MapRouteContent | null,
@@ -51,6 +57,31 @@ export function resolveRouteOverlay(
   }
 
   return layoutSlots.renderOverlay?.(overlayContext) ?? null;
+}
+
+export function resolveRouteTopRightChrome(
+  routeContent: MapRouteContent | null,
+  layoutSlots: MapShellSlots,
+  args: {
+    sheetSnap: SheetSnap;
+    closeSheet: () => void;
+    closeAriaLabel: string;
+  },
+): ReactNode | null {
+  if (isSheetOpen(args.sheetSnap)) {
+    const renderClose =
+      routeContent?.slots?.renderCloseButton ?? layoutSlots.renderCloseButton;
+
+    return (
+      renderClose?.(args.closeSheet, args.closeAriaLabel) ??
+      createElement(MapCloseSheetButton, {
+        ariaLabel: args.closeAriaLabel,
+        onPress: args.closeSheet,
+      })
+    );
+  }
+
+  return routeContent?.collapsedTopRight ?? null;
 }
 
 export type { MapSheetHeaderProps };

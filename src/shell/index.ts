@@ -11,6 +11,10 @@ export type {
 export { defaultMapShellConfig } from "./config";
 export { DefaultMapSheetHeader } from "./default-map-sheet-header";
 export {
+  MapCloseSheetButton,
+  type MapCloseSheetButtonProps,
+} from "./map-close-sheet-button";
+export {
   MAP_SHELL_CLASS,
   MAP_VIEWPORT_CLASS,
   MapFrame,
@@ -46,6 +50,7 @@ export {
   resolveRouteBody,
   resolveRouteHeader,
   resolveRouteOverlay,
+  resolveRouteTopRightChrome,
 } from "./resolve-route-chrome";
 export type { MapBottomChromeReserve } from "./types";
 export type { MapItemLocation, UseMapShellOptions } from "./use-map-shell";
