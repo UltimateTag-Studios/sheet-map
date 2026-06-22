@@ -77,37 +77,24 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 ---
 
-## Part 5C — Boot fly (`tryBootFly` + minimal `useMapFollowUser`) (current)
+## Part 5C — Boot fly (sliced — see dedicated doc)
 
-**Goal:** One smooth boot fly per map after padding is ready. **No gesture snap-back or GPS tick yet.**
+**Status:** Replanned. Previous monolithic attempt reverted; demo restored to phase 4 `useMapAnchor`.
 
-| Module | Notes |
-| ------ | ----- |
-| `try-boot-fly.ts` | Pure gate: `mapPaddingReady && styleLoaded && userLocation && !hasBootFlownForMapInstance` → `navigateTo` once |
-| `use-map-follow-user.ts` | Composes `useMapAnchor`; `startFollowUser` when coords arrive; calls `tryBootFly` |
-| Wire `applyMapPadding` | Pass `followUser` + `followTarget` from hook when following |
+**5A / 5B do not affect the demo** (reducer + exported helpers only; no `useMapAnchor` changes). What broke was uncommitted 5C wiring only.
 
-**Invariants:**
+**Step through slices here:** [`phase-5c-slices.md`](phase-5c-slices.md)
 
-- Boot runs **only** from `tryBootFly` — never from `syncMapPaddingFromCanvas` or `applyMapPadding`
-- Mark boot on **issue** of boot `navigateTo` (WeakMap + `bootFlown` reducer event)
-- `onMapInstanceReleased` → `resetBoot` + clear WeakMap (already in 5B)
-- **No boot when `userLocation` is null** (permission denied or still loading)
+Summary:
 
-**Demo:**
+| Slice | Demo? | Manual verify? |
+| ----- | ----- | -------------- |
+| 5C-1 Boot config inside `useMapAnchor` | No | No (tests only) |
+| 5C-2 `useMapFollowUser` wrapper | No | No (tests only) |
+| 5C-3 `MapUserLocation` + geolocation hook | Dot only; camera still `useMapAnchor` | Padding + overlay must still work |
+| 5C-4 Swap demo to `useMapFollowUser` | Yes | Full boot + padding checklist |
 
-- Port `useDemoUserLocation` to `hooks/` — **no fallback** on deny (see User location contract)
-- Swap `/sheet` to `useMapFollowUser` + location hook (keep manual fly button optional for debug)
-- Load with permission granted: padding → boot fly → `hasBootFlown` true
-- Load with permission denied: map works, no boot fly
-
-**You verify:**
-
-- [ ] Grant location: refresh ×5 → exactly one boot fly per map instance
-- [ ] Deny location: no boot fly; no crash
-- [ ] Strict Mode / remount: boot runs again on fresh map (latch cleared)
-- [ ] No stack overflow (boot not triggered from padding path)
-- [ ] `use-map-follow-user.test.ts` (boot-once cases) passes
+Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 ---
 
@@ -167,8 +154,8 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 ```
 5A reduceMapFollow ✅
- └─► 5B repositionCamera + boot latches
-      └─► 5C tryBootFly + useMapFollowUser (boot)
+ └─► 5B repositionCamera + boot latches ✅
+      └─► 5C boot fly — see phase-5c-slices.md (5C-1 … 5C-4)
            └─► 5D gesture settle + threshold
                 └─► 5E GPS + UI + bump
 ```
