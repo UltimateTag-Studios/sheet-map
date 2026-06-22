@@ -25,7 +25,7 @@ export type TryBootFlyInput = {
   mapPaddingReady: boolean;
   navigateTo: (
     position: MapPosition,
-    options?: { duration?: number },
+    options?: { duration?: number; keepFollowing?: boolean },
   ) => boolean;
   smoothFlyDurationMs: number;
   bootDurationMs?: number;

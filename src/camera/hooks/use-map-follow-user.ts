@@ -257,8 +257,6 @@ export function useMapFollowUser({
     followState.followUser,
     followState.hasBootFlown,
     hasUserLocation,
-    userLocationLat,
-    userLocationLng,
     mapRef,
     session,
     mapPaddingDebug,

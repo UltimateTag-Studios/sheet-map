@@ -114,7 +114,6 @@ describe("tryBootFly", () => {
       mapRef,
       enabled: true,
       mapPaddingReady: false,
-      session: "idle",
       navigateTo,
       smoothFlyDurationMs: 600,
     });
