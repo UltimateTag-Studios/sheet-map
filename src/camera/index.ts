@@ -53,6 +53,7 @@ export type {
   SyncMapPaddingFromCanvasResult,
 } from "./sync-map-padding-from-canvas";
 export { syncMapPaddingFromCanvas } from "./sync-map-padding-from-canvas";
+export type { MapAnchorBootConfig } from "./try-boot-fly";
 export type {
   NavigateToMapAnchorOptions,
   UseMapAnchorOptions,

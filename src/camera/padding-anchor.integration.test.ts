@@ -1,84 +1,12 @@
 import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { MapRef } from "react-map-gl/mapbox";
 import { describe, expect, it, vi } from "vitest";
 
 import type { SheetMotionPhase } from "../viewport";
 import { mockCanvas, stubViewport } from "../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../viewport/testing/mount-sheet-host-fixture";
+import { createTestMapRef } from "./testing/create-test-map-ref";
 import { useMapAnchor } from "./use-map-anchor";
-
-type MapEventHandler = (event?: { originalEvent?: Event }) => void;
-
-function createCombinedMapMock(
-  canvas: HTMLCanvasElement,
-  options: {
-    isMoving?: boolean;
-    center?: { lat: number; lng: number };
-    zoom?: number;
-  } = {},
-) {
-  const handlers = new Map<string, Set<MapEventHandler>>();
-  let isMoving = options.isMoving ?? false;
-  let center = options.center ?? { lat: 10, lng: 20 };
-  let zoom = options.zoom ?? 14;
-  let padding = { top: 0, left: 0, right: 0, bottom: 0 };
-
-  const map = {
-    isStyleLoaded: () => true,
-    isMoving: () => isMoving,
-    getCenter: () => center,
-    getZoom: () => zoom,
-    getPadding: () => padding,
-    getCanvas: () => canvas,
-    setPadding: vi.fn((next: typeof padding) => {
-      padding = next;
-      for (const handler of handlers.get("moveend") ?? []) {
-        handler();
-      }
-    }),
-    flyTo: vi.fn(),
-    jumpTo: vi.fn(),
-    stop: vi.fn(() => {
-      isMoving = false;
-    }),
-    on(event: string, handler: MapEventHandler) {
-      const set = handlers.get(event) ?? new Set();
-      set.add(handler);
-      handlers.set(event, set);
-    },
-    off(event: string, handler: MapEventHandler) {
-      handlers.get(event)?.delete(handler);
-    },
-    once(event: string, handler: MapEventHandler) {
-      const wrapper: MapEventHandler = (payload) => {
-        map.off(event, wrapper);
-        handler(payload);
-      };
-      map.on(event, wrapper);
-    },
-    emit(event: string, payload?: { originalEvent?: Event }) {
-      for (const handler of handlers.get(event) ?? []) {
-        handler(payload);
-      }
-    },
-    setMoving(next: boolean) {
-      isMoving = next;
-    },
-    setCenter(next: { lat: number; lng: number }) {
-      center = next;
-    },
-    setZoom(next: number) {
-      zoom = next;
-    },
-  };
-
-  const mapRef = {
-    getMap: () => map,
-  } as unknown as MapRef;
-
-  return { mapRef, map };
-}
 
 type HarnessSnapshot = {
   mapPadding: ReturnType<typeof useMapAnchor>["mapPadding"];
@@ -101,7 +29,10 @@ function mountPaddingAnchorHarness(initialObscuredBottomPx = 152) {
     },
   );
 
-  const combined = createCombinedMapMock(fixture.canvas);
+  const combined = createTestMapRef({
+    canvas: fixture.canvas,
+    initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
+  });
   const container = document.createElement("div");
   const root: Root = createRoot(container);
   let latest: HarnessSnapshot | null = null;

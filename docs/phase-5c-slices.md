@@ -1,6 +1,6 @@
 # Phase 5C — boot fly (sliced plan)
 
-**Status:** Not started (replan after failed monolithic 5C attempt).
+**Status:** 5C-1 complete (boot gate in `useMapAnchor`). Next: 5C-2 `useMapFollowUser`.
 
 Parent doc: [`phase-5-parts.md`](phase-5-parts.md). Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot).
 
@@ -73,10 +73,11 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 
 **Automated verify:**
 
-- [ ] `use-map-anchor.test.ts` — existing padding/session tests still pass
-- [ ] New tests: boot flies once when `boot.enabled` + padding ready; skips when latch set; skips when `getTarget()` null
-- [ ] `padding-anchor.integration.test.ts` unchanged behavior
-- [ ] `pnpm --filter @siegetag/sheet-map test` exits 0
+- [x] `use-map-anchor.test.ts` — existing padding/session tests still pass
+- [x] New tests: boot flies once when `boot.enabled` + padding ready; skips when latch set; skips when `getTarget()` null
+- [x] Hardening: delayed style load, async `getTarget`, no double-boot, remount latch reset
+- [x] `padding-anchor.integration.test.ts` unchanged behavior
+- [x] `pnpm --filter @siegetag/sheet-map test` exits 0
 
 **Manual verify:** none (demo still `useMapAnchor` without `boot`).
 

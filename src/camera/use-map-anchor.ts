@@ -22,7 +22,13 @@ import {
   drainPaddingSyncMoveEnd,
 } from "./sync-map-padding";
 import { syncMapPaddingFromCanvas } from "./sync-map-padding-from-canvas";
+import {
+  type MapAnchorBootConfig,
+  tryBootFly as runTryBootFly,
+} from "./try-boot-fly";
 import { whenMapStyleReady } from "./when-map-style-ready";
+
+export type { MapAnchorBootConfig } from "./try-boot-fly";
 
 const mapListenerCleanupByMap = new WeakMap<
   ReturnType<MapRef["getMap"]>,
@@ -46,6 +52,10 @@ export type UseMapAnchorOptions = {
   mapPaddingDebug?: boolean;
   /** Sheet gesture phase from `useLiveSheetObscuredBottomPx` (or sheet `onLayoutFrameChange`). */
   sheetPhase?: SheetMotionPhase;
+  /** One-shot boot fly — runs after mapPaddingReady + style loaded (same hook, ordered). */
+  boot?: MapAnchorBootConfig | null;
+  /** Default fly duration when boot.durationMs is omitted. */
+  smoothFlyDurationMs?: number;
   onMapInstanceReleased?: () => void;
 };
 
@@ -60,9 +70,13 @@ export function useMapAnchor({
   fixedChromeInsets,
   mapPaddingDebug = false,
   sheetPhase = "idle",
+  boot = null,
+  smoothFlyDurationMs = 600,
   onMapInstanceReleased,
 }: UseMapAnchorOptions) {
   const mapPaddingFromCanvasEnabled = liveSheetObscuredBottomPx !== undefined;
+  const bootEnabled = boot?.enabled === true;
+  const bootTargetReady = bootEnabled && boot?.getTarget() != null;
 
   const [state, dispatch] = useReducer(
     reduceMapAnchor,
@@ -93,6 +107,10 @@ export function useMapAnchor({
   const navigateToRef = useRef<
     (position: MapPosition, options?: NavigateToMapAnchorOptions) => boolean
   >(() => false);
+  const bootRef = useRef(boot);
+  bootRef.current = boot;
+  const smoothFlyDurationMsRef = useRef(smoothFlyDurationMs);
+  smoothFlyDurationMsRef.current = smoothFlyDurationMs;
 
   const refreshMapPaddingFromCanvas = useCallback(
     (options: RefreshMapPaddingFromCanvasOptions = {}) => {
@@ -198,6 +216,24 @@ export function useMapAnchor({
   );
 
   navigateToRef.current = navigateTo;
+
+  useEffect(() => {
+    if (bootEnabled && !bootTargetReady) {
+      return;
+    }
+
+    runTryBootFly({
+      bootEnabled,
+      bootConfig: bootRef.current,
+      mapRef,
+      enabled,
+      mapPaddingReady,
+      session: stateRef.current.session,
+      navigateTo: (position, options) =>
+        navigateToRef.current(position, options),
+      smoothFlyDurationMs: smoothFlyDurationMsRef.current,
+    });
+  }, [bootEnabled, bootTargetReady, mapRef, enabled, mapPaddingReady]);
 
   useEffect(() => {
     if (!mapRef || !enabled || !mapPaddingFromCanvasEnabled) {

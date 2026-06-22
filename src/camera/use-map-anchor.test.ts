@@ -1,95 +1,32 @@
-import type { Map as MapboxMap } from "mapbox-gl";
 import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { MapRef } from "react-map-gl/mapbox";
 import { describe, expect, it, vi } from "vitest";
 
 import { mockCanvas, stubViewport } from "../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../viewport/testing/mount-sheet-host-fixture";
+import {
+  hasBootFlownForMapInstance,
+  markBootFlownForMapInstance,
+} from "./map-instance-camera-state";
+import type { MapPosition } from "./map-position";
 import { clearMapPaddingSyncState, syncMapPadding } from "./sync-map-padding";
+import {
+  asTestMapboxMap,
+  createTestMapRef,
+  type TestMapRefHarness,
+} from "./testing/create-test-map-ref";
+import type { MapAnchorBootConfig } from "./try-boot-fly";
 import { useMapAnchor } from "./use-map-anchor";
-
-type MapEventHandler = (event?: { originalEvent?: Event }) => void;
-
-function createMapRefWithEvents(
-  options: {
-    isMoving?: boolean;
-    center?: { lat: number; lng: number };
-    zoom?: number;
-    canvas?: HTMLCanvasElement;
-  } = {},
-) {
-  const handlers = new Map<string, Set<MapEventHandler>>();
-  let isMoving = options.isMoving ?? false;
-  let center = options.center ?? { lat: 10, lng: 20 };
-  let zoom = options.zoom ?? 14;
-  let padding = { top: 0, left: 0, right: 0, bottom: 152 };
-
-  const map = {
-    isStyleLoaded: () => true,
-    isMoving: () => isMoving,
-    getCenter: () => center,
-    getZoom: () => zoom,
-    getPadding: () => padding,
-    setPadding: vi.fn((next: typeof padding) => {
-      padding = next;
-      for (const handler of handlers.get("moveend") ?? []) {
-        handler();
-      }
-    }),
-    flyTo: vi.fn(),
-    jumpTo: vi.fn(),
-    stop: vi.fn(() => {
-      isMoving = false;
-    }),
-    getCanvas: () =>
-      options.canvas ??
-      ({ clientWidth: 400, clientHeight: 800 } as HTMLCanvasElement),
-    on(event: string, handler: MapEventHandler) {
-      const set = handlers.get(event) ?? new Set();
-      set.add(handler);
-      handlers.set(event, set);
-    },
-    off(event: string, handler: MapEventHandler) {
-      handlers.get(event)?.delete(handler);
-    },
-    once(event: string, handler: MapEventHandler) {
-      const wrapper: MapEventHandler = (payload) => {
-        map.off(event, wrapper);
-        handler(payload);
-      };
-      map.on(event, wrapper);
-    },
-    emit(event: string, payload?: { originalEvent?: Event }) {
-      for (const handler of handlers.get(event) ?? []) {
-        handler(payload);
-      }
-    },
-    setMoving(next: boolean) {
-      isMoving = next;
-    },
-    setCenter(next: { lat: number; lng: number }) {
-      center = next;
-    },
-    setZoom(next: number) {
-      zoom = next;
-    },
-  };
-
-  const mapRef = {
-    getMap: () => map,
-  } as unknown as MapRef;
-
-  return { mapRef, map };
-}
 
 type MapAnchorHookResult = ReturnType<typeof useMapAnchor>;
 
 function mountAnchorWithMapRef(
-  harness: ReturnType<typeof createMapRefWithEvents>,
+  harness: TestMapRefHarness,
   options: {
     liveSheetObscuredBottomPx?: number;
     sheetPhase?: "idle" | "dragging" | "settling";
+    boot?: MapAnchorBootConfig | null;
+    smoothFlyDurationMs?: number;
   } = {},
 ) {
   const { mapRef, map } = harness;
@@ -104,6 +41,8 @@ function mountAnchorWithMapRef(
           mapRef,
           liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
           sheetPhase: options.sheetPhase,
+          boot: options.boot,
+          smoothFlyDurationMs: options.smoothFlyDurationMs,
         });
         return null;
       }),
@@ -131,12 +70,23 @@ function mountAnchor(
   options: {
     liveSheetObscuredBottomPx?: number;
     sheetPhase?: "idle" | "dragging" | "settling";
+    styleLoaded?: boolean;
   } = {},
 ) {
-  return mountAnchorWithMapRef(createMapRefWithEvents(), options);
+  return mountAnchorWithMapRef(
+    createTestMapRef({ styleLoaded: options.styleLoaded }),
+    options,
+  );
 }
 
-function mountAnchorWithLiveSheetPadding(initialPx = 152) {
+function mountAnchorWithLiveSheetPadding(
+  initialPx = 152,
+  options: {
+    boot?: MapAnchorBootConfig | null;
+    smoothFlyDurationMs?: number;
+    styleLoaded?: boolean;
+  } = {},
+) {
   stubViewport();
   const fixture = mountSheetHostFixture(
     mockCanvas,
@@ -149,7 +99,11 @@ function mountAnchorWithLiveSheetPadding(initialPx = 152) {
     },
   );
 
-  const harness = createMapRefWithEvents({ canvas: fixture.canvas });
+  const harness = createTestMapRef({
+    canvas: fixture.canvas,
+    styleLoaded: options.styleLoaded,
+    initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
+  });
   const container = document.createElement("div");
   const root: Root = createRoot(container);
   const latestRef: { current: MapAnchorHookResult | null } = { current: null };
@@ -186,6 +140,8 @@ function mountAnchorWithLiveSheetPadding(initialPx = 152) {
           mapRef: harness.mapRef,
           liveSheetObscuredBottomPx,
           sheetPhase,
+          boot: options.boot,
+          smoothFlyDurationMs: options.smoothFlyDurationMs,
         });
         return null;
       }),
@@ -216,6 +172,70 @@ function mountAnchorWithLiveSheetPadding(initialPx = 152) {
   };
 }
 
+function mountAnchorWithDeferredBootTarget(initialPx = 152) {
+  stubViewport();
+  const fixture = mountSheetHostFixture(
+    mockCanvas,
+    {},
+    {
+      top: 800 - initialPx,
+      bottom: 800,
+      height: initialPx,
+      y: 800 - initialPx,
+    },
+  );
+
+  const harness = createTestMapRef({
+    canvas: fixture.canvas,
+    initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
+  });
+  const container = document.createElement("div");
+  const root: Root = createRoot(container);
+  const latestRef: { current: MapAnchorHookResult | null } = { current: null };
+  let setBootTarget: ((next: MapPosition | null) => void) | null = null;
+
+  act(() => {
+    root.render(
+      createElement(function Harness() {
+        const [bootTarget, setBootTargetState] = useState<MapPosition | null>(
+          null,
+        );
+        setBootTarget = setBootTargetState;
+        latestRef.current = useMapAnchor({
+          mapRef: harness.mapRef,
+          liveSheetObscuredBottomPx: initialPx,
+          boot: {
+            enabled: true,
+            getTarget: () => bootTarget,
+          },
+        });
+        return null;
+      }),
+    );
+  });
+
+  return {
+    ...harness,
+    get latest(): MapAnchorHookResult {
+      if (!latestRef.current) {
+        throw new Error("hook not mounted");
+      }
+      return latestRef.current;
+    },
+    setBootTarget(next: MapPosition | null) {
+      act(() => {
+        setBootTarget?.(next);
+      });
+    },
+    unmount() {
+      act(() => {
+        root.unmount();
+      });
+      fixture.remove();
+    },
+  };
+}
+
 describe("useMapAnchor", () => {
   it("boots anchor from the map center when enabled", () => {
     const harness = mountAnchor();
@@ -227,9 +247,7 @@ describe("useMapAnchor", () => {
   });
 
   it("skips moveend commits while the map is still moving", () => {
-    const harness = mountAnchorWithMapRef(
-      createMapRefWithEvents({ isMoving: true }),
-    );
+    const harness = mountAnchorWithMapRef(createTestMapRef({ isMoving: true }));
 
     act(() => {
       harness.map.emit("dragstart", {
@@ -246,7 +264,7 @@ describe("useMapAnchor", () => {
 
   it("commits after moveend when the map has settled", () => {
     const harness = mountAnchorWithMapRef(
-      createMapRefWithEvents({ isMoving: false }),
+      createTestMapRef({ isMoving: false }),
     );
 
     act(() => {
@@ -298,7 +316,7 @@ describe("useMapAnchor", () => {
     expect(harness.latest.session).toBe("userGesture");
 
     act(() => {
-      syncMapPadding(harness.map as unknown as MapboxMap, {
+      syncMapPadding(asTestMapboxMap(harness.map), {
         top: 0,
         left: 0,
         right: 0,
@@ -309,7 +327,7 @@ describe("useMapAnchor", () => {
     expect(harness.latest.session).toBe("userGesture");
     expect(harness.latest.anchor).toEqual({ lat: 10, lng: 20, zoom: 14 });
 
-    clearMapPaddingSyncState(harness.map as unknown as MapboxMap);
+    clearMapPaddingSyncState(asTestMapboxMap(harness.map));
     harness.unmount();
   });
 
@@ -334,9 +352,7 @@ describe("useMapAnchor", () => {
   });
 
   it("navigateTo stops inertial map motion before flying", () => {
-    const harness = mountAnchorWithMapRef(
-      createMapRefWithEvents({ isMoving: true }),
-    );
+    const harness = mountAnchorWithMapRef(createTestMapRef({ isMoving: true }));
 
     act(() => {
       harness.latest.navigateTo(
@@ -370,7 +386,7 @@ describe("useMapAnchor", () => {
 
   it("settles navigating session on moveend when at target", () => {
     const harness = mountAnchorWithMapRef(
-      createMapRefWithEvents({
+      createTestMapRef({
         center: { lat: 3, lng: 4 },
         zoom: 16,
       }),
@@ -394,9 +410,7 @@ describe("useMapAnchor", () => {
   });
 
   it("waits on navigating moveend while the map is still moving", () => {
-    const harness = mountAnchorWithMapRef(
-      createMapRefWithEvents({ isMoving: true }),
-    );
+    const harness = mountAnchorWithMapRef(createTestMapRef({ isMoving: true }));
 
     act(() => {
       harness.latest.navigateTo(
@@ -486,5 +500,181 @@ describe("useMapAnchor", () => {
     expect(harness.latest.navigationIntent).toBeNull();
 
     harness.unmount();
+  });
+
+  it("issues one boot fly after map padding is ready", () => {
+    const onIssued = vi.fn();
+    const target = { lat: 40, lng: -74, zoom: 12 };
+    const harness = mountAnchorWithLiveSheetPadding(152, {
+      boot: {
+        enabled: true,
+        getTarget: () => target,
+        onIssued,
+        durationMs: 500,
+      },
+    });
+
+    expect(harness.latest.mapPaddingReady).toBe(true);
+    expect(harness.latest.session).toBe("navigating");
+    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+    expect(harness.map.flyTo).toHaveBeenCalledWith({
+      center: [-74, 40],
+      zoom: 12,
+      padding: { top: 0, left: 0, right: 0, bottom: 152 },
+      duration: 500,
+    });
+    expect(onIssued).toHaveBeenCalledTimes(1);
+    expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(true);
+
+    harness.unmount();
+  });
+
+  it("skips boot fly when the latch is already set", () => {
+    const harness = createTestMapRef();
+    markBootFlownForMapInstance(asTestMapboxMap(harness.map));
+
+    const mounted = mountAnchorWithMapRef(harness, {
+      boot: {
+        enabled: true,
+        getTarget: () => ({ lat: 40, lng: -74, zoom: 12 }),
+      },
+    });
+
+    expect(mounted.map.flyTo).not.toHaveBeenCalled();
+    mounted.unmount();
+  });
+
+  it("skips boot fly when getTarget returns null", () => {
+    const harness = mountAnchorWithLiveSheetPadding(152, {
+      boot: {
+        enabled: true,
+        getTarget: () => null,
+      },
+    });
+
+    expect(harness.latest.mapPaddingReady).toBe(true);
+    expect(harness.map.flyTo).not.toHaveBeenCalled();
+    expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(
+      false,
+    );
+
+    harness.unmount();
+  });
+
+  describe("boot fly hardening", () => {
+    it("waits for map style load before boot fly", () => {
+      const target = { lat: 40, lng: -74, zoom: 12 };
+      const harness = mountAnchorWithLiveSheetPadding(152, {
+        styleLoaded: false,
+        boot: {
+          enabled: true,
+          getTarget: () => target,
+        },
+      });
+
+      expect(harness.latest.mapPaddingReady).toBe(false);
+      expect(harness.map.flyTo).not.toHaveBeenCalled();
+
+      act(() => {
+        harness.map.emitLoad();
+      });
+
+      expect(harness.latest.mapPaddingReady).toBe(true);
+      expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+      expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(
+        true,
+      );
+
+      harness.unmount();
+    });
+
+    it("boots when getTarget becomes available after padding is ready", () => {
+      const target = { lat: 40, lng: -74, zoom: 12 };
+      const harness = mountAnchorWithDeferredBootTarget(152);
+
+      expect(harness.latest.mapPaddingReady).toBe(true);
+      expect(harness.map.flyTo).not.toHaveBeenCalled();
+
+      act(() => {
+        harness.setBootTarget(target);
+      });
+
+      expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+      expect(harness.map.flyTo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          center: [target.lng, target.lat],
+          zoom: target.zoom,
+        }),
+      );
+      expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(
+        true,
+      );
+
+      harness.unmount();
+    });
+
+    it("does not boot fly twice on the same map instance", () => {
+      const target = { lat: 40, lng: -74, zoom: 12 };
+      const harness = mountAnchorWithLiveSheetPadding(152, {
+        boot: {
+          enabled: true,
+          getTarget: () => target,
+        },
+      });
+
+      expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        harness.setObscuredBottomPx(200);
+      });
+
+      expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+
+      harness.unmount();
+    });
+
+    it("can boot again after unmount releases the map instance latch", () => {
+      const target = { lat: 40, lng: -74, zoom: 12 };
+      const harness = createTestMapRef();
+      const boot = {
+        enabled: true,
+        getTarget: () => target,
+      };
+
+      const first = mountAnchorWithMapRef(harness, { boot });
+      expect(first.map.flyTo).toHaveBeenCalledTimes(1);
+      first.unmount();
+
+      const second = mountAnchorWithMapRef(harness, { boot });
+      expect(second.map.flyTo).toHaveBeenCalledTimes(2);
+
+      second.unmount();
+    });
+
+    it("navigateTo after boot does not re-issue boot fly", () => {
+      const target = { lat: 40, lng: -74, zoom: 12 };
+      const harness = mountAnchorWithLiveSheetPadding(152, {
+        boot: {
+          enabled: true,
+          getTarget: () => target,
+        },
+      });
+
+      vi.mocked(harness.map.flyTo).mockClear();
+
+      act(() => {
+        harness.latest.navigateTo(
+          { lat: 1, lng: 2, zoom: 10 },
+          { duration: 500 },
+        );
+      });
+
+      expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+      expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(
+        true,
+      );
+
+      harness.unmount();
+    });
   });
 });
