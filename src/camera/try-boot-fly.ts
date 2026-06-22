@@ -7,17 +7,21 @@ import {
 } from "./map-instance-camera-state";
 import type { MapPosition } from "./map-position";
 
-export type MapAnchorBootConfig = {
-  /** When true, issue one boot fly after padding and style are ready. */
-  enabled: boolean;
-  getTarget: () => MapPosition | null;
-  onIssued?: () => void;
-  durationMs?: number;
-};
+export type BootFlyBlockReason =
+  | "disabled"
+  | "no_target"
+  | "no_map"
+  | "padding_not_ready"
+  | "already_flown"
+  | "session_busy"
+  | "navigate_rejected";
+
+export type TryBootFlyResult =
+  | { issued: true }
+  | { issued: false; reason: BootFlyBlockReason };
 
 export type TryBootFlyInput = {
-  bootEnabled: boolean;
-  bootConfig: MapAnchorBootConfig | null | undefined;
+  bootTarget: MapPosition | null;
   mapRef: MapRef | null;
   enabled: boolean;
   mapPaddingReady: boolean;
@@ -27,49 +31,89 @@ export type TryBootFlyInput = {
     options?: { duration?: number },
   ) => boolean;
   smoothFlyDurationMs: number;
+  bootDurationMs?: number;
+  onBootIssued?: () => void;
+  debug?: boolean;
 };
 
-/** One-shot boot fly after map padding and style are ready. Returns true when issued. */
-export function tryBootFly(input: TryBootFlyInput): boolean {
+const silentBlockReasons = new Set<BootFlyBlockReason>([
+  "already_flown",
+  "no_target",
+  "padding_not_ready",
+]);
+
+function blocked(reason: BootFlyBlockReason, debug: boolean): TryBootFlyResult {
+  if (debug && !silentBlockReasons.has(reason)) {
+    console.info("[boot-fly] blocked", { reason });
+  }
+  return { issued: false, reason };
+}
+
+/** All gates required before boot — mapRef implies style ready (MapCanvas publishes on `onLoad`). */
+export function areBootFlyGatesReady(input: {
+  enabled: boolean;
+  mapRef: MapRef | null;
+  bootTarget: MapPosition | null;
+  mapPaddingReady: boolean;
+}): boolean {
+  return Boolean(
+    input.enabled && input.mapRef && input.bootTarget && input.mapPaddingReady,
+  );
+}
+
+/**
+ * One-shot boot fly when map, padding, and target are ready.
+ * Style is not gated here — `MapCanvas` only publishes `mapRef` after load.
+ */
+export function tryBootFly(input: TryBootFlyInput): TryBootFlyResult {
   const {
-    bootEnabled,
-    bootConfig,
+    bootTarget,
     mapRef,
     enabled,
     mapPaddingReady,
     session,
     navigateTo,
     smoothFlyDurationMs,
+    bootDurationMs,
+    onBootIssued,
+    debug = false,
   } = input;
 
-  if (!bootEnabled || !bootConfig?.enabled || !mapRef || !enabled) {
-    return false;
+  if (!enabled) {
+    return blocked("disabled", debug);
+  }
+  if (!bootTarget) {
+    return blocked("no_target", debug);
+  }
+  if (!mapRef) {
+    return blocked("no_map", debug);
   }
 
   const map = mapRef.getMap();
-  if (!map.isStyleLoaded() || !mapPaddingReady) {
-    return false;
-  }
+
   if (hasBootFlownForMapInstance(map)) {
-    return false;
+    return blocked("already_flown", debug);
+  }
+  if (!mapPaddingReady) {
+    return blocked("padding_not_ready", debug);
   }
   if (session !== "idle") {
-    return false;
+    return blocked("session_busy", debug);
   }
 
-  const target = bootConfig.getTarget();
-  if (!target) {
-    return false;
-  }
-
-  const applied = navigateTo(target, {
-    duration: bootConfig.durationMs ?? smoothFlyDurationMs,
+  const applied = navigateTo(bootTarget, {
+    duration: bootDurationMs ?? smoothFlyDurationMs,
   });
   if (!applied) {
-    return false;
+    return blocked("navigate_rejected", debug);
   }
 
   markBootFlownForMapInstance(map);
-  bootConfig.onIssued?.();
-  return true;
+  onBootIssued?.();
+
+  if (debug) {
+    console.info("[boot-fly] issued", { target: bootTarget });
+  }
+
+  return { issued: true };
 }

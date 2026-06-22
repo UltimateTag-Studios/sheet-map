@@ -1,4 +1,4 @@
-import { act, createElement, useState } from "react";
+import { act, createElement, StrictMode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 
@@ -29,17 +29,21 @@ function mountFollowUserWithMapRef(
 
   act(() => {
     root.render(
-      createElement(() => {
-        latestRef.current = useMapFollowUser({
-          mapRef: harness.mapRef,
-          userLocation: options.userLocation ?? null,
-          liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
-          followZoom: options.followZoom,
-          smoothFlyDurationMs: options.smoothFlyDurationMs,
-          onMapInstanceReleased: options.onMapInstanceReleased,
-        });
-        return null;
-      }),
+      createElement(
+        StrictMode,
+        null,
+        createElement(() => {
+          latestRef.current = useMapFollowUser({
+            mapRef: harness.mapRef,
+            userLocation: options.userLocation ?? null,
+            liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
+            followZoom: options.followZoom,
+            smoothFlyDurationMs: options.smoothFlyDurationMs,
+            onMapInstanceReleased: options.onMapInstanceReleased,
+          });
+          return null;
+        }),
+      ),
     );
   });
 
@@ -194,6 +198,77 @@ describe("useMapFollowUser", () => {
     harness.unmount();
   });
 
+  it("boots when padding becomes ready after userLocation is already set", () => {
+    stubViewport();
+    const fixture = mountSheetHostFixture(
+      mockCanvas,
+      {},
+      {
+        top: 800 - 152,
+        bottom: 800,
+        height: 152,
+        y: 800 - 152,
+      },
+    );
+
+    const harness = createTestMapRef({
+      canvas: fixture.canvas,
+      styleLoaded: false,
+      initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
+    });
+
+    const mounted = mountFollowUserWithMapRef(harness, {
+      userLocation,
+      liveSheetObscuredBottomPx: 152,
+    });
+
+    expect(mounted.latest.mapPaddingReady).toBe(false);
+    expect(mounted.map.flyTo).not.toHaveBeenCalled();
+
+    act(() => {
+      mounted.map.emitLoad();
+    });
+
+    expect(mounted.latest.mapPaddingReady).toBe(true);
+    expect(mounted.latest.hasBootFlown).toBe(true);
+    expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
+
+    mounted.unmount();
+    fixture.remove();
+  });
+
+  it("boots when padding becomes ready without map idle or moveend", () => {
+    stubViewport();
+    const fixture = mountSheetHostFixture(
+      mockCanvas,
+      {},
+      {
+        top: 800 - 152,
+        bottom: 800,
+        height: 152,
+        y: 800 - 152,
+      },
+    );
+
+    const harness = createTestMapRef({
+      canvas: fixture.canvas,
+      emitEventsOnSetPadding: false,
+      initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
+    });
+
+    const mounted = mountFollowUserWithMapRef(harness, {
+      userLocation,
+      liveSheetObscuredBottomPx: 152,
+    });
+
+    expect(mounted.latest.mapPaddingReady).toBe(true);
+    expect(mounted.latest.hasBootFlown).toBe(true);
+    expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
+
+    mounted.unmount();
+    fixture.remove();
+  });
+
   it("does not boot when userLocation stays null", () => {
     const harness = mountFollowUserWithLiveSheetPadding(null);
 
@@ -223,5 +298,66 @@ describe("useMapFollowUser", () => {
     expect(second.latest.hasBootFlown).toBe(true);
 
     second.unmount();
+  });
+
+  it("does not re-issue boot when userLocation coordinates update", () => {
+    stubViewport();
+    const fixture = mountSheetHostFixture(
+      mockCanvas,
+      {},
+      {
+        top: 800 - 152,
+        bottom: 800,
+        height: 152,
+        y: 800 - 152,
+      },
+    );
+
+    const harness = createTestMapRef({
+      canvas: fixture.canvas,
+      initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
+    });
+
+    const container = document.createElement("div");
+    const root: Root = createRoot(container);
+    const latestRef: { current: FollowHookResult | null } = { current: null };
+    let setCoords: ((next: MapUserLocationCoords) => void) | null = null;
+
+    act(() => {
+      root.render(
+        createElement(
+          StrictMode,
+          null,
+          createElement(function Harness() {
+            const [coords, setCoordsState] =
+              useState<MapUserLocationCoords>(userLocation);
+            setCoords = setCoordsState;
+            latestRef.current = useMapFollowUser({
+              mapRef: harness.mapRef,
+              userLocation: coords,
+              liveSheetObscuredBottomPx: 152,
+            });
+            return null;
+          }),
+        ),
+      );
+    });
+
+    expect(latestRef.current?.hasBootFlown).toBe(true);
+    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      setCoords?.({
+        lat: userLocation.lat + 0.001,
+        lng: userLocation.lng + 0.001,
+      });
+    });
+
+    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      root.unmount();
+    });
+    fixture.remove();
   });
 });

@@ -17,6 +17,8 @@ export type CreateTestMapRefOptions = {
   /** When false, call `emitLoad` to flip style ready (default true). */
   styleLoaded?: boolean;
   initialPadding?: MapPadding;
+  /** When false, `setPadding` does not emit map events (default true). */
+  emitEventsOnSetPadding?: boolean;
 };
 
 type MapEventHandler = (event?: { originalEvent?: Event }) => void;
@@ -67,6 +69,7 @@ export function createTestMapRef(
     right: 0,
     bottom: 152,
   };
+  const emitEventsOnSetPadding = options.emitEventsOnSetPadding ?? true;
 
   const map: TestMapInstance = {
     isStyleLoaded: () => styleLoaded,
@@ -76,6 +79,9 @@ export function createTestMapRef(
     getPadding: () => padding,
     setPadding: vi.fn((next: MapPadding) => {
       padding = next;
+      if (!emitEventsOnSetPadding) {
+        return;
+      }
       for (const handler of handlers.get("moveend") ?? []) {
         handler();
       }

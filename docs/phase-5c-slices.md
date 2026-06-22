@@ -1,6 +1,6 @@
 # Phase 5C — boot fly (sliced plan)
 
-**Status:** 5C-3 complete (location dot + demo geolocation). Next: monolith cleanup, then 5C-4 demo swap.
+**Status:** Monolith cleanup done. 5C-4 demo wired to `useMapFollowUser` — **manual verify pending** before bumping `SHEET_MAP_PHASE_5_PART` to 4.
 
 Parent doc: [`phase-5-parts.md`](phase-5-parts.md). Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot).
 
@@ -105,11 +105,25 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 
 ---
 
-## Monolith cleanup (`useMapAnchor` split)
+## Monolith cleanup (`useMapAnchor` split) — done
 
-**When:** After **5C-3**, before **5C-4** (demo swap to `useMapFollowUser`).
+Split `camera/use-map-anchor.ts` (~420 lines) into effect-sized modules under `camera/use-map-anchor/`:
 
-5C-2 adds a thin wrapper only; 5C-3 adds dot + app geolocation hook. Split effect-sized modules once library surface for 5C is complete, so 5C-4 wires into a smaller anchor hook and manual verify is easier to reason about.
+| Module | Responsibility |
+| ------ | -------------- |
+| `types.ts` | Public option types |
+| `session-refs.ts` | Shared ref bundle for sub-hooks |
+| `use-map-padding-sync.ts` | Padding state + four sync effects |
+| `use-map-anchor-navigate.ts` | `navigateTo` |
+| `use-map-anchor-boot.ts` | Boot fly effect |
+| `use-map-anchor-listeners.ts` | drag/zoom/moveend + bootAnchor |
+| `use-map-anchor-sheet-settle.ts` | Sheet idle → settle navigating |
+| `use-map-instance-release.ts` | Map instance cleanup |
+| `use-map-anchor.ts` | Thin composer (~100 lines) |
+
+Also: shared test harness `camera/testing/mount-map-anchor-harness.ts`, `canvas/dot/index.ts` barrel.
+
+**Verify:** 91 tests green, typecheck + lint clean.
 
 ---
 
@@ -145,7 +159,7 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 | ------ | ------ |
 | Demo `/sheet` | `useMapFollowUser({ mapRef, userLocation, liveSheetObscuredBottomPx, sheetPhase, mapPaddingDebug })` |
 | Demo `/sheet` | Keep manual “Fly to demo point” button |
-| `src/index.ts` | `SHEET_MAP_PHASE_5_PART = 4` when done |
+| `src/index.ts` | `SHEET_MAP_PHASE_5_PART = 4` when manual verify passes |
 
 **Automated verify:**
 
@@ -185,6 +199,8 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 ### Known issues
 
 **5C-3 — padding race with early `MapUserLocation` mount (fixed):** Cached geolocation can return before `mapRef` is published and before the first `setPadding`. Mounting `MapUserLocation` inside `MapCanvas` adds style layers during that bootstrap window and intermittently left `mapPaddingReady` false (no debug overlay / no `setPadding` log). **Fix:** demo gates the dot on `mapPaddingReady`; `useMapAnchor` retries padding sync on `idle` + `resize` until ready.
+
+**5C-4 — boot fly (fixed):** Boot is one gate in `use-map-anchor-boot.ts`: `boot.getTarget()` (location) **and** `mapPaddingReady` (padding). Single `useEffect` — no padding callbacks, no idle/moveend listeners. Whichever gate flips last re-runs the effect and flies once (`tryBootFly` latch).
 
 ---
 

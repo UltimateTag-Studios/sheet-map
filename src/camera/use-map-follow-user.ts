@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import type { MapObscuredInsets, SheetMotionPhase } from "../viewport";
@@ -50,6 +50,9 @@ export function useMapFollowUser({
 
   const hasStartedFollowRef = useRef(false);
 
+  /** Boot uses the first GPS fix only — watchPosition updates must not retrigger boot. */
+  const [bootTarget, setBootTarget] = useState<MapPosition | null>(null);
+
   useEffect(() => {
     if (!hasUserLocation || hasStartedFollowRef.current) {
       return;
@@ -59,51 +62,34 @@ export function useMapFollowUser({
     followDispatch({ type: "startFollowUser" });
   }, [hasUserLocation]);
 
-  const buildUserPosition = useCallback(
-    (options: { includeZoom?: boolean } = {}): MapPosition | null => {
-      if (!hasUserLocation) {
-        return null;
-      }
+  useEffect(() => {
+    if (!hasUserLocation || bootTarget !== null) {
+      return;
+    }
 
-      const position: MapPosition = {
-        lat: userLocationLat,
-        lng: userLocationLng,
-      };
-
-      if (options.includeZoom) {
-        position.zoom = followZoom;
-      }
-
-      return position;
-    },
-    [hasUserLocation, userLocationLat, userLocationLng, followZoom],
-  );
+    setBootTarget({
+      lat: userLocationLat,
+      lng: userLocationLng,
+      zoom: followZoom,
+    });
+  }, [
+    hasUserLocation,
+    userLocationLat,
+    userLocationLng,
+    followZoom,
+    bootTarget,
+  ]);
 
   const onMapInstanceReleased = useCallback(() => {
     followDispatch({ type: "resetBoot" });
     hasStartedFollowRef.current = false;
+    setBootTarget(null);
     onMapInstanceReleasedOption?.();
   }, [onMapInstanceReleasedOption]);
 
-  const boot = useMemo(() => {
-    if (!followState.followUser || !hasUserLocation) {
-      return null;
-    }
-
-    return {
-      enabled: true as const,
-      getTarget: () => buildUserPosition({ includeZoom: true }),
-      onIssued: () => {
-        followDispatch({ type: "bootFlown" });
-      },
-      durationMs: smoothFlyDurationMs,
-    };
-  }, [
-    followState.followUser,
-    hasUserLocation,
-    buildUserPosition,
-    smoothFlyDurationMs,
-  ]);
+  const onBootIssued = useCallback(() => {
+    followDispatch({ type: "bootFlown" });
+  }, []);
 
   const anchor = useMapAnchor({
     mapRef,
@@ -113,7 +99,9 @@ export function useMapFollowUser({
     mapPaddingDebug,
     sheetPhase,
     smoothFlyDurationMs,
-    boot,
+    bootTarget,
+    bootDurationMs: smoothFlyDurationMs,
+    onBootIssued,
     onMapInstanceReleased,
   });
 

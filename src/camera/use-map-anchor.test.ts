@@ -1,5 +1,4 @@
-import { act, createElement, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { mockCanvas, stubViewport } from "../viewport/testing/fixtures";
@@ -8,233 +7,17 @@ import {
   hasBootFlownForMapInstance,
   markBootFlownForMapInstance,
 } from "./map-instance-camera-state";
-import type { MapPosition } from "./map-position";
 import { clearMapPaddingSyncState, syncMapPadding } from "./sync-map-padding";
 import {
   asTestMapboxMap,
   createTestMapRef,
-  type TestMapRefHarness,
 } from "./testing/create-test-map-ref";
-import type { MapAnchorBootConfig } from "./try-boot-fly";
-import { useMapAnchor } from "./use-map-anchor";
-
-type MapAnchorHookResult = ReturnType<typeof useMapAnchor>;
-
-function mountAnchorWithMapRef(
-  harness: TestMapRefHarness,
-  options: {
-    liveSheetObscuredBottomPx?: number;
-    sheetPhase?: "idle" | "dragging" | "settling";
-    boot?: MapAnchorBootConfig | null;
-    smoothFlyDurationMs?: number;
-  } = {},
-) {
-  const { mapRef, map } = harness;
-  const container = document.createElement("div");
-  const root: Root = createRoot(container);
-  const latestRef: { current: MapAnchorHookResult | null } = { current: null };
-
-  act(() => {
-    root.render(
-      createElement(() => {
-        latestRef.current = useMapAnchor({
-          mapRef,
-          liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
-          sheetPhase: options.sheetPhase,
-          boot: options.boot,
-          smoothFlyDurationMs: options.smoothFlyDurationMs,
-        });
-        return null;
-      }),
-    );
-  });
-
-  return {
-    mapRef,
-    map,
-    get latest(): MapAnchorHookResult {
-      if (!latestRef.current) {
-        throw new Error("hook not mounted");
-      }
-      return latestRef.current;
-    },
-    unmount() {
-      act(() => {
-        root.unmount();
-      });
-    },
-  };
-}
-
-function mountAnchor(
-  options: {
-    liveSheetObscuredBottomPx?: number;
-    sheetPhase?: "idle" | "dragging" | "settling";
-    styleLoaded?: boolean;
-  } = {},
-) {
-  return mountAnchorWithMapRef(
-    createTestMapRef({ styleLoaded: options.styleLoaded }),
-    options,
-  );
-}
-
-function mountAnchorWithLiveSheetPadding(
-  initialPx = 152,
-  options: {
-    boot?: MapAnchorBootConfig | null;
-    smoothFlyDurationMs?: number;
-    styleLoaded?: boolean;
-  } = {},
-) {
-  stubViewport();
-  const fixture = mountSheetHostFixture(
-    mockCanvas,
-    {},
-    {
-      top: 800 - initialPx,
-      bottom: 800,
-      height: initialPx,
-      y: 800 - initialPx,
-    },
-  );
-
-  const harness = createTestMapRef({
-    canvas: fixture.canvas,
-    styleLoaded: options.styleLoaded,
-    initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
-  });
-  const container = document.createElement("div");
-  const root: Root = createRoot(container);
-  const latestRef: { current: MapAnchorHookResult | null } = { current: null };
-  let setLivePx: ((next: number) => void) | null = null;
-  let setSheetPhase: ((next: "idle" | "dragging" | "settling") => void) | null =
-    null;
-
-  const updateSheetSlideRect = (obscuredBottomPx: number) => {
-    fixture.sheetSlide.getBoundingClientRect = () =>
-      ({
-        top: 800 - obscuredBottomPx,
-        bottom: 800,
-        left: 0,
-        right: 400,
-        width: 400,
-        height: obscuredBottomPx,
-        x: 0,
-        y: 800 - obscuredBottomPx,
-        toJSON: () => ({}),
-      }) as DOMRect;
-  };
-
-  act(() => {
-    root.render(
-      createElement(function Harness() {
-        const [liveSheetObscuredBottomPx, setLiveSheetObscuredBottomPx] =
-          useState(initialPx);
-        const [sheetPhase, setSheetPhaseState] = useState<
-          "idle" | "dragging" | "settling"
-        >("idle");
-        setLivePx = setLiveSheetObscuredBottomPx;
-        setSheetPhase = setSheetPhaseState;
-        latestRef.current = useMapAnchor({
-          mapRef: harness.mapRef,
-          liveSheetObscuredBottomPx,
-          sheetPhase,
-          boot: options.boot,
-          smoothFlyDurationMs: options.smoothFlyDurationMs,
-        });
-        return null;
-      }),
-    );
-  });
-
-  return {
-    ...harness,
-    get latest(): MapAnchorHookResult {
-      if (!latestRef.current) {
-        throw new Error("hook not mounted");
-      }
-      return latestRef.current;
-    },
-    setObscuredBottomPx(nextPx: number) {
-      updateSheetSlideRect(nextPx);
-      setLivePx?.(nextPx);
-    },
-    setSheetPhase(next: "idle" | "dragging" | "settling") {
-      setSheetPhase?.(next);
-    },
-    unmount() {
-      act(() => {
-        root.unmount();
-      });
-      fixture.remove();
-    },
-  };
-}
-
-function mountAnchorWithDeferredBootTarget(initialPx = 152) {
-  stubViewport();
-  const fixture = mountSheetHostFixture(
-    mockCanvas,
-    {},
-    {
-      top: 800 - initialPx,
-      bottom: 800,
-      height: initialPx,
-      y: 800 - initialPx,
-    },
-  );
-
-  const harness = createTestMapRef({
-    canvas: fixture.canvas,
-    initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
-  });
-  const container = document.createElement("div");
-  const root: Root = createRoot(container);
-  const latestRef: { current: MapAnchorHookResult | null } = { current: null };
-  let setBootTarget: ((next: MapPosition | null) => void) | null = null;
-
-  act(() => {
-    root.render(
-      createElement(function Harness() {
-        const [bootTarget, setBootTargetState] = useState<MapPosition | null>(
-          null,
-        );
-        setBootTarget = setBootTargetState;
-        latestRef.current = useMapAnchor({
-          mapRef: harness.mapRef,
-          liveSheetObscuredBottomPx: initialPx,
-          boot: {
-            enabled: true,
-            getTarget: () => bootTarget,
-          },
-        });
-        return null;
-      }),
-    );
-  });
-
-  return {
-    ...harness,
-    get latest(): MapAnchorHookResult {
-      if (!latestRef.current) {
-        throw new Error("hook not mounted");
-      }
-      return latestRef.current;
-    },
-    setBootTarget(next: MapPosition | null) {
-      act(() => {
-        setBootTarget?.(next);
-      });
-    },
-    unmount() {
-      act(() => {
-        root.unmount();
-      });
-      fixture.remove();
-    },
-  };
-}
+import {
+  mountAnchor,
+  mountAnchorWithDeferredBootTarget,
+  mountAnchorWithLiveSheetPadding,
+  mountAnchorWithMapRef,
+} from "./testing/mount-map-anchor-harness";
 
 describe("useMapAnchor", () => {
   it("boots anchor from the map center when enabled", () => {
@@ -503,15 +286,12 @@ describe("useMapAnchor", () => {
   });
 
   it("issues one boot fly after map padding is ready", () => {
-    const onIssued = vi.fn();
+    const onBootIssued = vi.fn();
     const target = { lat: 40, lng: -74, zoom: 12 };
     const harness = mountAnchorWithLiveSheetPadding(152, {
-      boot: {
-        enabled: true,
-        getTarget: () => target,
-        onIssued,
-        durationMs: 500,
-      },
+      bootTarget: target,
+      bootDurationMs: 500,
+      onBootIssued,
     });
 
     expect(harness.latest.mapPaddingReady).toBe(true);
@@ -523,7 +303,7 @@ describe("useMapAnchor", () => {
       padding: { top: 0, left: 0, right: 0, bottom: 152 },
       duration: 500,
     });
-    expect(onIssued).toHaveBeenCalledTimes(1);
+    expect(onBootIssued).toHaveBeenCalledTimes(1);
     expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(true);
 
     harness.unmount();
@@ -534,22 +314,16 @@ describe("useMapAnchor", () => {
     markBootFlownForMapInstance(asTestMapboxMap(harness.map));
 
     const mounted = mountAnchorWithMapRef(harness, {
-      boot: {
-        enabled: true,
-        getTarget: () => ({ lat: 40, lng: -74, zoom: 12 }),
-      },
+      bootTarget: { lat: 40, lng: -74, zoom: 12 },
     });
 
     expect(mounted.map.flyTo).not.toHaveBeenCalled();
     mounted.unmount();
   });
 
-  it("skips boot fly when getTarget returns null", () => {
+  it("skips boot fly when boot target is null", () => {
     const harness = mountAnchorWithLiveSheetPadding(152, {
-      boot: {
-        enabled: true,
-        getTarget: () => null,
-      },
+      bootTarget: null,
     });
 
     expect(harness.latest.mapPaddingReady).toBe(true);
@@ -566,10 +340,7 @@ describe("useMapAnchor", () => {
       const target = { lat: 40, lng: -74, zoom: 12 };
       const harness = mountAnchorWithLiveSheetPadding(152, {
         styleLoaded: false,
-        boot: {
-          enabled: true,
-          getTarget: () => target,
-        },
+        bootTarget: target,
       });
 
       expect(harness.latest.mapPaddingReady).toBe(false);
@@ -588,7 +359,7 @@ describe("useMapAnchor", () => {
       harness.unmount();
     });
 
-    it("boots when getTarget becomes available after padding is ready", () => {
+    it("boots when boot target becomes available after padding is ready", () => {
       const target = { lat: 40, lng: -74, zoom: 12 };
       const harness = mountAnchorWithDeferredBootTarget(152);
 
@@ -616,10 +387,7 @@ describe("useMapAnchor", () => {
     it("does not boot fly twice on the same map instance", () => {
       const target = { lat: 40, lng: -74, zoom: 12 };
       const harness = mountAnchorWithLiveSheetPadding(152, {
-        boot: {
-          enabled: true,
-          getTarget: () => target,
-        },
+        bootTarget: target,
       });
 
       expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
@@ -633,19 +401,58 @@ describe("useMapAnchor", () => {
       harness.unmount();
     });
 
-    it("can boot again after unmount releases the map instance latch", () => {
-      const target = { lat: 40, lng: -74, zoom: 12 };
-      const harness = createTestMapRef();
-      const boot = {
-        enabled: true,
-        getTarget: () => target,
-      };
+    it("boots via padding sync when boot target was already set", () => {
+      stubViewport();
+      const initialPx = 152;
+      const fixture = mountSheetHostFixture(
+        mockCanvas,
+        {},
+        {
+          top: 800 - initialPx,
+          bottom: 800,
+          height: initialPx,
+          y: 800 - initialPx,
+        },
+      );
 
-      const first = mountAnchorWithMapRef(harness, { boot });
+      const harness = createTestMapRef({
+        canvas: fixture.canvas,
+        styleLoaded: false,
+        initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
+      });
+
+      const target = { lat: 40, lng: -74, zoom: 12 };
+      const mounted = mountAnchorWithMapRef(harness, {
+        bootTarget: target,
+        liveSheetObscuredBottomPx: initialPx,
+      });
+
+      expect(mounted.latest.mapPaddingReady).toBe(false);
+      expect(mounted.map.flyTo).not.toHaveBeenCalled();
+
+      act(() => {
+        mounted.map.emitLoad();
+      });
+
+      expect(mounted.latest.mapPaddingReady).toBe(true);
+      expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
+      expect(hasBootFlownForMapInstance(asTestMapboxMap(mounted.map))).toBe(
+        true,
+      );
+
+      mounted.unmount();
+      fixture.remove();
+    });
+
+    it("can boot again after unmount releases the map instance latch", () => {
+      const harness = createTestMapRef();
+      const bootTarget = { lat: 40, lng: -74, zoom: 12 };
+
+      const first = mountAnchorWithMapRef(harness, { bootTarget });
       expect(first.map.flyTo).toHaveBeenCalledTimes(1);
       first.unmount();
 
-      const second = mountAnchorWithMapRef(harness, { boot });
+      const second = mountAnchorWithMapRef(harness, { bootTarget });
       expect(second.map.flyTo).toHaveBeenCalledTimes(2);
 
       second.unmount();
@@ -654,10 +461,7 @@ describe("useMapAnchor", () => {
     it("navigateTo after boot does not re-issue boot fly", () => {
       const target = { lat: 40, lng: -74, zoom: 12 };
       const harness = mountAnchorWithLiveSheetPadding(152, {
-        boot: {
-          enabled: true,
-          getTarget: () => target,
-        },
+        bootTarget: target,
       });
 
       vi.mocked(harness.map.flyTo).mockClear();
