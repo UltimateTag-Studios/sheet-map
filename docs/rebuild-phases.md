@@ -221,6 +221,8 @@ Extend `/sheet` screens:
 
 ## Phase 5 — Follow user
 
+**Incremental guide:** [`phase-5-parts.md`](phase-5-parts.md) — verify each part before the next.
+
 **Goal:** Boot fly, GPS reposition, my-location button, 40px snap-back — full camera FSM.
 
 **Read first:** [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot), Rule 3 (gesture settle), §6.

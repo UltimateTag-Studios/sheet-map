@@ -42,4 +42,4 @@ Demo: “Fly to demo point” on `/sheet`.
 
 `applyMapPadding` realign rules; `padding-anchor.integration.test.ts`; `SHEET_MAP_REBUILD_PHASE = 4`.
 
-**Next:** Phase 5 — follow user, boot fly, GPS, snap-back ([`rebuild-phases.md`](rebuild-phases.md)).
+**Next:** Phase 5 — [`phase-5-parts.md`](phase-5-parts.md) (follow user, boot fly, GPS, snap-back).
