@@ -43,7 +43,7 @@ A gesture is **not** over when the finger lifts. It lasts until:
 1. Mapbox `moveend`, **and**
 2. `map.isMoving() === false` (no inertial coast)
 
-While coasting, session stays `userGesture`. Sheet padding during momentum = **`setPadding` only** — never `jumpTo` / `flyTo` (kills momentum).
+While coasting, session stays `userGesture`. Sheet padding during momentum = **`setPadding` only** from our code — never `jumpTo` / `flyTo` / `map.stop()`. **Accepted:** Mapbox `setPadding` when the sheet moves may still end pan inertia — see [§3.1](#31-accepted-sheet-drag-stops-pan-momentum).
 
 ---
 
@@ -143,7 +143,7 @@ After `setPadding`, **jump** to `navigationIntent.target` (duration 0 if sheet m
 | Event | Action |
 | ----- | ------ |
 | `move` while following | 40px threshold vs `centerOffset`; may `stopFollowingUser` |
-| Sheet / padding change | **`setPadding` only** — no camera jump |
+| Sheet / padding change | **`setPadding` only** — no `jumpTo` / `flyTo` / `map.stop()` from our code |
 | User pan during `navigating` | `userGestureStarted` → `userGesture`, clears nav intent |
 
 **Gesture settle** — single `moveend` dispatcher:
@@ -163,6 +163,18 @@ moveend
 **No deferred padding flush on momentum `moveend`.** That was the old snap bug.
 
 **No camera move on momentum end** except: snap-back fly at settle (≤40px, following), or anchor commit (not following).
+
+### 3.1 Accepted: sheet drag stops pan momentum
+
+When the user is **panning with inertia** (`userGesture`, `map.isMoving()`) and the **sheet moves** (drag or settle animation), live padding sync calls Mapbox `setPadding`. **Pan coasting will stop.** This is accepted product behavior — we do **not** defer, coalesce, or skip padding updates to preserve momentum.
+
+| Layer | Rule |
+| ----- | ---- |
+| **Our code** | `setPadding` only — no `jumpTo`, `flyTo`, or `map.stop()` on sheet-driven padding |
+| **Mapbox** | `setPadding` may interrupt pan inertia when padding changes mid-coast |
+| **Do not** | Defer padding until `moveend`, batch on momentum end, or alternate padding mechanism — those caused worse bugs or wrong geometry |
+
+**Implication for tests:** integration tests assert we do not call `jumpTo`/`flyTo` on sheet padding during `userGesture`; they do **not** require Mapbox to keep coasting alive.
 
 ---
 
@@ -188,8 +200,8 @@ After `syncMapPadding`, optionally realign camera:
 | ------- | ------ | ----------- | ------------------------- |
 | `idle` | off | yes | **none** (Mapbox keeps center stable) |
 | `idle` | on | yes | jump to user |
-| `userGesture` | off | yes | **none** (preserve momentum) |
-| `userGesture` | on | yes | **none** (snap-back at settle only) |
+| `userGesture` | off | yes | **no jumpTo/flyTo** from our code (`setPadding` only; coast may still end — §3.1) |
+| `userGesture` | on | yes | **no jumpTo/flyTo** from our code; snap-back at pan settle only |
 | `navigating` | * | yes | jump to `navigationIntent.target` |
 
 `applyPaddingBeforeNavigation` (inside `navigateTo`): always `realign: false`.
@@ -260,33 +272,25 @@ Both paths use the same live `.sheet-slide` read when DOM is ready. They can **t
 
 ## 5. Double setPadding: expected vs bug
 
-### Expected (two calls)
-
-On cold load you often see:
-
-```
-setPadding { bottom: 0 }      ← sheetObscuredBottomPx state still 0
-setPadding { bottom: 205 }    ← after layout / onSheetLayoutFrameChange
-```
-
-**Why:** `useLiveSheetObscuredBottomPx` initializes to `0`. First sync runs when style ready; second when DOM reports real obscured height.
-
-**This is OK** for padding. Mapbox updates padding twice; no boot should run between them unless `paddingReady` + boot gates already satisfied after first sync.
-
-### Optional tightening (product choice)
-
-| Policy | Behavior |
-| ------ | -------- |
-| **A (permissive)** | Boot after first `paddingReady`; second padding sync during boot fly is OK (`navigating` → jump to target). |
-| **B (strict)** | Boot only after `sheetObscuredBottomPx > 0` or snap heights measured — avoids fly with wrong padding. |
-
-Original plan: **no snap-height gate for padding**, but **boot** may use policy B if fly-with-zero-padding is visibly wrong.
-
 ### Bug (do not do)
 
+- **`setPadding { bottom: 0 }` on cold load** because React state initialized to `0` while `.sheet-slide` was already measurable — padding must **read live DOM at apply time** and **skip** when `readLiveSheetObscuredBottomPx` returns `null`.
 - Boot triggered from inside padding sync → infinite recursion.
 - Third+ `setPadding` with **same** values → should be no-op (`areMapPaddingOptionsEqual`).
 - Padding `moveend` triggering gesture settle or boot.
+
+### Expected (occasional second call)
+
+After the DOM-read fix, a second `setPadding` on refresh means the **live obscured height actually changed** (e.g. sheet layout caught up, snap height remeasured) — not stale React state. Dedup handles identical consecutive values.
+
+There is **no single “layout settled forever”** signal for padding. Padding is a **continuous stream** from live `.sheet-slide` geometry while the sheet moves; `sheetPhase === idle` gates **boot** (phase 5), not every padding tick.
+
+### Boot gating (phase 5 — separate from padding)
+
+| Policy | Behavior |
+| ------ | -------- |
+| **A (permissive)** | Boot after first `paddingReady` from live DOM |
+| **B (strict)** | Boot only after `sheetObscuredBottomPx > 0` or first sheet `idle` — avoids fly with wrong padding |
 
 ---
 
@@ -426,12 +430,12 @@ Full matrix in original plan; key rows:
 
 ## 11. Manual test checklist
 
-- [ ] **Load:** style ready → padding (may log twice: 0 then measured) → one boot fly → blue button
+- [ ] **Load:** style ready → padding from live DOM → one boot fly → blue button
 - [ ] **Refresh ×5:** same as load every time
 - [ ] **Debug overlay:** appears after map load + layout; absent before load is OK
 - [ ] **My-location:** smooth fly, no crash
-- [ ] **Pan + sheet during momentum (following):** padding tracks, momentum continues, snap-back fly only at settle if ≤40px
-- [ ] **Pan + sheet (not following):** padding only, no camera on lift
+- [ ] **Pan + sheet during momentum (following):** padding tracks live; **coast may stop when sheet moves** (accepted); snap-back fly only at pan settle if ≤40px
+- [ ] **Pan + sheet (not following):** padding tracks; coast may stop when sheet moves; no extra camera API on pan settle
 - [ ] **Pan >40px while following:** follow releases
 - [ ] **Boot / my-location + sheet drag:** instant jumps to target while navigating
 - [ ] **GPS while following:** instant jump, session stays idle

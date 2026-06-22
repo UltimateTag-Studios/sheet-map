@@ -168,6 +168,8 @@ Reference: `screens/reference/sheet-on-map-screen.tsx` (camera hooks come in pha
 
 ## Phase 4 — Padding + anchor (session FSM)
 
+**Incremental guide:** [`phase-4-parts.md`](phase-4-parts.md) — verify each part before the next.
+
 **Goal:** Live `setPadding`, anchor session FSM, programmatic `navigateTo` — **no follow-user yet**.
 
 **Read first:** [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rules 2–3, §7–8.
@@ -187,7 +189,8 @@ Reference: `screens/reference/sheet-on-map-screen.tsx` (camera hooks come in pha
 
 - `syncSheetPadding` and `navigateTo` are **acyclic** (never boot/padding loop).
 - Padding `moveend` → `consumePaddingSyncMoveEnd` only.
-- During `userGesture` (incl. momentum): `setPadding` only — no camera jump.
+- During `userGesture` (incl. momentum): **`setPadding` only** from our code — no `jumpTo` / `flyTo` / `map.stop()`.
+- **Accepted:** sheet-driven `setPadding` may stop pan coasting (Mapbox) — see [`camera-fsm-plan.md` §3.1](camera-fsm-plan.md#31-accepted-sheet-drag-stops-pan-momentum). No defer/coalesce to preserve momentum.
 
 ### Tests
 

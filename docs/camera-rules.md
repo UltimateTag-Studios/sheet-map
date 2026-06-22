@@ -41,7 +41,7 @@ A user gesture is **not** over when the finger lifts. It lasts until:
 
 While the map is coasting after a pan, session stays **`userGesture`**. Threshold checks, padding rules, and settle logic all apply to this whole period — not only finger-down dragging.
 
-**Implication:** sheet padding changes during pan + momentum must **not** call `jumpTo` / `flyTo`. Only `setPadding`. Camera jumps kill momentum.
+**Implication:** sheet padding during pan + momentum must **not** call `jumpTo` / `flyTo` / `map.stop()` from our code — only `setPadding`. **Accepted:** Mapbox `setPadding` when the sheet moves may end pan inertia anyway ([`camera-fsm-plan.md` §3.1](camera-fsm-plan.md#31-accepted-sheet-drag-stops-pan-momentum)).
 
 Recenter while following during a gesture happens at **gesture settle** (mandatory snap-back fly if within 40px), not on every sheet padding tick.
 
@@ -89,7 +89,7 @@ While **`navigating`** + sheet geometry changes: after `setPadding`, **jump** to
 | Event | Action |
 | ----- | ------ |
 | `move` while following | 40px threshold vs `centerOffset`; may `stopFollowingUser` |
-| Sheet / padding change | **`setPadding` only** — no `jumpTo`, no `flyTo`, no defer, no flush on `moveend` |
+| Sheet / padding change | **`setPadding` only** — no `jumpTo`, `flyTo`, or `map.stop()` from our code |
 | User starts new pan during `navigating` | `userGestureStarted` → session `userGesture`, clears nav intent |
 
 ### Gesture settle (`moveend` when `!map.isMoving()`)
@@ -118,8 +118,8 @@ The sheet package owns snap heights, drag phase, and `sheetObscuredBottomPx`. Th
 | ------- | ------ | ----------- | ------------------------- |
 | `idle` | off | yes | none (Mapbox keeps center stable) |
 | `idle` | on | yes | jump to user (`repositionCamera`-style jump) |
-| `userGesture` | off | yes | **none** — preserve momentum |
-| `userGesture` | on | yes | **none** — preserve momentum; snap-back at settle |
+| `userGesture` | off | yes | no jumpTo/flyTo from our code (`setPadding` only; coast may end — plan §3.1) |
+| `userGesture` | on | yes | no jumpTo/flyTo from our code; snap-back at pan settle |
 | `navigating` | * | yes | jump to `navigationIntent.target` |
 
 Entry point: [`apply-sheet-padding.ts`](../src/camera/apply-sheet-padding.ts).
@@ -201,8 +201,8 @@ Optional: `NavigationIntent.reason` (`boot` | `myLocation` | `snapBack` | `mapIt
 
 - [ ] Load: padding before fly, location button focused
 - [ ] My-location: smooth fly, no crash
-- [ ] Pan + sheet **during momentum** (following): padding tracks, **momentum continues**, no snap on lift except snap-back fly if ≤40px
-- [ ] Pan + sheet **during momentum** (not following): padding tracks, no camera jump on lift
+- [ ] Pan + sheet **during momentum** (following): padding tracks; **coast may stop when sheet moves** (accepted); snap-back fly at pan settle if ≤40px
+- [ ] Pan + sheet **during momentum** (not following): padding tracks; coast may stop when sheet moves; no extra camera API on pan settle
 - [ ] Pan >40px while following: follow releases
 - [ ] Boot / my-location + sheet drag: instant jumps to target
 - [ ] GPS while following: instant jump, not fly
