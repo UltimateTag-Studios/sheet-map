@@ -59,4 +59,9 @@ export type {
   UseMapAnchorOptions,
 } from "./use-map-anchor";
 export { useMapAnchor } from "./use-map-anchor";
+export type {
+  MapUserLocationCoords,
+  UseMapFollowUserOptions,
+} from "./use-map-follow-user";
+export { useMapFollowUser } from "./use-map-follow-user";
 export { whenMapStyleReady } from "./when-map-style-ready";

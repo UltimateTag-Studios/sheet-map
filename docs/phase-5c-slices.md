@@ -1,6 +1,6 @@
 # Phase 5C — boot fly (sliced plan)
 
-**Status:** 5C-1 complete (boot gate in `useMapAnchor`). Next: 5C-2 `useMapFollowUser`.
+**Status:** 5C-2 complete (`useMapFollowUser`). Next: 5C-3 location dot + demo geolocation hook.
 
 Parent doc: [`phase-5-parts.md`](phase-5-parts.md). Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot).
 
@@ -97,11 +97,19 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 
 **Automated verify:**
 
-- [ ] `use-map-follow-user.test.ts` — boot once; boot when location arrives async; no boot when `userLocation` null
-- [ ] `use-map-anchor.test.ts` still pass
-- [ ] Full package test suite green
+- [x] `use-map-follow-user.test.ts` — boot once; boot when location arrives async; no boot when `userLocation` null
+- [x] `use-map-anchor.test.ts` still pass
+- [x] Full package test suite green
 
 **Manual verify:** none.
+
+---
+
+## Monolith cleanup (`useMapAnchor` split)
+
+**When:** After **5C-3**, before **5C-4** (demo swap to `useMapFollowUser`).
+
+5C-2 adds a thin wrapper only; 5C-3 adds dot + app geolocation hook. Split effect-sized modules once library surface for 5C is complete, so 5C-4 wires into a smaller anchor hook and manual verify is easier to reason about.
 
 ---
 
