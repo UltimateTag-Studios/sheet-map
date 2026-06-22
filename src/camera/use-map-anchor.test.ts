@@ -94,6 +94,7 @@ describe("useMapAnchor", () => {
       harness.map.emit("dragstart", {
         originalEvent: new Event("pointerdown"),
       });
+      harness.map.setMoving(true);
     });
 
     expect(harness.latest.session).toBe("userGesture");
@@ -109,6 +110,30 @@ describe("useMapAnchor", () => {
 
     expect(harness.latest.session).toBe("userGesture");
     expect(harness.latest.anchor).toEqual({ lat: 10, lng: 20, zoom: 14 });
+
+    clearMapPaddingSyncState(asTestMapboxMap(harness.map));
+    harness.unmount();
+  });
+
+  it("boots during userGesture without waiting for gesture settle", () => {
+    const target = { lat: 40, lng: -74, zoom: 12 };
+    const harness = mountAnchorWithDeferredBootTarget(152);
+
+    act(() => {
+      harness.map.emit("dragstart", {
+        originalEvent: new Event("pointerdown"),
+      });
+      harness.map.setMoving(true);
+    });
+
+    act(() => {
+      harness.setBootTarget(target);
+    });
+
+    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+    expect(harness.map.stop).toHaveBeenCalledTimes(1);
+    expect(harness.latest.session).toBe("navigating");
+    expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(true);
 
     clearMapPaddingSyncState(asTestMapboxMap(harness.map));
     harness.unmount();
@@ -444,18 +469,18 @@ describe("useMapAnchor", () => {
       fixture.remove();
     });
 
-    it("can boot again after unmount releases the map instance latch", () => {
+    it("can boot again after unmount releases the map instance latch", async () => {
       const harness = createTestMapRef();
       const bootTarget = { lat: 40, lng: -74, zoom: 12 };
 
       const first = mountAnchorWithMapRef(harness, { bootTarget });
       expect(first.map.flyTo).toHaveBeenCalledTimes(1);
-      first.unmount();
+      await first.unmount();
 
       const second = mountAnchorWithMapRef(harness, { bootTarget });
       expect(second.map.flyTo).toHaveBeenCalledTimes(2);
 
-      second.unmount();
+      await second.unmount();
     });
 
     it("navigateTo after boot does not re-issue boot fly", () => {

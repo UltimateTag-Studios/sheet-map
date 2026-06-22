@@ -8,6 +8,7 @@ import {
   createTestMapRef,
   type TestMapRefHarness,
 } from "./testing/create-test-map-ref";
+import { flushDeferredMapInstanceRelease } from "./testing/flush-deferred-map-instance-release";
 import type { MapUserLocationCoords } from "./use-map-follow-user";
 import { useMapFollowUser } from "./use-map-follow-user";
 
@@ -55,10 +56,11 @@ function mountFollowUserWithMapRef(
       }
       return latestRef.current;
     },
-    unmount() {
+    async unmount() {
       act(() => {
         root.unmount();
       });
+      await flushDeferredMapInstanceRelease();
     },
   };
 }
@@ -280,7 +282,7 @@ describe("useMapFollowUser", () => {
     harness.unmount();
   });
 
-  it("can boot again after map instance release", () => {
+  it("can boot again after map instance release", async () => {
     const onMapInstanceReleased = vi.fn();
     const harness = createTestMapRef();
     const first = mountFollowUserWithMapRef(harness, {
@@ -290,14 +292,14 @@ describe("useMapFollowUser", () => {
 
     expect(first.latest.hasBootFlown).toBe(true);
     expect(first.map.flyTo).toHaveBeenCalledTimes(1);
-    first.unmount();
+    await first.unmount();
     expect(onMapInstanceReleased).toHaveBeenCalledTimes(1);
 
     const second = mountFollowUserWithMapRef(harness, { userLocation });
     expect(second.map.flyTo).toHaveBeenCalledTimes(2);
     expect(second.latest.hasBootFlown).toBe(true);
 
-    second.unmount();
+    await second.unmount();
   });
 
   it("does not re-issue boot when userLocation coordinates update", () => {

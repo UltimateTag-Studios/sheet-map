@@ -1,6 +1,6 @@
 # Boot fly — behavior spec and target architecture
 
-**Status:** Draft (5C-4 still failing manual verify). Parent: [`phase-5c-slices.md`](phase-5c-slices.md), [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1.
+**Status:** Draft (5C-4 still failing manual verify). Parent: `[phase-5c-slices.md](phase-5c-slices.md)`, `[camera-fsm-plan.md](camera-fsm-plan.md)` §2 Rule 1.
 
 ---
 
@@ -12,16 +12,18 @@
 
 ## Product behavior (acceptance criteria)
 
-| # | Rule |
-| - | ---- |
-| 1 | **Once per map instance** — refresh or remount → may boot again; same instance → never twice |
-| 2 | **Both gates required** — valid `userLocation` (lat/lng) **and** first successful `setPadding` from live sheet DOM (`mapPaddingReady`) |
-| 3 | **Order-independent** — padding-first, location-first, or simultaneous must all boot |
-| 4 | **No boot** when location denied/null, padding never measurable, or boot latch already set |
-| 5 | **Retry until success or latch** — transient blocks (`session !== idle`, style not loaded, `navigateTo` false) must retry when the blocker clears; latch only on successful issue |
-| 6 | **Issue = navigate issued** — mark map WeakMap latch + follow reducer `bootFlown` when `navigateTo` returns true, not when fly animation ends |
-| 7 | **Acyclic** — boot never invoked from inside `syncMapPaddingFromCanvas` / `applyMapPadding` / `applyPaddingBeforeNavigation` |
-| 8 | **MapCanvas contract** — `mapRef` published only on `onLoad` (style ready); unpublish `null` on unmount |
+
+| #   | Rule                                                                                                                                                                              |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Once per map instance** — refresh or remount → may boot again; same instance → never twice                                                                                      |
+| 2   | **Both gates required** — valid `userLocation` (lat/lng) **and** first successful `setPadding` from live sheet DOM (`mapPaddingReady`)                                            |
+| 3   | **Order-independent** — padding-first, location-first, or simultaneous must all boot                                                                                              |
+| 4   | **No boot** when location denied/null, padding never measurable, or boot latch already set                                                                                        |
+| 5   | **Retry until success or latch** — transient blocks (`navigateTo` false) must retry when the blocker clears; latch only on successful issue |
+| 6   | **Issue = navigate issued** — mark map WeakMap latch + follow reducer `bootFlown` when `navigateTo` returns true, not when fly animation ends                                     |
+| 7   | **Acyclic** — boot never invoked from inside `syncMapPaddingFromCanvas` / `applyMapPadding` / `applyPaddingBeforeNavigation`                                                      |
+| 8   | **MapCanvas contract** — `mapRef` published only on `onLoad` (style ready); unpublish `null` on unmount                                                                           |
+
 
 **Manual verify (5C-4 sign-off):**
 
@@ -40,27 +42,22 @@ Tests pass (93+). Demo shows `mapPaddingReady` + user dot in many cases, but **c
 
 ### Root causes
 
-1. **Implicit boot config (`getTarget()` closure)**  
-   React cannot see “location became ready.” `bootReady` is computed at render from `boot?.getTarget() != null`, but the **trigger** is a `useEffect` on a derived boolean. Failed attempts (`session !== idle`, `navigateTo` false) are silent; retries depend on effect deps catching the right transition.
-
-2. **State vs ref mismatch on padding**  
-   Padding sets `mapPaddingReadyRef.current = true` **synchronously** in `refreshMapPaddingFromCanvas`, then `setMapPaddingReady(true)` async. Boot gates on React **state** (`bootReady` uses `mapPaddingReady`). That is usually one frame later — OK — but boot does **not** get a synchronous callback when the ref flips, unlike the old monolith pattern that read `paddingReadyRef` inside `tryBootFly` on every `tryBootFly` identity change.
-
-3. **Old monolith had the same latent bug**  
-   `useEffect(() => tryBootFly(), [tryBootFly])` with `tryBootFly` deps `[bootEnabled, mapRef, enabled]` — **not** `paddingReady`. Padding-only readiness did not recreate `tryBootFly`. Tests passed because they always paired location arrival with a `tryBootFly` identity change. Production often has **location first, padding second** with stable `bootEnabled`.
-
-4. **Tests ≠ browser timing**  
-   Harnesses mount `mapRef` immediately, mock style/DOM/sheet fixture together, and run under `act()`. Production races:
-   - `MapCanvas` `onLoad` → `setMapRef` (async state)
-   - `getCurrentPosition` / `watchPosition` (async)
-   - Sheet `onLayoutFrameChange` / DOM measurable (async)
-   - Padding reset to `false` on every new `mapRef` before first sync
-
-5. **No observability**  
-   `tryBootFly` returns `boolean`. Production failures are invisible.
-
-6. **Possible “boot ran but looked like it didn’t”**  
-   `navigateTo` forces `duration: 0` when `sheetPhase !== idle` (instant jump). User may expect a smooth fly during sheet settle.
+1. **Implicit boot config (`getTarget()` closure)**
+  React cannot see “location became ready.” `bootReady` is computed at render from `boot?.getTarget() != null`, but the **trigger** is a `useEffect` on a derived boolean. Failed attempts (`session !== idle`, `navigateTo` false) are silent; retries depend on effect deps catching the right transition.
+2. **State vs ref mismatch on padding**
+  Padding sets `mapPaddingReadyRef.current = true` **synchronously** in `refreshMapPaddingFromCanvas`, then `setMapPaddingReady(true)` async. Boot gates on React **state** (`bootReady` uses `mapPaddingReady`). That is usually one frame later — OK — but boot does **not** get a synchronous callback when the ref flips, unlike the old monolith pattern that read `paddingReadyRef` inside `tryBootFly` on every `tryBootFly` identity change.
+3. **Old monolith had the same latent bug**
+  `useEffect(() => tryBootFly(), [tryBootFly])` with `tryBootFly` deps `[bootEnabled, mapRef, enabled]` — **not** `paddingReady`. Padding-only readiness did not recreate `tryBootFly`. Tests passed because they always paired location arrival with a `tryBootFly` identity change. Production often has **location first, padding second** with stable `bootEnabled`.
+4. **Tests ≠ browser timing**
+  Harnesses mount `mapRef` immediately, mock style/DOM/sheet fixture together, and run under `act()`. Production races:
+  - `MapCanvas` `onLoad` → `setMapRef` (async state)
+  - `getCurrentPosition` / `watchPosition` (async)
+  - Sheet `onLayoutFrameChange` / DOM measurable (async)
+  - Padding reset to `false` on every new `mapRef` before first sync
+5. **No observability**
+  `tryBootFly` returns `boolean`. Production failures are invisible.
+6. **Possible “boot ran but looked like it didn’t”**
+  `navigateTo` forces `duration: 0` when `sheetPhase !== idle` (instant jump). User may expect a smooth fly during sheet settle.
 
 ---
 
@@ -68,12 +65,14 @@ Tests pass (93+). Demo shows `mapPaddingReady` + user dot in many cases, but **c
 
 ### Principle
 
-| Module | Responsibility | Must NOT |
-| ------ | -------------- | -------- |
-| **Padding sync** | Continuous `setPadding` from live DOM; emit `mapPaddingReady` | Call boot, call `navigateTo` |
-| **Follow / app layer** | Geolocation → `userLocation`; derive `bootTarget` | Own padding or session FSM |
-| **Boot coordinator** | When `bootTarget ∧ mapPaddingReady ∧ …` → `tryBootFly` once | Live inside padding pure functions |
-| **`tryBootFly`** | Pure gates + latch + single `navigateTo` | Side effects beyond issue |
+
+| Module                 | Responsibility                                                | Must NOT                           |
+| ---------------------- | ------------------------------------------------------------- | ---------------------------------- |
+| **Padding sync**       | Continuous `setPadding` from live DOM; emit `mapPaddingReady` | Call boot, call `navigateTo`       |
+| **Follow / app layer** | Geolocation → `userLocation`; derive `bootTarget`             | Own padding or session FSM         |
+| **Boot coordinator**   | When `bootTarget ∧ mapPaddingReady ∧ …` → `tryBootFly` once   | Live inside padding pure functions |
+| `**tryBootFly`**       | Pure gates + latch + single `navigateTo`                      | Side effects beyond issue          |
+
 
 ```
 ┌────────────────────────┐     ┌─────────────────────────┐
@@ -113,24 +112,21 @@ Single module; **only** place that calls `tryBootFly` from React.
 - `mapRef`, `enabled`
 - `bootTarget: MapPosition | null`
 - `mapPaddingReady` (state) + `mapPaddingReadyRef` (ref)
-- `session` (from `stateRef`)
 - `navigateToRef`, `smoothFlyDurationMs`
 - `onBootIssued`
 
 **Triggers (both required — order-independent by construction):**
 
-1. **`useLayoutEffect`** — deps: `[bootTarget, mapPaddingReady, mapRef, enabled, session, …]`  
-   Run `attemptBoot()` after DOM/state flush when any gate changes.
-
-2. **Padding completion hook** — `refreshMapPaddingFromCanvas` calls `onPaddingFirstSyncedRef.current?.()` **after** `mapPaddingReadyRef.current = true` (same synchronous stack as today’s ref flip).  
-   Coordinator registers: `() => attemptBoot()`.  
+1. **`useLayoutEffect`** — deps: `[bootTarget, mapPaddingReady, mapRef, enabled, …]`
+  Run `attemptBoot()` after DOM/state flush when any gate changes.
+2. **Padding completion hook** — `refreshMapPaddingFromCanvas` calls `onPaddingFirstSyncedRef.current?.()` **after** `mapPaddingReadyRef.current = true` (same synchronous stack as today’s ref flip).
+  Coordinator registers: `() => attemptBoot()`.  
    **Safe:** `attemptBoot` → `tryBootFly` → `navigateTo` → padding refresh does **not** call `onPaddingFirstSynced` again once latched; latch prevents re-entry.
-
 3. **Style load** — if `!map.isStyleLoaded()`, `map.once('load', attemptBoot)` (keep; cleanup on unmount).
 
-4. **Session retry** — when `session` returns to `idle` after a failed attempt, layout effect re-runs.
+**Do not gate boot on session** — boot uses `navigateTo`, which calls `beginProgrammaticNavigation` (`map.stop()` + fly). Same as my-location / demo fly: preempts user pan momentum.
 
-**Do not add:** idle/moveend/resize listeners on the map solely for boot (padding already retries on idle/resize). Boot piggybacks on padding’s retry + coordinator triggers.
+**Do not add:** idle/moveend/resize listeners on the map solely for boot (padding already retries on idle/resize).
 
 ### `tryBootFly` — keep pure, add failure reasons
 
@@ -142,7 +138,6 @@ export type BootFlyBlockReason =
   | "style_not_loaded"
   | "padding_not_ready"
   | "already_flown"
-  | "session_busy"
   | "navigate_rejected";
 
 export type TryBootFlyResult =
@@ -175,13 +170,12 @@ geolocation → bootTarget set
 useLayoutEffect → tryBootFly → ISSUE
 ```
 
-### C — Transient session_busy
+### C — GPS arrives during user pan
 
 ```
-both gates true, user panned during load
-tryBootFly → BLOCK session_busy
-moveend → session idle
-useLayoutEffect(session) → tryBootFly → ISSUE
+both gates true, user is dragging
+tryBootFly → navigateTo (map.stop + fly) → latch
+session → navigating (same as any programmatic fly)
 ```
 
 ---
@@ -225,21 +219,23 @@ camera/
 
 ## Test strategy (close the harness gap)
 
-| Test | Purpose |
-| ---- | ------- |
-| Existing unit tests on `tryBootFly` | Gate matrix with reasons |
-| **New:** coordinator calls `onPaddingFirstSynced` path | Location first, padding later **without** `bootTarget` identity change |
-| **New:** `MapCanvas` integration | `publishMapInstance` only after `emitLoad`; boot after |
-| **New:** failed `navigateTo` then session idle | Retry issues fly |
-| Harness: defer `emitLoad` + defer geolocation | Mirrors production order |
 
-Keep `mountAnchorWithDeferredBootTarget` but drive **`bootTarget` prop** instead of mutating `getTarget`.
+| Test                                                   | Purpose                                                                |
+| ------------------------------------------------------ | ---------------------------------------------------------------------- |
+| Existing unit tests on `tryBootFly`                    | Gate matrix with reasons                                               |
+| **New:** coordinator calls `onPaddingFirstSynced` path | Location first, padding later **without** `bootTarget` identity change |
+| **New:** `MapCanvas` integration                       | `publishMapInstance` only after `emitLoad`; boot after                 |
+| **New:** failed `navigateTo` then session idle         | Retry issues fly                                                       |
+| Harness: defer `emitLoad` + defer geolocation          | Mirrors production order                                               |
+
+
+Keep `mountAnchorWithDeferredBootTarget` but drive `**bootTarget` prop** instead of mutating `getTarget`.
 
 ---
 
 ## Implementation order
 
-1. **`tryBootFly` → `TryBootFlyResult` + debug logging** (no behavior change yet)
+1. `**tryBootFly` → `TryBootFlyResult` + debug logging** (no behavior change yet)
 2. **Replace `boot` prop with `bootTarget` + `onBootIssued`** at all call sites
 3. **Add `useBootFlyCoordinator`** with dual trigger (layout effect + padding callback)
 4. **Delete `use-map-anchor-boot.ts`**
@@ -265,10 +261,13 @@ With `VITE_SHEET_MAP_DEBUG=true`:
 
 ## Decision log
 
-| Choice | Rationale |
-| ------ | --------- |
-| Keep boot inside `useMapAnchor` | Phase 5C lessons; single session + `navigateTo` owner |
-| Plain `bootTarget` not `getTarget()` | React-visible input; testable; no closure races |
-| Padding callback + layout effect | Fixes padding-second without boot inside `syncMapPaddingFromCanvas` |
-| No boot from `applyMapPadding` | Prevents `navigateTo → padding → boot` stack overflow |
-| Edge-trigger optional | Latch already prevents double; level-trigger on gate changes is enough if coordinator runs on both triggers |
+
+| Choice                               | Rationale                                                                                                   |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Keep boot inside `useMapAnchor`      | Phase 5C lessons; single session + `navigateTo` owner                                                       |
+| Plain `bootTarget` not `getTarget()` | React-visible input; testable; no closure races                                                             |
+| Padding callback + layout effect     | Fixes padding-second without boot inside `syncMapPaddingFromCanvas`                                         |
+| No boot from `applyMapPadding`       | Prevents `navigateTo → padding → boot` stack overflow                                                       |
+| Edge-trigger optional                | Latch already prevents double; level-trigger on gate changes is enough if coordinator runs on both triggers |
+
+

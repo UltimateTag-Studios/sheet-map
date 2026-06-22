@@ -1,6 +1,5 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
-import type { MapAnchorSession } from "./anchor";
 import {
   hasBootFlownForMapInstance,
   markBootFlownForMapInstance,
@@ -13,7 +12,6 @@ export type BootFlyBlockReason =
   | "no_map"
   | "padding_not_ready"
   | "already_flown"
-  | "session_busy"
   | "navigate_rejected";
 
 export type TryBootFlyResult =
@@ -25,7 +23,6 @@ export type TryBootFlyInput = {
   mapRef: MapRef | null;
   enabled: boolean;
   mapPaddingReady: boolean;
-  session: MapAnchorSession;
   navigateTo: (
     position: MapPosition,
     options?: { duration?: number },
@@ -63,7 +60,7 @@ export function areBootFlyGatesReady(input: {
 
 /**
  * One-shot boot fly when map, padding, and target are ready.
- * Style is not gated here — `MapCanvas` only publishes `mapRef` after load.
+ * Uses `navigateTo` (stops user momentum) — does not wait for session idle.
  */
 export function tryBootFly(input: TryBootFlyInput): TryBootFlyResult {
   const {
@@ -71,7 +68,6 @@ export function tryBootFly(input: TryBootFlyInput): TryBootFlyResult {
     mapRef,
     enabled,
     mapPaddingReady,
-    session,
     navigateTo,
     smoothFlyDurationMs,
     bootDurationMs,
@@ -96,9 +92,6 @@ export function tryBootFly(input: TryBootFlyInput): TryBootFlyResult {
   }
   if (!mapPaddingReady) {
     return blocked("padding_not_ready", debug);
-  }
-  if (session !== "idle") {
-    return blocked("session_busy", debug);
   }
 
   const applied = navigateTo(bootTarget, {

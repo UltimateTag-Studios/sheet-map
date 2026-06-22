@@ -1,6 +1,10 @@
 import { useCallback, useReducer, useRef } from "react";
 
-import { createInitialMapAnchorState, reduceMapAnchor } from "../anchor";
+import {
+  createInitialMapAnchorState,
+  type MapAnchorEvent,
+  reduceMapAnchor,
+} from "../anchor";
 import type { MapPosition } from "../map-position";
 import type { MapAnchorSessionRefs } from "./session-refs";
 import type { UseMapAnchorOptions } from "./types";
@@ -35,6 +39,11 @@ export function useMapAnchor({
   const stateRef = useRef(state);
   stateRef.current = state;
 
+  const dispatchAnchor = useCallback((event: MapAnchorEvent) => {
+    stateRef.current = reduceMapAnchor(stateRef.current, event);
+    dispatch(event);
+  }, []);
+
   const sheetPhaseRef = useRef(sheetPhase);
   sheetPhaseRef.current = sheetPhase;
 
@@ -43,7 +52,7 @@ export function useMapAnchor({
 
   const session: MapAnchorSessionRefs = {
     stateRef,
-    dispatch,
+    dispatch: dispatchAnchor,
     sheetPhaseRef,
     sheetMotionActiveRef,
   };
@@ -76,7 +85,6 @@ export function useMapAnchor({
     smoothFlyDurationMs,
     mapPaddingReadyRef: padding.mapPaddingReadyRef,
     onBootAttemptRef,
-    session,
     navigateToRef,
     onBootIssued,
     mapPaddingDebug,
@@ -99,12 +107,14 @@ export function useMapAnchor({
     mapRef,
     enabled,
     session,
-    onBootAttemptRef,
   });
 
-  const setAnchor = useCallback((position: MapPosition) => {
-    dispatch({ type: "setAnchor", position });
-  }, []);
+  const setAnchor = useCallback(
+    (position: MapPosition) => {
+      dispatchAnchor({ type: "setAnchor", position });
+    },
+    [dispatchAnchor],
+  );
 
   return {
     anchor: state.anchor,

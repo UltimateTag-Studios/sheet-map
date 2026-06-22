@@ -1,6 +1,6 @@
+import type { ReactElement } from "react";
 import { act, createElement, StrictMode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { ReactElement } from "react";
 
 import type { SheetMotionPhase } from "../../viewport";
 import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
@@ -11,6 +11,7 @@ import {
   createTestMapRef,
   type TestMapRefHarness,
 } from "./create-test-map-ref";
+import { flushDeferredMapInstanceRelease } from "./flush-deferred-map-instance-release";
 
 export type MapAnchorHookResult = ReturnType<typeof useMapAnchor>;
 
@@ -56,10 +57,11 @@ function renderMapAnchorHarness(
       }
       return latestRef.current;
     },
-    unmount() {
+    async unmount() {
       act(() => {
         root.unmount();
       });
+      await flushDeferredMapInstanceRelease();
       onUnmount?.();
     },
   };
@@ -179,10 +181,11 @@ export function mountAnchorWithLiveSheetPadding(
         setSheetPhase?.(next);
       });
     },
-    unmount() {
+    async unmount() {
       act(() => {
         root.unmount();
       });
+      await flushDeferredMapInstanceRelease();
       fixture.remove();
     },
   };
@@ -242,10 +245,11 @@ export function mountAnchorWithDeferredBootTarget(initialPx = 152) {
         setBootTarget?.(next);
       });
     },
-    unmount() {
+    async unmount() {
       act(() => {
         root.unmount();
       });
+      await flushDeferredMapInstanceRelease();
       fixture.remove();
     },
   };

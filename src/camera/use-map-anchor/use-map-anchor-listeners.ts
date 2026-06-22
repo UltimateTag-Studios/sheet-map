@@ -1,5 +1,5 @@
 import type { MapEventOf } from "mapbox-gl";
-import { type MutableRefObject, useEffect } from "react";
+import { useEffect } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import {
@@ -22,14 +22,12 @@ export type UseMapAnchorListenersInput = {
   mapRef: MapRef | null;
   enabled: boolean;
   session: MapAnchorSessionRefs;
-  onBootAttemptRef: MutableRefObject<(() => void) | null>;
 };
 
 export function useMapAnchorListeners({
   mapRef,
   enabled,
   session,
-  onBootAttemptRef,
 }: UseMapAnchorListenersInput): void {
   const { stateRef, dispatch, sheetMotionActiveRef } = session;
 
@@ -63,7 +61,14 @@ export function useMapAnchorListeners({
     };
 
     const handleMoveEnd = () => {
-      if (consumePaddingSyncMoveEnd(map)) {
+      const paddingMoveEnd = consumePaddingSyncMoveEnd(map);
+      if (paddingMoveEnd) {
+        if (!map.isMoving() && stateRef.current.session === "userGesture") {
+          dispatch({
+            type: "userGestureSettled",
+            position: readMapAnchorPosition(map),
+          });
+        }
         return;
       }
 
@@ -76,19 +81,10 @@ export function useMapAnchorListeners({
           type: "userGestureSettled",
           position: readMapAnchorPosition(map),
         });
-        onBootAttemptRef.current?.();
         return;
       }
 
-      const sessionBefore = stateRef.current.session;
       trySettleNavigatingSession(map, stateRef, sheetMotionActiveRef, dispatch);
-
-      if (
-        sessionBefore === "navigating" &&
-        stateRef.current.session === "idle"
-      ) {
-        onBootAttemptRef.current?.();
-      }
     };
 
     const attachListeners = () => {
@@ -118,12 +114,5 @@ export function useMapAnchorListeners({
       mapListenerCleanupByMap.delete(map);
       cleanup();
     };
-  }, [
-    mapRef,
-    enabled,
-    stateRef,
-    dispatch,
-    sheetMotionActiveRef,
-    onBootAttemptRef,
-  ]);
+  }, [mapRef, enabled, stateRef, dispatch, sheetMotionActiveRef]);
 }

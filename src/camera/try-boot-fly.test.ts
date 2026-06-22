@@ -54,7 +54,6 @@ describe("tryBootFly", () => {
       mapRef,
       enabled: true,
       mapPaddingReady: true,
-      session: "idle",
       navigateTo,
       smoothFlyDurationMs: 600,
       bootDurationMs: 500,
@@ -77,7 +76,6 @@ describe("tryBootFly", () => {
       mapRef,
       enabled: true,
       mapPaddingReady: true,
-      session: "idle",
       navigateTo,
       smoothFlyDurationMs: 600,
     });
@@ -95,7 +93,6 @@ describe("tryBootFly", () => {
       mapRef,
       enabled: true,
       mapPaddingReady: true,
-      session: "idle",
       navigateTo,
       smoothFlyDurationMs: 600,
     });
@@ -137,7 +134,6 @@ describe("tryBootFly", () => {
       mapRef,
       enabled: true,
       mapPaddingReady: true,
-      session: "idle",
       navigateTo,
       smoothFlyDurationMs: 600,
     });
