@@ -1,9 +1,4 @@
-import {
-  type MutableRefObject,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-} from "react";
+import { type RefObject, useCallback, useLayoutEffect, useRef } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import { areBootFlyGatesReady, tryBootFly } from "../../boot/try-boot-fly";
@@ -17,8 +12,8 @@ export type UseBootFlyCoordinatorInput = {
   bootTarget: MapPosition | null;
   bootDurationMs?: number;
   smoothFlyDurationMs: number;
-  mapPaddingReadyRef: MutableRefObject<boolean>;
-  navigateToRef: MutableRefObject<
+  mapPaddingReadyRef: RefObject<boolean>;
+  navigateToRef: RefObject<
     (position: MapPosition, options?: NavigateToMapAnchorOptions) => boolean
   >;
   onBootIssued?: () => void;

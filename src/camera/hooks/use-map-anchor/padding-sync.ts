@@ -1,5 +1,5 @@
 import {
-  type MutableRefObject,
+  type RefObject,
   useCallback,
   useEffect,
   useRef,
@@ -11,6 +11,7 @@ import type { MapObscuredInsets } from "../../../viewport";
 import { applyMapPadding } from "../../padding/apply";
 import type { MapPaddingOptions } from "../../padding/compute";
 import { syncMapPaddingFromCanvas } from "../../padding/sync-from-canvas";
+import type { MapPosition } from "../../shared/map-position";
 import { whenMapStyleReady } from "../../shared/when-map-style-ready";
 import type { MapAnchorSessionRefs } from "./session-refs";
 import type { RefreshMapPaddingFromCanvasOptions } from "./types";
@@ -23,6 +24,8 @@ export type UseMapPaddingSyncInput = {
   fixedChromeInsets?: Partial<MapObscuredInsets>;
   mapPaddingDebug: boolean;
   session: MapAnchorSessionRefs;
+  followUser?: boolean;
+  followTarget?: MapPosition | null;
   /** Called once when the first live-DOM padding sync succeeds. */
   onPaddingReady?: () => void;
 };
@@ -30,8 +33,8 @@ export type UseMapPaddingSyncInput = {
 export type MapPaddingSyncHandle = {
   mapPadding: MapPaddingOptions | null;
   mapPaddingReady: boolean;
-  mapPaddingReadyRef: MutableRefObject<boolean>;
-  refreshMapPaddingFromCanvasRef: MutableRefObject<
+  mapPaddingReadyRef: RefObject<boolean>;
+  refreshMapPaddingFromCanvasRef: RefObject<
     (options?: RefreshMapPaddingFromCanvasOptions) => boolean
   >;
 };
@@ -44,6 +47,8 @@ export function useMapPaddingSync({
   fixedChromeInsets,
   mapPaddingDebug,
   session,
+  followUser = false,
+  followTarget = null,
   onPaddingReady,
 }: UseMapPaddingSyncInput): MapPaddingSyncHandle {
   const { stateRef, sheetPhaseRef } = session;
@@ -60,6 +65,12 @@ export function useMapPaddingSync({
 
   const onPaddingReadyRef = useRef(onPaddingReady);
   onPaddingReadyRef.current = onPaddingReady;
+
+  const followUserRef = useRef(followUser);
+  followUserRef.current = followUser;
+
+  const followTargetRef = useRef(followTarget);
+  followTargetRef.current = followTarget;
 
   const refreshMapPaddingFromCanvas = useCallback(
     (options: RefreshMapPaddingFromCanvasOptions = {}) => {
@@ -83,6 +94,8 @@ export function useMapPaddingSync({
           paddingChanged: true,
           realign: options.realign,
           sheetMotionActive,
+          followUser: followUserRef.current,
+          followTarget: followTargetRef.current,
           debug: mapPaddingDebug,
         });
       }

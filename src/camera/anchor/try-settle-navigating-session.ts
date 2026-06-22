@@ -1,5 +1,5 @@
 import type { Map as MapboxMap } from "mapbox-gl";
-import type { Dispatch, MutableRefObject } from "react";
+import type { Dispatch, RefObject } from "react";
 
 import { isAtMapAnchorPosition } from "./is-at-position";
 import type { MapAnchorEvent } from "./reduce";
@@ -7,8 +7,8 @@ import type { MapAnchorState } from "./state";
 
 export function trySettleNavigatingSession(
   map: MapboxMap,
-  stateRef: MutableRefObject<MapAnchorState>,
-  sheetMotionActiveRef: MutableRefObject<boolean>,
+  stateRef: RefObject<MapAnchorState>,
+  sheetMotionActiveRef: RefObject<boolean>,
   dispatch: Dispatch<MapAnchorEvent>,
 ): void {
   const { session, anchor } = stateRef.current;

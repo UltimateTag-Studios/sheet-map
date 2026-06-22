@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import type { MapObscuredInsets, SheetMotionPhase } from "../../viewport";
+import type { PixelPoint } from "../../viewport/types/pixel";
 import { createInitialMapFollowState, reduceMapFollow } from "../follow";
 import type { MapPosition } from "../shared/map-position";
 import { useMapAnchor } from "./use-map-anchor";
@@ -12,6 +13,8 @@ export type MapUserLocationCoords = {
   accuracyMeters?: number | null;
 };
 
+export const DEFAULT_FOLLOW_RELEASE_THRESHOLD_PX = 40;
+
 export type UseMapFollowUserOptions = {
   mapRef: MapRef | null;
   userLocation: MapUserLocationCoords | null;
@@ -20,11 +23,11 @@ export type UseMapFollowUserOptions = {
   fixedChromeInsets?: Partial<MapObscuredInsets>;
   mapPaddingDebug?: boolean;
   sheetPhase?: SheetMotionPhase;
+  /** Visible-area center offset for follow threshold + padding realign. */
+  centerOffset?: PixelPoint;
   followZoom?: number;
   smoothFlyDurationMs?: number;
-  /**
-   * 5D: screen pixels before follow releases on user pan (app default often 40).
-   */
+  /** Screen pixels before follow releases on user pan (demo default 40). */
   followReleaseThresholdPx?: number;
   onMapInstanceReleased?: () => void;
 };
@@ -37,8 +40,10 @@ export function useMapFollowUser({
   fixedChromeInsets,
   mapPaddingDebug = false,
   sheetPhase = "idle",
+  centerOffset = { x: 0, y: 0 },
   followZoom = 15,
   smoothFlyDurationMs = 600,
+  followReleaseThresholdPx = DEFAULT_FOLLOW_RELEASE_THRESHOLD_PX,
   onMapInstanceReleased: onMapInstanceReleasedOption,
 }: UseMapFollowUserOptions) {
   const userLocationLng = userLocation?.lng;
@@ -95,6 +100,23 @@ export function useMapFollowUser({
     followDispatch({ type: "bootFlown" });
   }, []);
 
+  const stopFollowingUser = useCallback(() => {
+    followDispatch({ type: "stopFollowUser" });
+  }, []);
+
+  const followTarget: MapPosition | null = hasUserLocation
+    ? { lat: userLocationLat, lng: userLocationLng, zoom: followZoom }
+    : null;
+
+  const follow =
+    followState.followUser && hasUserLocation
+      ? {
+          userLocation: { lat: userLocationLat, lng: userLocationLng },
+          centerOffset,
+          thresholdPx: followReleaseThresholdPx,
+        }
+      : null;
+
   const anchor = useMapAnchor({
     mapRef,
     enabled,
@@ -107,6 +129,10 @@ export function useMapFollowUser({
     bootDurationMs: smoothFlyDurationMs,
     onBootIssued,
     onMapInstanceReleased,
+    follow,
+    onReleaseFollow: stopFollowingUser,
+    followUser: followState.followUser,
+    followTarget,
   });
 
   return {

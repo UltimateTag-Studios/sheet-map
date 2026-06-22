@@ -5,6 +5,11 @@ export {
   jumpToMapAnchor,
 } from "./apply-camera";
 export { beginProgrammaticNavigation } from "./begin-programmatic-navigation";
+export {
+  evaluateFollowAtGestureSettle,
+  type GestureSettleOutcome,
+  type MapAnchorFollowConfig,
+} from "./evaluate-gesture-settle";
 export { isAtMapAnchorPosition } from "./is-at-position";
 export { isUserMapGestureEvent } from "./is-user-map-gesture-event";
 export { readMapAnchorPosition } from "./read-position";

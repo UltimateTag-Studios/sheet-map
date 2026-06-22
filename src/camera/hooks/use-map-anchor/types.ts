@@ -1,7 +1,10 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
+import type { MapAnchorFollowConfig } from "../../anchor";
 import type { MapPosition } from "../../shared/map-position";
-import type { MapObscuredInsets, SheetMotionPhase } from "../../viewport";
+import type { MapObscuredInsets, SheetMotionPhase } from "../../../viewport";
+
+export type { MapAnchorFollowConfig } from "../../anchor";
 
 export type NavigateToMapAnchorOptions = {
   /** ms. 0 or omitted = jump; >0 = fly when sheet is idle. Jump when sheet is dragging or settling. */
@@ -26,11 +29,13 @@ export type UseMapAnchorOptions = {
   bootDurationMs?: number;
   onBootIssued?: () => void;
   smoothFlyDurationMs?: number;
-  /**
-   * 5D: screen pixels before follow releases on user pan (app default often 40).
-   * Not used until gesture-settle lands in 5D.
-   */
-  followReleaseThresholdPx?: number;
+  /** Active follow config for gesture settle + padding realign. */
+  follow?: MapAnchorFollowConfig | null;
+  /** Called when pan exceeds follow threshold or settle releases follow. */
+  onReleaseFollow?: () => void;
+  /** Phase 5D padding matrix: idle + following → jump to user when sheet moves. */
+  followUser?: boolean;
+  followTarget?: MapPosition | null;
   onMapInstanceReleased?: () => void;
 };
 

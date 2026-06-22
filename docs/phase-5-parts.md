@@ -116,10 +116,11 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 **You verify:**
 
-- [ ] Pan >40px while following: follow releases, no snap-back fly
-- [ ] Pan ≤40px while following: snap-back fly at settle (not on every padding tick)
-- [ ] Pan while not following: unchanged phase 4 behavior
-- [ ] Tests for `evaluate-gesture-settle.ts`
+- [x] Pan >40px while following: follow releases, no snap-back fly (unit tests)
+- [x] Pan ≤40px while following: snap-back fly at settle (unit tests)
+- [x] Pan while not following: unchanged phase 4 behavior (existing tests)
+- [x] Tests for `evaluate-gesture-settle.ts`
+- [ ] Manual: pan + sheet during momentum while following (demo `/sheet`)
 
 ---
 

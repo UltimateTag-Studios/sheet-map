@@ -189,13 +189,13 @@ Also: shared test harness `camera/testing/`, `canvas/dot/index.ts` barrel.
 
 **Manual verify (required):**
 
-- [ ] **Padding baseline:** refresh ×3 with debug on → `setPadding` log every time; debug overlay visible; sheet hint not stuck on `(not ready)`
-- [ ] **Boot:** grant location → exactly **one** smooth fly to blue dot per load
-- [ ] **Boot:** refresh ×5 → one boot fly per load (not per padding tick)
-- [ ] **Deny:** location denied → map works; no boot fly; no crash
-- [ ] **Strict Mode:** navigate away and back → boot can run again on fresh map instance
-- [ ] **No regressions:** fly-to-demo still works; pan + sheet drag behave as phase 4
-- [ ] **Not in 5C:** GPS dot tracking map (`repositionCamera`) — that's 5E; dot may stay fixed while you pan until 5E
+- [x] **Padding baseline:** refresh ×3 with debug on → `setPadding` log every time; debug overlay visible; sheet hint not stuck on `(not ready)`
+- [x] **Boot:** grant location → exactly **one** smooth fly to blue dot per load
+- [x] **Boot:** refresh ×5 → one boot fly per load (not per padding tick)
+- [x] **Deny:** location denied → map works; no boot fly; no crash
+- [x] **Strict Mode:** navigate away and back → boot can run again on fresh map instance
+- [x] **No regressions:** fly-to-demo still works; pan + sheet drag behave as phase 4
+- [x] **Not in 5C:** GPS dot tracking map (`repositionCamera`) — that's 5E; dot may stay fixed while you pan until 5E
 
 ---
 

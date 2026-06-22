@@ -506,4 +506,115 @@ describe("useMapAnchor", () => {
       harness.unmount();
     });
   });
+
+  describe("follow gesture settle", () => {
+    const follow = {
+      userLocation: { lat: 2, lng: 1 },
+      centerOffset: { x: 20, y: -80 },
+      thresholdPx: 40,
+    };
+
+    function withProject(
+      harness: ReturnType<typeof createTestMapRef>,
+      project: () => { x: number; y: number },
+    ) {
+      const map = harness.map as typeof harness.map & {
+        project: () => { x: number; y: number };
+      };
+      map.project = project;
+      return harness;
+    }
+
+    it("snaps back via navigateTo when follow is enabled and pan is within threshold", () => {
+      const onReleaseFollow = vi.fn();
+      const harness = withProject(createTestMapRef(), () => ({
+        x: 220,
+        y: 320,
+      }));
+      const mounted = mountAnchorWithMapRef(harness, {
+        follow,
+        onReleaseFollow,
+        smoothFlyDurationMs: 600,
+      });
+
+      act(() => {
+        harness.map.emit("dragstart", {
+          originalEvent: new Event("pointerdown"),
+        });
+      });
+
+      act(() => {
+        harness.map.emit("moveend");
+      });
+
+      expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+      expect(onReleaseFollow).not.toHaveBeenCalled();
+      expect(mounted.latest.session).toBe("navigating");
+
+      mounted.unmount();
+    });
+
+    it("stops follow when pan exceeds threshold at settle", () => {
+      const onReleaseFollow = vi.fn();
+      const harness = withProject(createTestMapRef(), () => ({
+        x: 300,
+        y: 320,
+      }));
+      const mounted = mountAnchorWithMapRef(harness, {
+        follow,
+        onReleaseFollow,
+      });
+
+      act(() => {
+        harness.map.emit("dragstart", {
+          originalEvent: new Event("pointerdown"),
+        });
+        harness.map.setCenter({ lat: 11, lng: 21 });
+      });
+
+      act(() => {
+        harness.map.emit("moveend");
+      });
+
+      expect(harness.map.flyTo).not.toHaveBeenCalled();
+      expect(onReleaseFollow).toHaveBeenCalledTimes(1);
+      expect(mounted.latest.anchor).toEqual({ lat: 11, lng: 21, zoom: 14 });
+      expect(mounted.latest.session).toBe("idle");
+
+      mounted.unmount();
+    });
+
+    it("stops follow during drag as soon as threshold is crossed", () => {
+      const onReleaseFollow = vi.fn();
+      let projected = { x: 220, y: 320 };
+      const harness = withProject(createTestMapRef(), () => projected);
+      const mounted = mountAnchorWithMapRef(harness, {
+        follow,
+        onReleaseFollow,
+      });
+
+      act(() => {
+        harness.map.emit("dragstart", {
+          originalEvent: new Event("pointerdown"),
+        });
+      });
+
+      act(() => {
+        projected = { x: 300, y: 320 };
+        harness.map.emit("move");
+      });
+
+      expect(onReleaseFollow).toHaveBeenCalledTimes(1);
+      expect(harness.map.flyTo).not.toHaveBeenCalled();
+
+      act(() => {
+        projected = { x: 220, y: 320 };
+        harness.map.emit("moveend");
+      });
+
+      expect(harness.map.flyTo).not.toHaveBeenCalled();
+
+      mounted.unmount();
+    });
+  });
 });

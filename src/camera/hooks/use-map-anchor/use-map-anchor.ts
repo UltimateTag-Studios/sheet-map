@@ -26,6 +26,10 @@ export function useMapAnchor({
   bootDurationMs,
   onBootIssued,
   smoothFlyDurationMs = 600,
+  follow = null,
+  onReleaseFollow,
+  followUser = false,
+  followTarget = null,
   onMapInstanceReleased,
 }: UseMapAnchorOptions) {
   const mapPaddingFromCanvasEnabled = liveSheetObscuredBottomPx !== undefined;
@@ -50,6 +54,8 @@ export function useMapAnchor({
   const sheetMotionActiveRef = useRef(sheetPhase !== "idle");
   sheetMotionActiveRef.current = sheetPhase !== "idle";
 
+  const followThresholdExceededRef = useRef(false);
+
   const session: MapAnchorSessionRefs = {
     stateRef,
     dispatch: dispatchAnchor,
@@ -67,6 +73,8 @@ export function useMapAnchor({
     fixedChromeInsets,
     mapPaddingDebug,
     session,
+    followUser,
+    followTarget,
     onPaddingReady: () => onPaddingReadyRef.current?.(),
   });
 
@@ -75,6 +83,7 @@ export function useMapAnchor({
     mapPaddingDebug,
     session,
     refreshMapPaddingFromCanvasRef: padding.refreshMapPaddingFromCanvasRef,
+    followThresholdExceededRef,
   });
 
   const { attemptBoot } = useBootFlyCoordinator({
@@ -107,6 +116,11 @@ export function useMapAnchor({
     mapRef,
     enabled,
     session,
+    follow,
+    onReleaseFollow,
+    smoothFlyDurationMs,
+    navigateToRef,
+    followThresholdExceededRef,
   });
 
   const setAnchor = useCallback(

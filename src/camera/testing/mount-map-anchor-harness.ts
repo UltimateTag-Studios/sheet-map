@@ -2,11 +2,12 @@ import type { ReactElement } from "react";
 import { act, createElement, StrictMode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
-import type { MapPosition } from "../../shared/map-position";
 import type { SheetMotionPhase } from "../../viewport";
 import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../../viewport/testing/mount-sheet-host-fixture";
+import type { MapAnchorFollowConfig } from "../anchor";
 import { useMapAnchor } from "../hooks/use-map-anchor";
+import type { MapPosition } from "../shared/map-position";
 import {
   createTestMapRef,
   type TestMapRefHarness,
@@ -23,6 +24,8 @@ export type MountAnchorOptions = {
   onBootIssued?: () => void;
   smoothFlyDurationMs?: number;
   styleLoaded?: boolean;
+  follow?: MapAnchorFollowConfig | null;
+  onReleaseFollow?: () => void;
 };
 
 function renderStrictMode(element: ReactElement) {
@@ -80,6 +83,8 @@ export function mountAnchorWithMapRef(
       bootDurationMs: options.bootDurationMs,
       onBootIssued: options.onBootIssued,
       smoothFlyDurationMs: options.smoothFlyDurationMs,
+      follow: options.follow,
+      onReleaseFollow: options.onReleaseFollow,
     }),
   );
 }

@@ -1,4 +1,4 @@
-import { type MutableRefObject, useCallback, useRef } from "react";
+import { type RefObject, useCallback, useRef } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import {
@@ -22,9 +22,10 @@ export type UseMapAnchorNavigateInput = {
   mapRef: MapRef | null;
   mapPaddingDebug: boolean;
   session: MapAnchorSessionRefs;
-  refreshMapPaddingFromCanvasRef: MutableRefObject<
+  refreshMapPaddingFromCanvasRef: RefObject<
     (options?: RefreshMapPaddingFromCanvasOptions) => boolean
   >;
+  followThresholdExceededRef: RefObject<boolean>;
 };
 
 export type MapAnchorNavigateHandle = {
@@ -32,7 +33,7 @@ export type MapAnchorNavigateHandle = {
     position: MapPosition,
     options?: NavigateToMapAnchorOptions,
   ) => boolean;
-  navigateToRef: MutableRefObject<
+  navigateToRef: RefObject<
     (position: MapPosition, options?: NavigateToMapAnchorOptions) => boolean
   >;
 };
@@ -42,6 +43,7 @@ export function useMapAnchorNavigate({
   mapPaddingDebug,
   session,
   refreshMapPaddingFromCanvasRef,
+  followThresholdExceededRef,
 }: UseMapAnchorNavigateInput): MapAnchorNavigateHandle {
   const { stateRef, dispatch, sheetPhaseRef } = session;
 
@@ -93,6 +95,8 @@ export function useMapAnchorNavigate({
       dispatch({ type: "setAnchor", position: anchorPosition });
       dispatch({ type: "navigationStarted", intent });
 
+      followThresholdExceededRef.current = false;
+
       beginProgrammaticNavigation(map, () => {
         refreshMapPaddingFromCanvasRef.current({ realign: false });
       });
@@ -106,6 +110,7 @@ export function useMapAnchorNavigate({
       dispatch,
       sheetPhaseRef,
       refreshMapPaddingFromCanvasRef,
+      followThresholdExceededRef,
     ],
   );
 
