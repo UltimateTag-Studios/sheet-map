@@ -126,7 +126,7 @@ All programmatic camera moves use **one path:**
 2. `beginProgrammaticNavigation(map, applyPaddingBeforeNavigation)`:
    - `map.stop()` — preempts user momentum (intentional).
    - `applyMapPadding({ realign: false })` — padding only, **no boot**, **no** follow realign.
-3. `applyMapAnchorCamera` — fly or jump (`duration: 0` when `sheetMotionActive`).
+3. `applyMapAnchorCamera` — fly or jump (`duration: 0` when sheet is dragging or settling).
 
 **While `navigating` + sheet geometry changes:**
 

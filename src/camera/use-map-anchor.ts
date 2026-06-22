@@ -2,7 +2,7 @@ import type { MapEventOf } from "mapbox-gl";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import type { MapObscuredInsets } from "../viewport";
+import type { MapObscuredInsets, SheetMotionPhase } from "../viewport";
 import {
   applyMapAnchorCamera,
   beginProgrammaticNavigation,
@@ -30,7 +30,7 @@ const mapListenerCleanupByMap = new WeakMap<
 >();
 
 export type NavigateToMapAnchorOptions = {
-  /** ms. 0 or omitted = jump; >0 = fly. Ignored while sheet is moving — always jumps. */
+  /** ms. 0 or omitted = jump; >0 = fly when sheet is idle. Jump when sheet is dragging or settling. */
   duration?: number;
 };
 
@@ -44,8 +44,8 @@ export type UseMapAnchorOptions = {
   liveSheetObscuredBottomPx?: number;
   fixedChromeInsets?: Partial<MapObscuredInsets>;
   mapPaddingDebug?: boolean;
-  /** True while sheet phase is dragging or settling. */
-  sheetMotionActive?: boolean;
+  /** Sheet gesture phase from `useLiveSheetObscuredBottomPx` (or sheet `onLayoutFrameChange`). */
+  sheetPhase?: SheetMotionPhase;
   onMapInstanceReleased?: () => void;
 };
 
@@ -59,7 +59,7 @@ export function useMapAnchor({
   liveSheetObscuredBottomPx,
   fixedChromeInsets,
   mapPaddingDebug = false,
-  sheetMotionActive = false,
+  sheetPhase = "idle",
   onMapInstanceReleased,
 }: UseMapAnchorOptions) {
   const mapPaddingFromCanvasEnabled = liveSheetObscuredBottomPx !== undefined;
@@ -79,9 +79,13 @@ export function useMapAnchor({
   stateRef.current = state;
   const onMapInstanceReleasedRef = useRef(onMapInstanceReleased);
   onMapInstanceReleasedRef.current = onMapInstanceReleased;
-  const sheetMotionActiveRef = useRef(sheetMotionActive);
-  sheetMotionActiveRef.current = sheetMotionActive;
-  const prevSheetMotionActiveRef = useRef(sheetMotionActive);
+  const sheetPhaseRef = useRef(sheetPhase);
+  sheetPhaseRef.current = sheetPhase;
+  const sheetMotionActiveRef = useRef(sheetPhase !== "idle");
+  sheetMotionActiveRef.current = sheetPhase !== "idle";
+  const prevSheetMotionActiveRef = useRef(sheetPhase !== "idle");
+
+  const sheetMotionActive = sheetPhase !== "idle";
 
   const refreshMapPaddingFromCanvasRef = useRef<
     (options?: RefreshMapPaddingFromCanvasOptions) => boolean
@@ -96,6 +100,8 @@ export function useMapAnchor({
         return false;
       }
 
+      const sheetMotionActive = sheetPhaseRef.current !== "idle";
+
       const result = syncMapPaddingFromCanvas({
         map: mapRef.getMap(),
         fixedChromeInsets,
@@ -109,6 +115,8 @@ export function useMapAnchor({
           state: stateRef.current,
           paddingChanged: true,
           realign: options.realign,
+          sheetMotionActive,
+          debug: mapPaddingDebug,
         });
       }
 
@@ -149,15 +157,16 @@ export function useMapAnchor({
       }
 
       const requestedDuration = options.duration ?? 0;
-      const duration = sheetMotionActiveRef.current ? 0 : requestedDuration;
+      const sheetMoving = sheetPhaseRef.current !== "idle";
+      const duration = sheetMoving ? 0 : requestedDuration;
 
-      if (
-        mapPaddingDebug &&
-        sheetMotionActiveRef.current &&
-        requestedDuration > 0
-      ) {
-        console.info("[map-navigate] jump (duration 0): sheet motion active", {
+      if (mapPaddingDebug) {
+        const mode = duration > 0 ? "fly" : "jump";
+        console.info(`[map-navigate] ${mode}`, {
+          duration,
           requestedDuration,
+          sheetPhase: sheetPhaseRef.current,
+          ...(mode === "jump" && sheetMoving ? { reason: "sheet moving" } : {}),
         });
       }
       const anchorPosition = mergeMapAnchorPosition(

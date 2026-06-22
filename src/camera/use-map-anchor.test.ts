@@ -89,7 +89,7 @@ function mountAnchorWithMapRef(
   harness: ReturnType<typeof createMapRefWithEvents>,
   options: {
     liveSheetObscuredBottomPx?: number;
-    sheetMotionActive?: boolean;
+    sheetPhase?: "idle" | "dragging" | "settling";
   } = {},
 ) {
   const { mapRef, map } = harness;
@@ -103,7 +103,7 @@ function mountAnchorWithMapRef(
         latestRef.current = useMapAnchor({
           mapRef,
           liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
-          sheetMotionActive: options.sheetMotionActive,
+          sheetPhase: options.sheetPhase,
         });
         return null;
       }),
@@ -130,7 +130,7 @@ function mountAnchorWithMapRef(
 function mountAnchor(
   options: {
     liveSheetObscuredBottomPx?: number;
-    sheetMotionActive?: boolean;
+    sheetPhase?: "idle" | "dragging" | "settling";
   } = {},
 ) {
   return mountAnchorWithMapRef(createMapRefWithEvents(), options);
@@ -154,6 +154,8 @@ function mountAnchorWithLiveSheetPadding(initialPx = 152) {
   const root: Root = createRoot(container);
   const latestRef: { current: MapAnchorHookResult | null } = { current: null };
   let setLivePx: ((next: number) => void) | null = null;
+  let setSheetPhase: ((next: "idle" | "dragging" | "settling") => void) | null =
+    null;
 
   const updateSheetSlideRect = (obscuredBottomPx: number) => {
     fixture.sheetSlide.getBoundingClientRect = () =>
@@ -175,10 +177,15 @@ function mountAnchorWithLiveSheetPadding(initialPx = 152) {
       createElement(function Harness() {
         const [liveSheetObscuredBottomPx, setLiveSheetObscuredBottomPx] =
           useState(initialPx);
+        const [sheetPhase, setSheetPhaseState] = useState<
+          "idle" | "dragging" | "settling"
+        >("idle");
         setLivePx = setLiveSheetObscuredBottomPx;
+        setSheetPhase = setSheetPhaseState;
         latestRef.current = useMapAnchor({
           mapRef: harness.mapRef,
           liveSheetObscuredBottomPx,
+          sheetPhase,
         });
         return null;
       }),
@@ -196,6 +203,9 @@ function mountAnchorWithLiveSheetPadding(initialPx = 152) {
     setObscuredBottomPx(nextPx: number) {
       updateSheetSlideRect(nextPx);
       setLivePx?.(nextPx);
+    },
+    setSheetPhase(next: "idle" | "dragging" | "settling") {
+      setSheetPhase?.(next);
     },
     unmount() {
       act(() => {
@@ -404,8 +414,8 @@ describe("useMapAnchor", () => {
     harness.unmount();
   });
 
-  it("navigateTo jumps when sheet is already moving", () => {
-    const harness = mountAnchor({ sheetMotionActive: true });
+  it("navigateTo jumps when sheet is dragging", () => {
+    const harness = mountAnchor({ sheetPhase: "dragging" });
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
     act(() => {
@@ -415,6 +425,20 @@ describe("useMapAnchor", () => {
     expect(harness.latest.session).toBe("navigating");
     expect(harness.map.flyTo).not.toHaveBeenCalled();
     expect(harness.map.jumpTo).toHaveBeenCalled();
+
+    harness.unmount();
+  });
+
+  it("navigateTo jumps while sheet is settling", () => {
+    const harness = mountAnchor({ sheetPhase: "settling" });
+    const destination = { lat: 3, lng: 4, zoom: 16 };
+
+    act(() => {
+      harness.latest.navigateTo(destination, { duration: 1000 });
+    });
+
+    expect(harness.map.jumpTo).toHaveBeenCalled();
+    expect(harness.map.flyTo).not.toHaveBeenCalled();
 
     harness.unmount();
   });
@@ -430,6 +454,7 @@ describe("useMapAnchor", () => {
     vi.mocked(harness.map.jumpTo).mockClear();
 
     act(() => {
+      harness.setSheetPhase("dragging");
       harness.setObscuredBottomPx(200);
     });
 
