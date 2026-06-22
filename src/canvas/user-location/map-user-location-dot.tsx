@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { useMapUserTrackingContext } from "../../camera/hooks/map-user-tracking-context";
+import type { MapUserLocationStyleOverrides } from "./style-overrides";
 import { MapUserLocation } from "./user-location";
 
 export type MapUserLocationDotRenderProps = {
@@ -12,13 +13,17 @@ export type MapUserLocationDotRenderProps = {
 
 export type MapUserLocationDotProps = {
   renderDot?: (props: MapUserLocationDotRenderProps) => ReactNode;
+  styleOverrides?: MapUserLocationStyleOverrides;
 };
 
 /**
  * Default user-location dot + accuracy halo.
  * Reads `tracking`, padding readiness, and coords from `MapUserTrackingProvider`.
  */
-export function MapUserLocationDot({ renderDot }: MapUserLocationDotProps) {
+export function MapUserLocationDot({
+  renderDot,
+  styleOverrides,
+}: MapUserLocationDotProps) {
   const { tracking, mapPaddingReady, userLocation } =
     useMapUserTrackingContext();
 
@@ -43,6 +48,7 @@ export function MapUserLocationDot({ renderDot }: MapUserLocationDotProps) {
       longitude={dotProps.longitude}
       accuracyMeters={dotProps.accuracyMeters}
       focused={dotProps.focused}
+      styleOverrides={styleOverrides}
     />
   );
 }

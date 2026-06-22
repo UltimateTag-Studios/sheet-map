@@ -12,6 +12,7 @@ import {
 } from "../dot/style";
 import { resolveMapRef } from "../instance/resolve-map-ref";
 import { accuracyMetersToHaloRadiusPx } from "./accuracy-to-halo-radius";
+import type { MapUserLocationStyleOverrides } from "./style-overrides";
 import { useMapCanvasZoom } from "./use-zoom";
 
 export type MapUserLocationProps = {
@@ -20,6 +21,7 @@ export type MapUserLocationProps = {
   accuracyMeters?: number | null;
   /** Brighter accuracy halo when the user location is the active map focus. */
   focused?: boolean;
+  styleOverrides?: MapUserLocationStyleOverrides;
 };
 
 const SOURCE_ID = "sheet-map-user-location-source";
@@ -47,18 +49,19 @@ export function MapUserLocation({
   latitude,
   accuracyMeters = null,
   focused = false,
+  styleOverrides,
 }: MapUserLocationProps) {
   const maps = useMap();
   const zoom = useMapCanvasZoom();
-  const haloRadiusPx = accuracyMetersToHaloRadiusPx(
-    accuracyMeters,
-    latitude,
-    zoom,
-  );
+  const haloRadiusPx =
+    styleOverrides?.haloRadiusPx ??
+    accuracyMetersToHaloRadiusPx(accuracyMeters, latitude, zoom);
   const hitRadiusPx = MAP_DOT_HIT_RADIUS_PX;
-  const haloOpacity = focused
-    ? MAP_USER_LOCATION_HALO_OPACITY
-    : MAP_USER_LOCATION_HALO_OPACITY_IDLE;
+  const haloOpacity =
+    styleOverrides?.haloOpacity ??
+    (focused
+      ? MAP_USER_LOCATION_HALO_OPACITY
+      : MAP_USER_LOCATION_HALO_OPACITY_IDLE);
 
   const data: FeatureCollection<Point> = {
     type: "FeatureCollection",
