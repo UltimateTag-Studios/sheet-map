@@ -276,6 +276,31 @@ export function useMapAnchor({
   }, [mapPaddingFromCanvasEnabled, liveSheetObscuredBottomPx]);
 
   useEffect(() => {
+    if (
+      !mapRef ||
+      !enabled ||
+      !mapPaddingFromCanvasEnabled ||
+      mapPaddingReady
+    ) {
+      return;
+    }
+
+    const map = mapRef.getMap();
+
+    const retryPaddingSync = () => {
+      refreshMapPaddingFromCanvasRef.current();
+    };
+
+    map.on("idle", retryPaddingSync);
+    map.on("resize", retryPaddingSync);
+
+    return () => {
+      map.off("idle", retryPaddingSync);
+      map.off("resize", retryPaddingSync);
+    };
+  }, [mapRef, enabled, mapPaddingFromCanvasEnabled, mapPaddingReady]);
+
+  useEffect(() => {
     const wasSheetMotionActive = prevSheetMotionActiveRef.current;
     prevSheetMotionActiveRef.current = sheetMotionActive;
 

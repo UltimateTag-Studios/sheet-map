@@ -1,6 +1,6 @@
 # Phase 5C — boot fly (sliced plan)
 
-**Status:** 5C-2 complete (`useMapFollowUser`). Next: 5C-3 location dot + demo geolocation hook.
+**Status:** 5C-3 complete (location dot + demo geolocation). Next: monolith cleanup, then 5C-4 demo swap.
 
 Parent doc: [`phase-5-parts.md`](phase-5-parts.md). Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot).
 
@@ -125,7 +125,7 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 
 **Automated verify:**
 
-- [ ] Package tests still pass (no new camera tests required)
+- [x] Package tests still pass (no new camera tests required)
 
 **Manual verify:**
 
@@ -184,7 +184,7 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 
 ### Known issues
 
-_(empty — fill in if a slice fails manual verify)_
+**5C-3 — padding race with early `MapUserLocation` mount (fixed):** Cached geolocation can return before `mapRef` is published and before the first `setPadding`. Mounting `MapUserLocation` inside `MapCanvas` adds style layers during that bootstrap window and intermittently left `mapPaddingReady` false (no debug overlay / no `setPadding` log). **Fix:** demo gates the dot on `mapPaddingReady`; `useMapAnchor` retries padding sync on `idle` + `resize` until ready.
 
 ---
 
