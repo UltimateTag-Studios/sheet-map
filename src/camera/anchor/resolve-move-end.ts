@@ -4,12 +4,12 @@ import type { MapAnchorSession } from "./state";
 export type MoveEndResolution =
   | { kind: "noop"; reason: "still_moving" | "padding_only" }
   | { kind: "userGestureSettled"; position: MapPosition }
-  | { kind: "trySettleNavigating" };
+  | { kind: "trySettleFlying" };
 
-/** Optional bag for 5D follow release / snap-back (threshold configured by app, not hardcoded here). */
+/** Optional bag for follow release / snap-back (threshold configured by app, not hardcoded here). */
 export type MoveEndFollowContext = {
   followUser: boolean;
-  /** Screen pixels — app default often 40; not used until 5D gesture settle. */
+  /** Screen pixels — app default often 40; not used until gesture settle. */
   followReleaseThresholdPx?: number;
 };
 
@@ -43,8 +43,8 @@ export function resolveMoveEnd(input: {
     };
   }
 
-  if (input.session === "navigating") {
-    return { kind: "trySettleNavigating" };
+  if (input.session === "flying") {
+    return { kind: "trySettleFlying" };
   }
 
   return { kind: "noop", reason: "padding_only" };

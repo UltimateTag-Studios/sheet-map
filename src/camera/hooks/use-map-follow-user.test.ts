@@ -456,7 +456,7 @@ describe("useMapFollowUser", () => {
     fixture.remove();
   });
 
-  it("does not reposition while session is navigating", () => {
+  it("does not navigate via GPS while session is flying", () => {
     stubViewport();
     const fixture = mountSheetHostFixture(
       mockCanvas,
@@ -506,7 +506,7 @@ describe("useMapFollowUser", () => {
       );
     });
 
-    expect(latestRef.current?.session).toBe("navigating");
+    expect(latestRef.current?.session).toBe("flying");
     vi.mocked(harness.map.jumpTo).mockClear();
 
     act(() => {

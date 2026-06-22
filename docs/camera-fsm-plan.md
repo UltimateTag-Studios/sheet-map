@@ -14,7 +14,7 @@
 | ------- | ------ | --------- |
 | `idle` | Nobody (at rest) | User starts pan/zoom, or app calls `navigateTo` |
 | `userGesture` | User (pan / zoom) | Gesture **fully** settled (`moveend` + `!map.isMoving()`) |
-| `navigating` | App (`navigateTo`) | Target reached, sheet idle, `navigationSettled` |
+| `flying` | App (`navigateTo`, `duration > 0`) | Target reached, sheet idle, `flySettled` |
 
 **Not sessions** (orthogonal state):
 
@@ -22,17 +22,17 @@
 | ----- | ----- | ----- |
 | `followUser`, `hasBootFlown` | Follow reducer | Whether we track GPS and whether boot fly was issued |
 | `sheetObscuredBottomPx`, `sheetMotionActive` | `@siegetag/sheet` + DOM | Camera **reacts** only |
-| `selectedMapItemId` (future) | App shell | Uses same `navigating` session via `navigateTo` |
+| `selectedMapItemId` (future) | App shell | Uses same `flying` session via animated `navigateTo` |
 
 ```mermaid
 stateDiagram-v2
   direction LR
   [*] --> idle
-  idle --> navigating: navigateTo
+  idle --> flying: navigateTo_fly
   idle --> userGesture: dragstart_or_zoomstart
-  navigating --> idle: navigationSettled
-  navigating --> userGesture: user_pan
-  userGesture --> navigating: gesture_settle_snapBack
+  flying --> idle: flySettled
+  flying --> userGesture: user_pan
+  userGesture --> flying: gesture_settle_snapBack
   userGesture --> idle: userGestureSettled
 ```
 
@@ -101,36 +101,36 @@ On map unmount / `mapRef` swap:
 
 ---
 
-### Rule 2 — Programmatic navigation (`navigateTo`)
+### Rule 2 — Camera moves: `navigateTo` only
 
-All programmatic camera moves use **one path:**
+One public API. **`anchor`** (lat/lng/zoom) is whatever should stay centered in the visible map area.
 
-`navigateTo` → `navigationStarted` → session `navigating` → `navigationSettled` when at target + sheet idle.
+`navigateTo` → set **`anchor`** → `map.stop()` → padding sync (`realign: false`) → fly/jump.
+
+| `duration` | Session |
+|------------|---------|
+| `> 0` | `flyStarted` → **`flying`** → `flySettled` → `idle` |
+| `0` | stays **`idle`** (instant jump) |
 
 | Trigger | Camera | Session after |
 | ------- | ------ | ------------- |
-| Boot | smooth fly + zoom | `navigating` → `idle` |
-| My-location button | smooth fly | `navigating` → `idle` |
-| Gesture settle snap-back (≤40px, still following) | smooth fly | `navigating` → `idle` |
-| Future map-item focus | smooth fly | `navigating` → `idle` |
-
-**Not `navigateTo`:**
-
-| Trigger | API | Session |
-| ------- | --- | ------- |
-| GPS tick while following | `repositionCamera` (instant `jumpTo`) | stays `idle` |
+| Boot | smooth fly + zoom | `flying` → `idle` |
+| My-location button | smooth fly | `flying` → `idle` |
+| Gesture settle snap-back (≤40px, still following) | smooth fly | `flying` → `idle` |
+| GPS tick while following | instant jump | stays `idle` |
+| Future map-item focus | smooth fly | `flying` → `idle` |
 
 **Inside `navigateTo`:**
 
-1. Update `stateRef` to `navigating` **before** camera commands (re-entrancy safety).
-2. `beginProgrammaticNavigation(map, applyPaddingBeforeNavigation)`:
-   - `map.stop()` — preempts user momentum (intentional).
-   - `applyMapPadding({ realign: false })` — padding only, **no boot**, **no** follow realign.
-3. `applyMapAnchorCamera` — fly or jump (`duration: 0` when sheet is dragging or settling).
+1. Optional `stopFollowingUser` when `keepFollowing` is false.
+2. Dispatch `setAnchor` + `flyStarted` only when `duration > 0`.
+3. `map.stop()` — preempts user momentum (intentional).
+4. `applyMapPadding({ realign: false })` — padding only, no camera realign.
+5. `moveCameraProgrammatic` — fly or jump (`duration: 0` when sheet is dragging or settling).
 
-**While `navigating` + sheet geometry changes:**
+**While sheet geometry changes** (padding sync with `realign: true`):
 
-After `setPadding`, **jump** to `navigationIntent.target` (duration 0 if sheet moving).
+After `setPadding`, **jump** to **`anchor`** when sheet is moving and session is not `userGesture`.
 
 **No side channels:** delete `onSnapBack` callbacks; snap-back is `navigateTo` like boot.
 
@@ -144,7 +144,7 @@ After `setPadding`, **jump** to `navigationIntent.target` (duration 0 if sheet m
 | ----- | ------ |
 | `move` while following | 40px threshold vs `centerOffset`; may `stopFollowingUser` |
 | Sheet / padding change | **`setPadding` only** — no `jumpTo` / `flyTo` / `map.stop()` from our code |
-| User pan during `navigating` | `userGestureStarted` → `userGesture`, clears nav intent |
+| User pan during `flying` | `userGestureStarted` → `userGesture` |
 
 **Gesture settle** — single `moveend` dispatcher:
 
@@ -154,10 +154,10 @@ moveend
   → map.isMoving()? return (wait for momentum)
   → session === userGesture?
        → evaluateFollowAtGestureSettle
-       → snapBack (≤40px, following)? navigateTo fly → navigating
+       → snapBack (≤40px, following)? navigateTo fly → flying
        → releaseFollow (>40px)? stopFollowingUser + userGestureSettled → idle
        → else userGestureSettled → idle (commit anchor)
-  → session === navigating? trySettleNavigatingSession
+  → session === flying? trySettleFlyingSession
 ```
 
 **No deferred padding flush on momentum `moveend`.** That was the old snap bug.
@@ -192,17 +192,14 @@ Camera hook **reacts** to sheet inputs. No duplicate sheet FSM in camera code.
 
 ---
 
-## 3. Padding + camera matrix (`applyMapPadding`)
+## 3. Padding + camera (`applyMapPadding`)
 
 After `syncMapPaddingFromCanvas`, optionally realign camera:
 
-| Session | Follow | Sheet moves | Camera after `setPadding` |
-| ------- | ------ | ----------- | ------------------------- |
-| `idle` | off | yes | **none** (Mapbox keeps center stable) |
-| `idle` | on | yes | jump to user |
-| `userGesture` | off | yes | **no jumpTo/flyTo** from our code (`setPadding` only; coast may still end — §3.1) |
-| `userGesture` | on | yes | **no jumpTo/flyTo** from our code; snap-back at pan settle only |
-| `navigating` | * | yes | jump to `navigationIntent.target` |
+| Session | Sheet moves | Camera after `setPadding` |
+| ------- | ----------- | ------------------------- |
+| `userGesture` | yes | **no jumpTo/flyTo** from our code (`setPadding` only; coast may still end — §3.1) |
+| `idle` or `flying` | yes | jump to **`anchor`** |
 
 `applyPaddingBeforeNavigation` (inside `navigateTo`): always `realign: false`.
 
@@ -300,9 +297,9 @@ There is **no single “layout settled forever”** signal for padding. Padding 
 | ------- | ---- |
 | Auto-follow | When GPS available → `startFollowUser` |
 | `isFollowFocused` | `followUser && hasBootFlown` (blue after boot **issued**) |
-| GPS updates | `repositionCamera` when `session === idle` only |
-| My-location button | `navigateTo` (same as boot path, not `repositionCamera`) |
-| Snap-back | `navigateTo` at gesture settle (≤40px) |
+| GPS updates | `navigateTo({ duration: 0, keepFollowing: true })` when `session === idle` only |
+| My-location button | `navigateTo` fly with `keepFollowing: true` |
+| Snap-back | `navigateTo` at gesture settle (≤40px) with `keepFollowing: true` |
 
 **Geolocation (app layer):** See [`phase-5-parts.md`](phase-5-parts.md) — request on map mount; boot only when `userLocation` is non-null; **no boot on deny**; no fake fallback coords in product code. Capacitor uses `@capacitor/geolocation` + OS settings when permanently denied.
 
@@ -315,7 +312,7 @@ There is **no single “layout settled forever”** signal for padding. Padding 
 1. `consumePaddingSyncMoveEnd` → return
 2. `map.isMoving()` → return
 3. `userGesture` → gesture settle
-4. `navigating` → `trySettleNavigatingSession`
+4. `flying` → `trySettleFlyingSession`
 5. else noop
 
 No second padding `moveend` listener. No deferred padding queue.
@@ -341,7 +338,7 @@ flowchart TD
 
   subgraph camera [Camera module]
     NT[navigateTo]
-    RC[repositionCamera]
+    MCP[moveCameraProgrammatic]
     BPN[applyPaddingBeforeNavigation]
   end
 
@@ -355,7 +352,8 @@ flowchart TD
   SMPC -->|mapPaddingReady| TBF
   TBF --> NT
   NT --> BPN --> SMPC
-  NT --> RC
+  NT --> MCP
+  SMPC -->|realign| MCP
 ```
 
 ### Module layout
@@ -367,7 +365,8 @@ camera/
   padding/                     # apply, compute, sync, sync-from-canvas
   boot/                        # try-boot-fly
   instance/                    # camera-state (per-map latches)
-  shared/                      # map-position, reposition-camera, when-map-style-ready
+  shared/                      # map-position, when-map-style-ready
+  movement/                    # moveCameraProgrammatic
   hooks/
     use-map-anchor/            # listeners, navigate, padding-sync, boot-coordinator
     use-map-follow-user.ts
@@ -379,14 +378,16 @@ viewport/
   MapVisibleAreaDebug / MapVisibleAreaOverlay
 ```
 
-### Three camera APIs (no cycles)
+### Public API
 
-| API | Enters `navigating`? | Calls padding? |
-| --- | -------------------- | -------------- |
+| API | Enters `flying`? | Calls padding? |
+| --- | ---------------- | -------------- |
 | `syncMapPaddingFromCanvas` | No | Yes |
-| `navigateTo` | Yes | Yes via `applyPaddingBeforeNavigation` only |
-| `repositionCamera` | No | No |
+| `navigateTo` (`duration > 0`) | Yes | Yes via `applyPaddingBeforeNavigation` only |
+| `navigateTo` (`duration === 0`) | No | Yes via `applyPaddingBeforeNavigation` only |
 | `tryBootFly` | Via `navigateTo` once | No direct call |
+
+Apps import **`useMapFollowUser` only**; `useMapAnchor` is internal.
 
 ---
 
@@ -396,9 +397,8 @@ Full matrix in original plan; key rows:
 
 | Session | Padding change | Result |
 | ------- | -------------- | ------ |
-| `idle` + follow | sheet moves | setPadding + jump user |
-| `userGesture` + follow | sheet moves | setPadding only |
-| `navigating` | sheet moves | setPadding + jump to nav target |
+| `idle` or `flying` | sheet moves | setPadding + jump to `anchor` |
+| `userGesture` | sheet moves | setPadding only |
 | `userGesture` | momentum ends, ≤40px | navigateTo snap-back |
 | `userGesture` | momentum ends, >40px | stop follow, idle |
 
@@ -406,8 +406,8 @@ Full matrix in original plan; key rows:
 
 | ID | Fix |
 | -- | --- |
-| G1 | GPS uses `repositionCamera`, not `navigateTo` |
-| G2 | Nav settle checks zoom when intent includes zoom |
+| G1 | GPS uses instant `navigateTo`, not a separate reposition API |
+| G2 | Fly settle checks zoom when anchor includes zoom |
 | G3 | GPS / boot read `session` from `stateRef`, not stale closure |
 | G4 | Snap-back from `moveend`: update `stateRef` before `stopMapMotion` |
 
@@ -439,16 +439,15 @@ Full matrix in original plan; key rows:
 - [ ] **Pan + sheet during momentum (following):** padding tracks live; **coast may stop when sheet moves** (accepted); snap-back fly only at pan settle if ≤40px
 - [ ] **Pan + sheet (not following):** padding tracks; coast may stop when sheet moves; no extra camera API on pan settle
 - [ ] **Pan >40px while following:** follow releases
-- [ ] **Boot / my-location + sheet drag:** instant jumps to target while navigating
-- [ ] **GPS while following:** instant jump, session stays idle
+- [ ] **Boot / my-location + sheet drag:** instant jumps to `anchor` while flying
+- [ ] **GPS while following:** instant `navigateTo`, session stays idle
 
 ---
 
 ## 12. Out of scope (do not add during rewrite)
 
 - Map item selection reducer (uses same `navigateTo`)
-- Renaming `navigating` → `programmatic`
-- `NavigationIntent.reason` (optional metadata only)
+- Mid-gesture anchor sync (settle-only is enough)
 - Backwards-compat shims for old APIs
 
 ---

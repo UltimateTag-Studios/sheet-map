@@ -10,15 +10,13 @@ export type NavigateToMapAnchorOptions = {
   /**
    * ms. 0 or omitted = jump; >0 = fly when sheet is idle.
    * Jump when sheet is dragging or settling.
-   *
-   * Not for GPS ticks — use `repositionCamera` (no session, no `map.stop()`).
    */
   duration?: number;
   /**
    * Keep GPS follow enabled after this move. Boot, snap-back, and recenter pass `true`.
    * Default `false` releases follow (e.g. fly to a map item or demo point).
    */
-  retainFollow?: boolean;
+  keepFollowing?: boolean;
 };
 
 export type UseMapAnchorOptions = {
@@ -39,13 +37,10 @@ export type UseMapAnchorOptions = {
   bootDurationMs?: number;
   onBootIssued?: () => void;
   smoothFlyDurationMs?: number;
-  /** Active follow config for gesture settle + padding realign. */
+  /** Active follow config for gesture settle. */
   follow?: MapAnchorFollowConfig | null;
   /** Called when pan exceeds follow threshold or settle releases follow. */
   onReleaseFollow?: () => void;
-  /** Phase 5D padding matrix: idle + following → jump to user when sheet moves. */
-  followUser?: boolean;
-  followTarget?: MapPosition | null;
   onMapInstanceReleased?: () => void;
 };
 

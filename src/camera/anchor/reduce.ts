@@ -1,12 +1,12 @@
 import type { MapPosition } from "../shared/map-position";
-import type { MapAnchorState, NavigationIntent } from "./state";
+import type { MapAnchorState } from "./state";
 
 export type MapAnchorEvent =
   | { type: "setAnchor"; position: MapPosition }
   | { type: "userGestureStarted" }
   | { type: "userGestureSettled"; position: MapPosition }
-  | { type: "navigationStarted"; intent: NavigationIntent }
-  | { type: "navigationSettled" };
+  | { type: "flyStarted" }
+  | { type: "flySettled" };
 
 export function reduceMapAnchor(
   state: MapAnchorState,
@@ -22,25 +22,21 @@ export function reduceMapAnchor(
       return {
         ...state,
         session: "userGesture",
-        navigationIntent: null,
       };
     case "userGestureSettled":
       return {
         anchor: event.position,
         session: "idle",
-        navigationIntent: null,
       };
-    case "navigationStarted":
+    case "flyStarted":
       return {
         ...state,
-        session: "navigating",
-        navigationIntent: event.intent,
+        session: "flying",
       };
-    case "navigationSettled":
+    case "flySettled":
       return {
         ...state,
         session: "idle",
-        navigationIntent: null,
       };
   }
 }

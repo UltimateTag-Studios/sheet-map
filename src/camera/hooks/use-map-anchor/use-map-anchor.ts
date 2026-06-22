@@ -5,8 +5,6 @@ import {
   type MapAnchorEvent,
   reduceMapAnchor,
 } from "../../anchor";
-import { repositionCamera as applyRepositionCamera } from "../../movement";
-import type { MapPosition } from "../../shared/map-position";
 import { useBootFlyCoordinator } from "./boot-coordinator";
 import { useMapInstanceRelease } from "./instance-release";
 import { useMapAnchorListeners } from "./listeners";
@@ -29,8 +27,6 @@ export function useMapAnchor({
   smoothFlyDurationMs = 600,
   follow = null,
   onReleaseFollow,
-  followUser = false,
-  followTarget = null,
   onMapInstanceReleased,
 }: UseMapAnchorOptions) {
   const mapPaddingFromCanvasEnabled = liveSheetObscuredBottomPx !== undefined;
@@ -74,8 +70,6 @@ export function useMapAnchor({
     fixedChromeInsets,
     mapPaddingDebug,
     session,
-    followUser,
-    followTarget,
     onPaddingReady: () => onPaddingReadyRef.current?.(),
   });
 
@@ -125,41 +119,13 @@ export function useMapAnchor({
     followThresholdExceededRef,
   });
 
-  const setAnchor = useCallback(
-    (position: MapPosition) => {
-      dispatchAnchor({ type: "setAnchor", position });
-    },
-    [dispatchAnchor],
-  );
-
-  const repositionCamera = useCallback(
-    (position: MapPosition): boolean => {
-      if (!mapRef) {
-        return false;
-      }
-
-      return applyRepositionCamera({
-        mapRef,
-        position,
-        currentAnchor: stateRef.current.anchor,
-        updateAnchor: (anchorPosition) => {
-          dispatchAnchor({ type: "setAnchor", position: anchorPosition });
-        },
-      });
-    },
-    [mapRef, dispatchAnchor],
-  );
-
   return {
     anchor: state.anchor,
     session: state.session,
-    navigationIntent: state.navigationIntent,
     /** Last Mapbox padding applied from live sheet DOM. */
     mapPadding: padding.mapPadding,
     /** True after the first successful `setPadding` from live sheet DOM. */
     mapPaddingReady: padding.mapPaddingReady,
-    setAnchor,
     navigateTo,
-    repositionCamera,
   };
 }

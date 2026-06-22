@@ -50,14 +50,14 @@ describe("resolveMoveEnd", () => {
     ).toEqual({ kind: "noop", reason: "still_moving" });
   });
 
-  it("signals navigating settle when session is navigating and map stopped", () => {
+  it("signals flying settle when session is flying and map stopped", () => {
     expect(
       resolveMoveEnd({
         paddingMoveEnd: false,
         isMoving: false,
-        session: "navigating",
+        session: "flying",
         readPosition,
       }),
-    ).toEqual({ kind: "trySettleNavigating" });
+    ).toEqual({ kind: "trySettleFlying" });
   });
 });

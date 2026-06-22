@@ -8,7 +8,7 @@ import {
   type MapAnchorFollowConfig,
   readMapAnchorPosition,
   resolveMoveEnd,
-  trySettleNavigatingSession,
+  trySettleFlyingSession,
 } from "../../anchor";
 import {
   consumePaddingSyncMoveEnd,
@@ -125,7 +125,7 @@ export function useMapAnchorListeners({
       if (outcome.kind === "snapBackToUser") {
         navigateToRef.current(outcome.target, {
           duration: smoothFlyDurationMsRef.current,
-          retainFollow: true,
+          keepFollowing: true,
         });
         return;
       }
@@ -169,11 +169,11 @@ export function useMapAnchorListeners({
         return;
       }
 
-      trySettleNavigatingSession(map, stateRef, sheetMotionActiveRef, dispatch);
+      trySettleFlyingSession(map, stateRef, sheetMotionActiveRef, dispatch);
     };
 
     const handleMapIdle = () => {
-      trySettleNavigatingSession(map, stateRef, sheetMotionActiveRef, dispatch);
+      trySettleFlyingSession(map, stateRef, sheetMotionActiveRef, dispatch);
     };
 
     const attachListeners = () => {

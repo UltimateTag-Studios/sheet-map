@@ -98,7 +98,7 @@ describe("padding + anchor integration", () => {
       harness.latest.navigateTo(destination, { duration: 1000 });
     });
 
-    expect(harness.latest.session).toBe("navigating");
+    expect(harness.latest.session).toBe("flying");
 
     vi.mocked(harness.map.flyTo).mockClear();
     vi.mocked(harness.map.jumpTo).mockClear();
@@ -113,13 +113,13 @@ describe("padding + anchor integration", () => {
         zoom: destination.zoom,
       }),
     );
-    expect(harness.latest.session).toBe("navigating");
+    expect(harness.latest.session).toBe("flying");
     expect(harness.latest.anchor).toEqual(destination);
 
     harness.unmount();
   });
 
-  it("settles navigating session on fly moveend", () => {
+  it("settles flying session on fly moveend", () => {
     const harness = mountPaddingAnchorHarness(152);
     const destination = { lat: 3, lng: 4, zoom: 16 };
 

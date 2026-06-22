@@ -6,6 +6,7 @@ import { applyMapPadding } from "./apply";
 
 function createMapRefMock() {
   const map = {
+    isStyleLoaded: () => true,
     getPadding: () => ({ top: 0, left: 0, right: 0, bottom: 152 }),
     flyTo: vi.fn(),
     jumpTo: vi.fn(),
@@ -20,7 +21,6 @@ function createMapRefMock() {
 const idleState: MapAnchorState = {
   anchor: { lat: 10, lng: 20, zoom: 14 },
   session: "idle",
-  navigationIntent: null,
 };
 
 const userGestureState: MapAnchorState = {
@@ -28,10 +28,9 @@ const userGestureState: MapAnchorState = {
   session: "userGesture",
 };
 
-const navigatingState: MapAnchorState = {
+const flyingState: MapAnchorState = {
   anchor: { lat: 3, lng: 4, zoom: 16 },
-  session: "navigating",
-  navigationIntent: { target: { lat: 3, lng: 4, zoom: 16 } },
+  session: "flying",
 };
 
 describe("applyMapPadding", () => {
@@ -40,7 +39,7 @@ describe("applyMapPadding", () => {
 
     applyMapPadding({
       mapRef,
-      state: navigatingState,
+      state: flyingState,
       paddingChanged: false,
       sheetMotionActive: true,
     });
@@ -53,7 +52,7 @@ describe("applyMapPadding", () => {
 
     applyMapPadding({
       mapRef,
-      state: navigatingState,
+      state: flyingState,
       paddingChanged: true,
       realign: false,
       sheetMotionActive: true,
@@ -62,7 +61,7 @@ describe("applyMapPadding", () => {
     expect(map.jumpTo).not.toHaveBeenCalled();
   });
 
-  it("idle + sheet moves + follow off: no camera realign", () => {
+  it("idle + sheet moves: jumps to anchor", () => {
     const { mapRef, map } = createMapRefMock();
 
     applyMapPadding({
@@ -70,28 +69,12 @@ describe("applyMapPadding", () => {
       state: idleState,
       paddingChanged: true,
       sheetMotionActive: true,
-    });
-
-    expect(map.jumpTo).not.toHaveBeenCalled();
-  });
-
-  it("idle + sheet moves + follow on: jumps to follow target", () => {
-    const { mapRef, map } = createMapRefMock();
-    const followTarget = { lat: 11, lng: 21, zoom: 15 };
-
-    applyMapPadding({
-      mapRef,
-      state: idleState,
-      paddingChanged: true,
-      sheetMotionActive: true,
-      followUser: true,
-      followTarget,
     });
 
     expect(map.jumpTo).toHaveBeenCalledWith(
       expect.objectContaining({
-        center: [21, 11],
-        zoom: 15,
+        center: [20, 10],
+        zoom: 14,
       }),
     );
   });
@@ -104,20 +87,18 @@ describe("applyMapPadding", () => {
       state: userGestureState,
       paddingChanged: true,
       sheetMotionActive: true,
-      followUser: true,
-      followTarget: { lat: 11, lng: 21 },
     });
 
     expect(map.jumpTo).not.toHaveBeenCalled();
   });
 
-  it("navigating + sheet moves: jumps to navigation target", () => {
+  it("flying + sheet moves: jumps to anchor", () => {
     const { mapRef, map } = createMapRefMock();
     const onRealignAnchor = vi.fn();
 
     applyMapPadding({
       mapRef,
-      state: navigatingState,
+      state: flyingState,
       paddingChanged: true,
       sheetMotionActive: true,
       onRealignAnchor,
@@ -136,12 +117,12 @@ describe("applyMapPadding", () => {
     });
   });
 
-  it("navigating + sheet idle: no jump", () => {
+  it("flying + sheet idle: no jump", () => {
     const { mapRef, map } = createMapRefMock();
 
     applyMapPadding({
       mapRef,
-      state: navigatingState,
+      state: flyingState,
       paddingChanged: true,
       sheetMotionActive: false,
     });

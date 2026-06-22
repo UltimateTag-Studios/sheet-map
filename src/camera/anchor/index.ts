@@ -23,10 +23,9 @@ export {
 } from "./resolve-move-end";
 export {
   createInitialMapAnchorState,
-  isNavigationSession,
+  isFlyingSession,
   type MapAnchorSession,
   type MapAnchorState,
-  type NavigationIntent,
 } from "./state";
 export { stopMapMotion } from "./stop-map-motion";
-export { trySettleNavigatingSession } from "./try-settle-navigating-session";
+export { trySettleFlyingSession } from "./try-settle-flying-session";

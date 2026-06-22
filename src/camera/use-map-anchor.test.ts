@@ -132,14 +132,14 @@ describe("useMapAnchor", () => {
 
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
     expect(harness.map.stop).toHaveBeenCalledTimes(1);
-    expect(harness.latest.session).toBe("navigating");
+    expect(harness.latest.session).toBe("flying");
     expect(hasBootFlownForMapInstance(asTestMapboxMap(harness.map))).toBe(true);
 
     clearMapPaddingSyncState(asTestMapboxMap(harness.map));
     harness.unmount();
   });
 
-  it("navigateTo sets anchor, opens navigating session, and flies", () => {
+  it("navigateTo sets anchor, opens flying session, and flies", () => {
     const harness = mountAnchor();
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
@@ -148,7 +148,7 @@ describe("useMapAnchor", () => {
     });
 
     expect(harness.latest.anchor).toEqual(destination);
-    expect(harness.latest.session).toBe("navigating");
+    expect(harness.latest.session).toBe("flying");
     expect(harness.map.flyTo).toHaveBeenCalledWith({
       center: [4, 3],
       zoom: 16,
@@ -159,7 +159,7 @@ describe("useMapAnchor", () => {
     harness.unmount();
   });
 
-  it("navigateTo without retainFollow calls onReleaseFollow", () => {
+  it("navigateTo without keepFollowing calls onReleaseFollow", () => {
     const onReleaseFollow = vi.fn();
     const harness = mountAnchor({ onReleaseFollow });
 
@@ -172,16 +172,16 @@ describe("useMapAnchor", () => {
     harness.unmount();
   });
 
-  it("repositionCamera jumps without entering navigating session", () => {
+  it("navigateTo with duration 0 jumps and stays idle", () => {
     const harness = mountAnchor();
 
     act(() => {
-      harness.latest.repositionCamera({ lat: 3, lng: 4, zoom: 16 });
+      harness.latest.navigateTo({ lat: 3, lng: 4, zoom: 16 });
     });
 
     expect(harness.latest.session).toBe("idle");
     expect(harness.map.jumpTo).toHaveBeenCalled();
-    expect(harness.map.stop).not.toHaveBeenCalled();
+    expect(harness.map.stop).toHaveBeenCalled();
     expect(harness.map.flyTo).not.toHaveBeenCalled();
 
     harness.unmount();
@@ -211,7 +211,7 @@ describe("useMapAnchor", () => {
       harness.latest.navigateTo(destination);
     });
 
-    expect(harness.latest.session).toBe("navigating");
+    expect(harness.latest.session).toBe("idle");
     expect(harness.map.jumpTo).toHaveBeenCalledWith({
       center: [4, 3],
       padding: { top: 0, left: 0, right: 0, bottom: 152 },
@@ -220,7 +220,7 @@ describe("useMapAnchor", () => {
     harness.unmount();
   });
 
-  it("settles navigating session on moveend when at target", () => {
+  it("settles flying session on moveend when at target", () => {
     const harness = mountAnchorWithMapRef(
       createTestMapRef({
         center: { lat: 3, lng: 4 },
@@ -230,7 +230,7 @@ describe("useMapAnchor", () => {
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
     act(() => {
-      harness.latest.navigateTo(destination);
+      harness.latest.navigateTo(destination, { duration: 1000 });
     });
 
     vi.mocked(harness.map.jumpTo).mockClear();
@@ -245,7 +245,7 @@ describe("useMapAnchor", () => {
     harness.unmount();
   });
 
-  it("waits on navigating moveend while the map is still moving", () => {
+  it("waits on flying moveend while the map is still moving", () => {
     const harness = mountAnchorWithMapRef(createTestMapRef({ isMoving: true }));
 
     act(() => {
@@ -259,7 +259,7 @@ describe("useMapAnchor", () => {
       harness.map.emit("moveend");
     });
 
-    expect(harness.latest.session).toBe("navigating");
+    expect(harness.latest.session).toBe("flying");
 
     harness.unmount();
   });
@@ -272,7 +272,7 @@ describe("useMapAnchor", () => {
       harness.latest.navigateTo(destination, { duration: 1000 });
     });
 
-    expect(harness.latest.session).toBe("navigating");
+    expect(harness.latest.session).toBe("idle");
     expect(harness.map.flyTo).not.toHaveBeenCalled();
     expect(harness.map.jumpTo).toHaveBeenCalled();
 
@@ -308,7 +308,7 @@ describe("useMapAnchor", () => {
       harness.setObscuredBottomPx(200);
     });
 
-    expect(harness.latest.session).toBe("navigating");
+    expect(harness.latest.session).toBe("flying");
     expect(harness.map.jumpTo).toHaveBeenCalledWith(
       expect.objectContaining({
         center: [destination.lng, destination.lat],
@@ -319,7 +319,7 @@ describe("useMapAnchor", () => {
     harness.unmount();
   });
 
-  it("user pan during navigating cancels fly and opens userGesture", () => {
+  it("user pan during flying cancels fly and opens userGesture", () => {
     const harness = mountAnchor();
 
     act(() => {
@@ -333,7 +333,6 @@ describe("useMapAnchor", () => {
     });
 
     expect(harness.latest.session).toBe("userGesture");
-    expect(harness.latest.navigationIntent).toBeNull();
 
     harness.unmount();
   });
@@ -348,7 +347,7 @@ describe("useMapAnchor", () => {
     });
 
     expect(harness.latest.mapPaddingReady).toBe(true);
-    expect(harness.latest.session).toBe("navigating");
+    expect(harness.latest.session).toBe("flying");
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
     expect(harness.map.flyTo).toHaveBeenCalledWith({
       center: [-74, 40],
@@ -577,7 +576,7 @@ describe("useMapAnchor", () => {
 
       expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
       expect(onReleaseFollow).not.toHaveBeenCalled();
-      expect(mounted.latest.session).toBe("navigating");
+      expect(mounted.latest.session).toBe("flying");
 
       mounted.unmount();
     });

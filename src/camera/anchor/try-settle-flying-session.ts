@@ -5,14 +5,14 @@ import { isAtMapAnchorPosition } from "./is-at-position";
 import type { MapAnchorEvent } from "./reduce";
 import type { MapAnchorState } from "./state";
 
-export function trySettleNavigatingSession(
+export function trySettleFlyingSession(
   map: MapboxMap,
   stateRef: RefObject<MapAnchorState>,
   sheetMotionActiveRef: RefObject<boolean>,
   dispatch: Dispatch<MapAnchorEvent>,
 ): void {
   const { session, anchor } = stateRef.current;
-  if (session !== "navigating") {
+  if (session !== "flying") {
     return;
   }
 
@@ -28,5 +28,5 @@ export function trySettleNavigatingSession(
     return;
   }
 
-  dispatch({ type: "navigationSettled" });
+  dispatch({ type: "flySettled" });
 }

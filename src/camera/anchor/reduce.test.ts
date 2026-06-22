@@ -4,7 +4,6 @@ import { reduceMapAnchor } from "./reduce";
 import { createInitialMapAnchorState } from "./state";
 
 const samplePosition = { lat: 1, lng: 2, zoom: 15 };
-const sampleIntent = { target: samplePosition };
 
 describe("reduceMapAnchor", () => {
   it("stores an explicit anchor without changing session", () => {
@@ -15,20 +14,17 @@ describe("reduceMapAnchor", () => {
 
     expect(next.anchor).toEqual(samplePosition);
     expect(next.session).toBe("idle");
-    expect(next.navigationIntent).toBeNull();
   });
 
-  it("opens a user gesture session and clears navigation intent", () => {
+  it("opens a user gesture session", () => {
     const started = reduceMapAnchor(
       reduceMapAnchor(createInitialMapAnchorState(), {
-        type: "navigationStarted",
-        intent: sampleIntent,
+        type: "flyStarted",
       }),
       { type: "userGestureStarted" },
     );
 
     expect(started.session).toBe("userGesture");
-    expect(started.navigationIntent).toBeNull();
   });
 
   it("commits anchor and closes the session on user settle", () => {
@@ -46,43 +42,38 @@ describe("reduceMapAnchor", () => {
     expect(settled.session).toBe("idle");
   });
 
-  it("opens a navigating session with intent", () => {
-    const navigating = reduceMapAnchor(
+  it("opens a flying session", () => {
+    const flying = reduceMapAnchor(
       reduceMapAnchor(createInitialMapAnchorState(), {
         type: "setAnchor",
         position: samplePosition,
       }),
-      { type: "navigationStarted", intent: sampleIntent },
+      { type: "flyStarted" },
     );
 
-    expect(navigating.anchor).toEqual(samplePosition);
-    expect(navigating.session).toBe("navigating");
-    expect(navigating.navigationIntent).toEqual(sampleIntent);
+    expect(flying.anchor).toEqual(samplePosition);
+    expect(flying.session).toBe("flying");
   });
 
-  it("closes navigating session on settle", () => {
+  it("closes flying session on settle", () => {
     const settled = reduceMapAnchor(
       reduceMapAnchor(createInitialMapAnchorState(), {
-        type: "navigationStarted",
-        intent: sampleIntent,
+        type: "flyStarted",
       }),
-      { type: "navigationSettled" },
+      { type: "flySettled" },
     );
 
     expect(settled.session).toBe("idle");
-    expect(settled.navigationIntent).toBeNull();
   });
 
-  it("user gesture replaces an open navigating session", () => {
+  it("user gesture replaces an open flying session", () => {
     const userGesture = reduceMapAnchor(
       reduceMapAnchor(createInitialMapAnchorState(), {
-        type: "navigationStarted",
-        intent: sampleIntent,
+        type: "flyStarted",
       }),
       { type: "userGestureStarted" },
     );
 
     expect(userGesture.session).toBe("userGesture");
-    expect(userGesture.navigationIntent).toBeNull();
   });
 });

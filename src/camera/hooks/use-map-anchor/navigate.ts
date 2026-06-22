@@ -1,7 +1,6 @@
 import { type RefObject, useCallback, useRef } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import type { NavigationIntent } from "../../anchor";
 import { moveCameraProgrammatic } from "../../movement";
 import {
   type MapPosition,
@@ -60,7 +59,7 @@ export function useMapAnchorNavigate({
         return false;
       }
 
-      if (!options.retainFollow) {
+      if (!options.keepFollowing) {
         onReleaseFollowRef.current?.();
       }
 
@@ -82,10 +81,11 @@ export function useMapAnchorNavigate({
         session.stateRef.current.anchor,
         position,
       );
-      const intent: NavigationIntent = { target: position };
 
       dispatch({ type: "setAnchor", position: anchorPosition });
-      dispatch({ type: "navigationStarted", intent });
+      if (duration > 0) {
+        dispatch({ type: "flyStarted" });
+      }
 
       followThresholdExceededRef.current = false;
 

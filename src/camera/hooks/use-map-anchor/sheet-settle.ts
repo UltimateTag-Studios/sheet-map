@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import type { SheetMotionPhase } from "../../../viewport";
-import { trySettleNavigatingSession } from "../../anchor";
+import { trySettleFlyingSession } from "../../anchor";
 import type { MapAnchorSessionRefs } from "./session-refs";
 
 export type UseMapAnchorSheetSettleInput = {
@@ -30,7 +30,7 @@ export function useMapAnchorSheetSettle({
       return;
     }
 
-    trySettleNavigatingSession(
+    trySettleFlyingSession(
       mapRef.getMap(),
       stateRef,
       sheetMotionActiveRef,

@@ -147,16 +147,18 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 ---
 
-## Part 5F — Movement layer + unified `navigateTo` ✅
+## Part 5F — One `anchor`, one `navigateTo` ✅
 
-**Goal:** One public camera API; decouple Mapbox moves from session/follow policy.
+**Goal:** Single source of truth for map center; trim public API.
 
-| Module | Notes |
+| Change | Notes |
 | ------ | ----- |
-| `movement/reposition-camera.ts` | GPS / padding instant jump |
-| `movement/programmatic.ts` | `map.stop()` + fly/jump for `navigateTo` |
-| `navigate.ts` | `retainFollow`; sole programmatic path |
-| `padding/apply.ts` | Uses `moveCameraInstant`; syncs anchor on realign |
+| `anchor` only | Removed `navigationIntent`, `followTarget` padding inputs |
+| `navigateTo` only | GPS uses instant `navigateTo`; `flying` session only for `duration > 0` |
+| `keepFollowing` | Renamed from `retainFollow` |
+| `padding/apply.ts` | One rule: sheet moving + not `userGesture` → jump to `anchor` |
+| `movement/programmatic.ts` | Padding uses `stopUserMotion: false`; deleted `reposition-camera.ts` |
+| Public exports | `useMapFollowUser` only; `useMapAnchor` internal to package |
 
 **Manual verify (re-run phase 5 checklist):**
 
@@ -183,7 +185,7 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 - Boot or `navigateTo` from inside `syncMapPaddingFromCanvas`
 - Defer/coalesce padding to preserve pan momentum
-- GPS updates via `repositionCamera` only — not `navigateTo`
+- GPS updates via `navigateTo({ duration: 0, keepFollowing: true })` when `session === "idle"`
 - Snap-back or threshold checks on every sheet padding tick (settle only)
 - Silent fallback coordinates when location is denied (demo dev flag only if ever)
 - Bundle unrelated parts in one PR — land and verify each part before the next
