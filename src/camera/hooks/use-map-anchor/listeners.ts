@@ -29,7 +29,7 @@ export type UseMapAnchorListenersInput = {
   enabled: boolean;
   session: MapAnchorSessionRefs;
   follow: MapAnchorFollowConfig | null;
-  onReleaseFollow?: () => void;
+  onReleaseTracking?: () => void;
   smoothFlyDurationMs: number;
   navigateToRef: RefObject<
     (position: MapPosition, options?: NavigateToMapAnchorOptions) => boolean
@@ -42,7 +42,7 @@ export function useMapAnchorListeners({
   enabled,
   session,
   follow,
-  onReleaseFollow,
+  onReleaseTracking,
   smoothFlyDurationMs,
   navigateToRef,
   followThresholdExceededRef,
@@ -52,8 +52,8 @@ export function useMapAnchorListeners({
   const followRef = useRef(follow);
   followRef.current = follow;
 
-  const onReleaseFollowRef = useRef(onReleaseFollow);
-  onReleaseFollowRef.current = onReleaseFollow;
+  const onReleaseTrackingRef = useRef(onReleaseTracking);
+  onReleaseTrackingRef.current = onReleaseTracking;
 
   const smoothFlyDurationMsRef = useRef(smoothFlyDurationMs);
   smoothFlyDurationMsRef.current = smoothFlyDurationMs;
@@ -99,7 +99,7 @@ export function useMapAnchorListeners({
 
       if (distancePx > activeFollow.thresholdPx) {
         followThresholdExceededRef.current = true;
-        onReleaseFollowRef.current?.();
+        onReleaseTrackingRef.current?.();
       }
     };
 
@@ -125,13 +125,13 @@ export function useMapAnchorListeners({
       if (outcome.kind === "snapBackToUser") {
         navigateToRef.current(outcome.target, {
           duration: smoothFlyDurationMsRef.current,
-          keepFollowing: true,
+          keepTracking: true,
         });
         return;
       }
 
-      if (outcome.kind === "releaseFollow") {
-        onReleaseFollowRef.current?.();
+      if (outcome.kind === "releaseTracking") {
+        onReleaseTrackingRef.current?.();
       }
 
       dispatch({
@@ -149,7 +149,7 @@ export function useMapAnchorListeners({
         isMoving: map.isMoving(),
         session: stateRef.current.session,
         readPosition: () => readMapAnchorPosition(map),
-        followContext: activeFollowContext(followRef.current),
+        trackingContext: activeTrackingContext(followRef.current),
       });
 
       if (resolution.kind === "noop") {
@@ -218,15 +218,15 @@ export function useMapAnchorListeners({
   ]);
 }
 
-function activeFollowContext(
+function activeTrackingContext(
   follow: MapAnchorFollowConfig | null,
-): { followUser: boolean; followReleaseThresholdPx: number } | undefined {
+): { tracking: boolean; followReleaseThresholdPx: number } | undefined {
   if (!follow) {
     return undefined;
   }
 
   return {
-    followUser: true,
+    tracking: true,
     followReleaseThresholdPx: follow.thresholdPx,
   };
 }

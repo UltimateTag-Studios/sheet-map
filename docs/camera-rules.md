@@ -16,7 +16,7 @@ Authoritative behavior for `@siegetag/sheet-map` map camera, padding, and follow
 
 Orthogonal state (not sessions):
 
-- **Follow:** `followUser`, `hasBootFlown` — [`reduce-map-follow.ts`](../src/camera/follow/reduce-map-follow.ts)
+- **Tracking:** `tracking`, internal `hasBootFlown` in reducer — [`reduce-map-follow.ts`](../src/camera/follow/reduce-map-follow.ts)
 - **Selection (future):** `selectedMapItemId` — app shell, not anchor session
 - **Sheet geometry:** `sheetObscuredBottomPx`, `sheetMotionActive` — owned by `@siegetag/sheet`
 
@@ -75,7 +75,7 @@ Padding realign uses `moveCameraProgrammatic({ stopUserMotion: false })` interna
 | Option | Default | Meaning |
 | ------ | ------- | ------- |
 | `duration` | `0` (jump) | Fly ms when sheet idle; forced jump while sheet moves |
-| `keepFollowing` | `false` | Keep GPS follow. Boot, snap-back, recenter pass `true`. Demo fly releases follow. |
+| `keepTracking` | `false` | Keep user tracking. Boot, snap-back, recenter pass `true`. Demo fly releases tracking. |
 
 `navigateTo` → optional `stopFollowingUser` → set **`anchor`** → `map.stop()` → padding sync (`realign: false`) → fly/jump. Animated flies dispatch `flyStarted`; instant jumps do not.
 
@@ -126,17 +126,16 @@ Entry point: [`padding/apply.ts`](../src/camera/padding/apply.ts).
 
 ---
 
-## Follow-user (`useMapFollowUser`)
+## User tracking (`useMapUserTracking`)
 
-Apps import **`useMapFollowUser` only** — it composes internal `useMapAnchor`.
+Apps import **`useMapUserTracking` only** — it composes internal `useMapAnchor`.
 
 - Auto-starts follow when GPS available.
-- **`tracking`:** alias for `followUser` (gray button when false, blue when true).
-- **Dot halo `focused`:** `tracking && hasBootFlown` (brighter halo after boot).
-- GPS updates: `navigateTo({ duration: 0, keepFollowing: true })` when `session === "idle"`.
-- My-location button: `recenterOnUser` → `navigateTo` fly with `keepFollowing: true`.
-- Fly to another place (demo point, map item): `navigateTo` without `keepFollowing` → follow released, button turns gray.
-- Snap-back at gesture settle: `navigateTo` with `keepFollowing: true`.
+- **`tracking`:** camera actively follows the user — blue my-location button and brighter user dot halo.
+- GPS updates: `navigateTo({ duration: 0, keepTracking: true })` when `tracking && session === "idle"`.
+- My-location button: `recenterOnUser` → `navigateTo` fly with `keepTracking: true`.
+- Fly to another place (demo point, map item): `navigateTo` without `keepTracking` → tracking off, button gray.
+- Snap-back at gesture settle: `navigateTo` with `keepTracking: true`.
 - **Debug:** with `VITE_SHEET_MAP_DEBUG=true`, GPS logs `[map-follow-gps] navigate`; skipped ticks while non-idle log `[map-follow-gps] skipped`.
 
 **Demo padding logs:** set `VITE_SHEET_MAP_DEBUG=true` in `apps/sheet-map-demo/.env` to see `[map-padding-from-canvas] setPadding` in the console.
@@ -199,7 +198,7 @@ Optional: `NavigationIntent.reason` (`boot` | `myLocation` | `snapBack` | `mapIt
 | `shared/reposition-camera.ts` | GPS instant jump without session |
 | `padding/sync.ts` | Mapbox `setPadding` + padding moveend flag |
 | `hooks/use-map-anchor/` | Listeners, `navigateTo`, padding, **boot coordinator**, single `moveend` dispatcher |
-| `hooks/use-map-follow-user.ts` | Boot target, GPS, threshold option, composes anchor |
+| `hooks/use-map-user-tracking.ts` | Boot target, GPS, threshold option, composes anchor |
 
 ---
 

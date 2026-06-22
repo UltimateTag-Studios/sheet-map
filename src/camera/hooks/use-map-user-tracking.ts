@@ -6,13 +6,11 @@ import type { PixelPoint } from "../../viewport/types/pixel";
 import { createInitialMapFollowState, reduceMapFollow } from "../follow";
 import {
   clearFollowReleasedForMapInstance,
-  hasFollowAutoStartedForMapInstance,
-  hasFollowReleasedForMapInstance,
-  markFollowAutoStartedForMapInstance,
   markFollowReleasedForMapInstance,
 } from "../instance/camera-state";
 import { type MapPosition, positionKey } from "../shared/map-position";
 import { useMapAnchor } from "./use-map-anchor";
+import type { NavigateToMapAnchorOptions } from "./use-map-anchor/types";
 
 export type MapUserLocationCoords = {
   lng: number;
@@ -20,19 +18,16 @@ export type MapUserLocationCoords = {
   accuracyMeters?: number | null;
 };
 
-export const DEFAULT_FOLLOW_RELEASE_THRESHOLD_PX = 40;
+export const DEFAULT_TRACKING_RELEASE_THRESHOLD_PX = 40;
 
 /** Optional zoom on my-location recenter; omit to preserve the current map level. */
 export type RecenterOnUserOptions = {
   zoom?: number;
 };
 
-export type NavigateToMapAnchorOptions = {
-  duration?: number;
-  keepFollowing?: boolean;
-};
+export type { NavigateToMapAnchorOptions } from "./use-map-anchor/types";
 
-export type UseMapFollowUserOptions = {
+export type UseMapUserTrackingOptions = {
   mapRef: MapRef | null;
   userLocation: MapUserLocationCoords | null;
   enabled?: boolean;
@@ -40,17 +35,18 @@ export type UseMapFollowUserOptions = {
   fixedChromeInsets?: Partial<MapObscuredInsets>;
   mapPaddingDebug?: boolean;
   sheetPhase?: SheetMotionPhase;
-  /** Visible-area center offset for follow threshold. */
+  /** Visible-area center offset for tracking threshold. */
   centerOffset?: PixelPoint;
-  /** Zoom for the one-shot boot fly only (`bootTarget.zoom`). */
-  followZoom?: number;
+  /** Zoom for the one-shot boot fly only. */
+  bootZoom?: number;
   smoothFlyDurationMs?: number;
-  /** Screen pixels before follow releases on user pan (demo default 40). */
-  followReleaseThresholdPx?: number;
+  /** Screen pixels before tracking releases on user pan (demo default 40). */
+  trackingReleaseThresholdPx?: number;
   onMapInstanceReleased?: () => void;
 };
 
-export function useMapFollowUser({
+/** Public map camera hook: boot fly, GPS tracking, gesture threshold, `navigateTo`. */
+export function useMapUserTracking({
   mapRef,
   userLocation,
   enabled = true,
@@ -59,19 +55,19 @@ export function useMapFollowUser({
   mapPaddingDebug = false,
   sheetPhase = "idle",
   centerOffset = { x: 0, y: 0 },
-  followZoom = 15,
+  bootZoom = 15,
   smoothFlyDurationMs = 600,
-  followReleaseThresholdPx = DEFAULT_FOLLOW_RELEASE_THRESHOLD_PX,
+  trackingReleaseThresholdPx = DEFAULT_TRACKING_RELEASE_THRESHOLD_PX,
   onMapInstanceReleased: onMapInstanceReleasedOption,
-}: UseMapFollowUserOptions) {
+}: UseMapUserTrackingOptions) {
   const userLocationLng = userLocation?.lng;
   const userLocationLat = userLocation?.lat;
   const hasUserLocation =
     userLocationLng !== undefined && userLocationLat !== undefined;
 
-  const [followState, followDispatch] = useReducer(
+  const [trackingState, trackingDispatch] = useReducer(
     reduceMapFollow,
-    { autoFollow: false },
+    { tracking: false },
     createInitialMapFollowState,
   );
 
@@ -100,23 +96,6 @@ export function useMapFollowUser({
   >(() => false);
 
   useEffect(() => {
-    if (!hasUserLocation || !mapRef) {
-      return;
-    }
-
-    const map = mapRef.getMap();
-    if (hasFollowReleasedForMapInstance(map)) {
-      return;
-    }
-
-    if (!hasFollowAutoStartedForMapInstance(map)) {
-      markFollowAutoStartedForMapInstance(map);
-    }
-
-    followDispatch({ type: "startFollowUser" });
-  }, [hasUserLocation, mapRef]);
-
-  useEffect(() => {
     if (!hasUserLocation || bootTarget !== null) {
       return;
     }
@@ -124,18 +103,12 @@ export function useMapFollowUser({
     setBootTarget({
       lat: userLocationLat,
       lng: userLocationLng,
-      zoom: followZoom,
+      zoom: bootZoom,
     });
-  }, [
-    hasUserLocation,
-    userLocationLat,
-    userLocationLng,
-    followZoom,
-    bootTarget,
-  ]);
+  }, [hasUserLocation, userLocationLat, userLocationLng, bootZoom, bootTarget]);
 
   const onMapInstanceReleased = useCallback(() => {
-    followDispatch({ type: "resetBoot" });
+    trackingDispatch({ type: "resetBoot" });
     lastGpsPositionKeyRef.current = null;
     setBootTarget(null);
     onMapInstanceReleasedOption?.();
@@ -146,22 +119,22 @@ export function useMapFollowUser({
     if (position) {
       rememberGpsPosition(position);
     }
-    followDispatch({ type: "bootFlown" });
+    trackingDispatch({ type: "bootFlown" });
   }, [buildUserPosition, rememberGpsPosition]);
 
-  const stopFollowingUser = useCallback(() => {
+  const stopTracking = useCallback(() => {
     if (mapRef) {
       markFollowReleasedForMapInstance(mapRef.getMap());
     }
-    followDispatch({ type: "stopFollowUser" });
+    trackingDispatch({ type: "stopTracking" });
   }, [mapRef]);
 
-  const follow =
-    followState.followUser && hasUserLocation
+  const trackingConfig =
+    trackingState.tracking && hasUserLocation
       ? {
           userLocation: { lat: userLocationLat, lng: userLocationLng },
           centerOffset,
-          thresholdPx: followReleaseThresholdPx,
+          thresholdPx: trackingReleaseThresholdPx,
         }
       : null;
 
@@ -177,8 +150,8 @@ export function useMapFollowUser({
     bootDurationMs: smoothFlyDurationMs,
     onBootIssued,
     onMapInstanceReleased,
-    follow,
-    onReleaseFollow: stopFollowingUser,
+    follow: trackingConfig,
+    onReleaseTracking: stopTracking,
   });
 
   navigateToRef.current = navigateTo;
@@ -198,11 +171,11 @@ export function useMapFollowUser({
       if (mapRef) {
         clearFollowReleasedForMapInstance(mapRef.getMap());
       }
-      followDispatch({ type: "startFollowUser" });
+      trackingDispatch({ type: "startTracking" });
       rememberGpsPosition(position);
       navigateToRef.current(target, {
         duration: smoothFlyDurationMs,
-        keepFollowing: true,
+        keepTracking: true,
       });
     },
     [buildUserPosition, rememberGpsPosition, smoothFlyDurationMs, mapRef],
@@ -210,8 +183,7 @@ export function useMapFollowUser({
 
   useEffect(() => {
     if (
-      !followState.followUser ||
-      !followState.hasBootFlown ||
+      !trackingState.tracking ||
       !hasUserLocation ||
       !mapRef ||
       session !== "idle"
@@ -219,8 +191,7 @@ export function useMapFollowUser({
       if (
         mapPaddingDebug &&
         hasUserLocation &&
-        followState.followUser &&
-        followState.hasBootFlown &&
+        trackingState.tracking &&
         session !== "idle"
       ) {
         console.info("[map-follow-gps] skipped", {
@@ -244,7 +215,7 @@ export function useMapFollowUser({
     lastGpsPositionKeyRef.current = nextKey;
     const applied = navigateToRef.current(position, {
       duration: 0,
-      keepFollowing: true,
+      keepTracking: true,
     });
     if (mapPaddingDebug) {
       console.info("[map-follow-gps] navigate", {
@@ -254,8 +225,7 @@ export function useMapFollowUser({
       });
     }
   }, [
-    followState.followUser,
-    followState.hasBootFlown,
+    trackingState.tracking,
     hasUserLocation,
     mapRef,
     session,
@@ -268,9 +238,8 @@ export function useMapFollowUser({
     anchor,
     session,
     navigateTo,
-    tracking: followState.followUser,
-    followUser: followState.followUser,
-    hasBootFlown: followState.hasBootFlown,
+    userLocation: hasUserLocation ? userLocation : null,
+    tracking: trackingState.tracking,
     recenterOnUser,
   };
 }

@@ -159,15 +159,15 @@ describe("useMapAnchor", () => {
     harness.unmount();
   });
 
-  it("navigateTo without keepFollowing calls onReleaseFollow", () => {
-    const onReleaseFollow = vi.fn();
-    const harness = mountAnchor({ onReleaseFollow });
+  it("navigateTo without keepTracking calls onReleaseTracking", () => {
+    const onReleaseTracking = vi.fn();
+    const harness = mountAnchor({ onReleaseTracking });
 
     act(() => {
       harness.latest.navigateTo({ lat: 3, lng: 4 }, { duration: 500 });
     });
 
-    expect(onReleaseFollow).toHaveBeenCalledTimes(1);
+    expect(onReleaseTracking).toHaveBeenCalledTimes(1);
 
     harness.unmount();
   });
@@ -553,14 +553,14 @@ describe("useMapAnchor", () => {
     }
 
     it("snaps back via navigateTo when follow is enabled and pan is within threshold", () => {
-      const onReleaseFollow = vi.fn();
+      const onReleaseTracking = vi.fn();
       const harness = withProject(createTestMapRef(), () => ({
         x: 220,
         y: 320,
       }));
       const mounted = mountAnchorWithMapRef(harness, {
         follow,
-        onReleaseFollow,
+        onReleaseTracking,
         smoothFlyDurationMs: 600,
       });
 
@@ -575,21 +575,21 @@ describe("useMapAnchor", () => {
       });
 
       expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-      expect(onReleaseFollow).not.toHaveBeenCalled();
+      expect(onReleaseTracking).not.toHaveBeenCalled();
       expect(mounted.latest.session).toBe("flying");
 
       mounted.unmount();
     });
 
     it("stops follow when pan exceeds threshold at settle", () => {
-      const onReleaseFollow = vi.fn();
+      const onReleaseTracking = vi.fn();
       const harness = withProject(createTestMapRef(), () => ({
         x: 300,
         y: 320,
       }));
       const mounted = mountAnchorWithMapRef(harness, {
         follow,
-        onReleaseFollow,
+        onReleaseTracking,
       });
 
       act(() => {
@@ -604,7 +604,7 @@ describe("useMapAnchor", () => {
       });
 
       expect(harness.map.flyTo).not.toHaveBeenCalled();
-      expect(onReleaseFollow).toHaveBeenCalledTimes(1);
+      expect(onReleaseTracking).toHaveBeenCalledTimes(1);
       expect(mounted.latest.anchor).toEqual({ lat: 11, lng: 21, zoom: 14 });
       expect(mounted.latest.session).toBe("idle");
 
@@ -612,12 +612,12 @@ describe("useMapAnchor", () => {
     });
 
     it("stops follow during drag as soon as threshold is crossed", () => {
-      const onReleaseFollow = vi.fn();
+      const onReleaseTracking = vi.fn();
       let projected = { x: 220, y: 320 };
       const harness = withProject(createTestMapRef(), () => projected);
       const mounted = mountAnchorWithMapRef(harness, {
         follow,
-        onReleaseFollow,
+        onReleaseTracking,
       });
 
       act(() => {
@@ -631,7 +631,7 @@ describe("useMapAnchor", () => {
         harness.map.emit("move");
       });
 
-      expect(onReleaseFollow).toHaveBeenCalledTimes(1);
+      expect(onReleaseTracking).toHaveBeenCalledTimes(1);
       expect(harness.map.flyTo).not.toHaveBeenCalled();
 
       act(() => {

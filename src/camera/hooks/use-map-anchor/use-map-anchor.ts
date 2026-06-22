@@ -26,7 +26,7 @@ export function useMapAnchor({
   onBootIssued,
   smoothFlyDurationMs = 600,
   follow = null,
-  onReleaseFollow,
+  onReleaseTracking,
   onMapInstanceReleased,
 }: UseMapAnchorOptions) {
   const mapPaddingFromCanvasEnabled = liveSheetObscuredBottomPx !== undefined;
@@ -79,7 +79,7 @@ export function useMapAnchor({
     session,
     refreshMapPaddingFromCanvasRef: padding.refreshMapPaddingFromCanvasRef,
     followThresholdExceededRef,
-    onReleaseFollow,
+    onReleaseTracking,
   });
 
   const { attemptBoot } = useBootFlyCoordinator({
@@ -113,7 +113,7 @@ export function useMapAnchor({
     enabled,
     session,
     follow,
-    onReleaseFollow,
+    onReleaseTracking,
     smoothFlyDurationMs,
     navigateToRef,
     followThresholdExceededRef,

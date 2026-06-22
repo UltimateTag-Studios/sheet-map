@@ -20,7 +20,7 @@ export type UseMapAnchorNavigateInput = {
     (options?: RefreshMapPaddingFromCanvasOptions) => boolean
   >;
   followThresholdExceededRef: RefObject<boolean>;
-  onReleaseFollow?: () => void;
+  onReleaseTracking?: () => void;
 };
 
 export type MapAnchorNavigateHandle = {
@@ -39,12 +39,12 @@ export function useMapAnchorNavigate({
   session,
   refreshMapPaddingFromCanvasRef,
   followThresholdExceededRef,
-  onReleaseFollow,
+  onReleaseTracking,
 }: UseMapAnchorNavigateInput): MapAnchorNavigateHandle {
   const { dispatch, sheetPhaseRef } = session;
 
-  const onReleaseFollowRef = useRef(onReleaseFollow);
-  onReleaseFollowRef.current = onReleaseFollow;
+  const onReleaseTrackingRef = useRef(onReleaseTracking);
+  onReleaseTrackingRef.current = onReleaseTracking;
 
   const navigateToRef = useRef<
     (position: MapPosition, options?: NavigateToMapAnchorOptions) => boolean
@@ -59,8 +59,8 @@ export function useMapAnchorNavigate({
         return false;
       }
 
-      if (!options.keepFollowing) {
-        onReleaseFollowRef.current?.();
+      if (!options.keepTracking) {
+        onReleaseTrackingRef.current?.();
       }
 
       const requestedDuration = options.duration ?? 0;

@@ -35,7 +35,7 @@ describe("evaluateFollowAtGestureSettle", () => {
     const map = createMap(() => ({ x: 220, y: 320 }));
 
     expect(evaluateFollowAtGestureSettle(map, follow, true)).toEqual({
-      kind: "releaseFollow",
+      kind: "releaseTracking",
     });
   });
 
@@ -43,7 +43,7 @@ describe("evaluateFollowAtGestureSettle", () => {
     const map = createMap(() => ({ x: 300, y: 320 }));
 
     expect(evaluateFollowAtGestureSettle(map, follow, false)).toEqual({
-      kind: "releaseFollow",
+      kind: "releaseTracking",
     });
   });
 

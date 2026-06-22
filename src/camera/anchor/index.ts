@@ -17,8 +17,8 @@ export {
   reduceMapAnchor,
 } from "./reduce";
 export {
-  type MoveEndFollowContext,
   type MoveEndResolution,
+  type MoveEndTrackingContext,
   resolveMoveEnd,
 } from "./resolve-move-end";
 export {

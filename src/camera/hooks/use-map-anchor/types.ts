@@ -13,10 +13,10 @@ export type NavigateToMapAnchorOptions = {
    */
   duration?: number;
   /**
-   * Keep GPS follow enabled after this move. Boot, snap-back, and recenter pass `true`.
-   * Default `false` releases follow (e.g. fly to a map item or demo point).
+   * Keep user tracking enabled after this move. Boot, snap-back, and recenter pass `true`.
+   * Default `false` releases tracking (e.g. fly to a map item or demo point).
    */
-  keepFollowing?: boolean;
+  keepTracking?: boolean;
 };
 
 export type UseMapAnchorOptions = {
@@ -37,10 +37,10 @@ export type UseMapAnchorOptions = {
   bootDurationMs?: number;
   onBootIssued?: () => void;
   smoothFlyDurationMs?: number;
-  /** Active follow config for gesture settle. */
+  /** Active tracking config for gesture settle. */
   follow?: MapAnchorFollowConfig | null;
-  /** Called when pan exceeds follow threshold or settle releases follow. */
-  onReleaseFollow?: () => void;
+  /** Called when pan exceeds tracking threshold or settle releases tracking. */
+  onReleaseTracking?: () => void;
   onMapInstanceReleased?: () => void;
 };
 

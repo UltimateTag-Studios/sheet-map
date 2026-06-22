@@ -1,13 +1,13 @@
 export type MapFollowState = {
-  followUser: boolean;
+  tracking: boolean;
   hasBootFlown: boolean;
 };
 
 export function createInitialMapFollowState(options: {
-  autoFollow?: boolean;
+  tracking?: boolean;
 }): MapFollowState {
   return {
-    followUser: options.autoFollow ?? false,
+    tracking: options.tracking ?? false,
     hasBootFlown: false,
   };
 }

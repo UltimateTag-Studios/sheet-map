@@ -1,8 +1,8 @@
 import type { MapFollowState } from "./state";
 
 export type MapFollowEvent =
-  | { type: "startFollowUser" }
-  | { type: "stopFollowUser" }
+  | { type: "startTracking" }
+  | { type: "stopTracking" }
   | { type: "bootFlown" }
   | { type: "resetBoot" };
 
@@ -11,20 +11,21 @@ export function reduceMapFollow(
   event: MapFollowEvent,
 ): MapFollowState {
   switch (event.type) {
-    case "startFollowUser":
+    case "startTracking":
       return {
         ...state,
-        followUser: true,
+        tracking: true,
       };
-    case "stopFollowUser":
+    case "stopTracking":
       return {
         ...state,
-        followUser: false,
+        tracking: false,
       };
     case "bootFlown":
       return {
         ...state,
         hasBootFlown: true,
+        tracking: true,
       };
     case "resetBoot":
       return {

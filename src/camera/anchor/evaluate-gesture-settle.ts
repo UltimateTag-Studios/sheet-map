@@ -14,7 +14,7 @@ export type MapAnchorFollowConfig = {
 
 export type GestureSettleOutcome =
   | { kind: "snapBackToUser"; target: MapPosition }
-  | { kind: "releaseFollow" }
+  | { kind: "releaseTracking" }
   | { kind: "commitAnchor"; position: MapPosition };
 
 export function evaluateFollowAtGestureSettle(
@@ -29,7 +29,7 @@ export function evaluateFollowAtGestureSettle(
   }
 
   if (thresholdExceeded) {
-    return { kind: "releaseFollow" };
+    return { kind: "releaseTracking" };
   }
 
   const distancePx = readUserLocationFollowDistancePx(
@@ -39,7 +39,7 @@ export function evaluateFollowAtGestureSettle(
   );
 
   if (distancePx > follow.thresholdPx) {
-    return { kind: "releaseFollow" };
+    return { kind: "releaseTracking" };
   }
 
   return {

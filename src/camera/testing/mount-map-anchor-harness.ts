@@ -25,7 +25,7 @@ export type MountAnchorOptions = {
   smoothFlyDurationMs?: number;
   styleLoaded?: boolean;
   follow?: MapAnchorFollowConfig | null;
-  onReleaseFollow?: () => void;
+  onReleaseTracking?: () => void;
 };
 
 function renderStrictMode(element: ReactElement) {
@@ -84,7 +84,7 @@ export function mountAnchorWithMapRef(
       onBootIssued: options.onBootIssued,
       smoothFlyDurationMs: options.smoothFlyDurationMs,
       follow: options.follow,
-      onReleaseFollow: options.onReleaseFollow,
+      onReleaseTracking: options.onReleaseTracking,
     }),
   );
 }

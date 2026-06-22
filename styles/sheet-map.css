@@ -127,3 +127,12 @@
 .sheet-map-my-location-button[aria-pressed="true"]:hover {
   background: #1558b0;
 }
+
+.sheet-map-item-dot {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: 9999px;
+  background: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.45);
+}

@@ -6,9 +6,9 @@ export type MoveEndResolution =
   | { kind: "userGestureSettled"; position: MapPosition }
   | { kind: "trySettleFlying" };
 
-/** Optional bag for follow release / snap-back (threshold configured by app, not hardcoded here). */
-export type MoveEndFollowContext = {
-  followUser: boolean;
+/** Optional bag for tracking release / snap-back (threshold configured by app, not hardcoded here). */
+export type MoveEndTrackingContext = {
+  tracking: boolean;
   /** Screen pixels — app default often 40; not used until gesture settle. */
   followReleaseThresholdPx?: number;
 };
@@ -18,9 +18,9 @@ export function resolveMoveEnd(input: {
   isMoving: boolean;
   session: MapAnchorSession;
   readPosition: () => MapPosition;
-  followContext?: MoveEndFollowContext;
+  trackingContext?: MoveEndTrackingContext;
 }): MoveEndResolution {
-  void input.followContext;
+  void input.trackingContext;
 
   if (input.paddingMoveEnd) {
     if (!input.isMoving && input.session === "userGesture") {

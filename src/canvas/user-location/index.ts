@@ -4,6 +4,11 @@ export {
   MAP_USER_LOCATION_MIN_HALO_RADIUS_PX,
   mapMetersPerPixel,
 } from "./accuracy-to-halo-radius";
+export {
+  MapUserLocationDot,
+  type MapUserLocationDotProps,
+  type MapUserLocationDotRenderProps,
+} from "./map-user-location-dot";
 export { useMapCanvasZoom } from "./use-zoom";
 export {
   MAP_USER_LOCATION_HALO_LAYER_ID,

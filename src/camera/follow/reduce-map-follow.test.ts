@@ -4,32 +4,32 @@ import { reduceMapFollow } from "./reduce-map-follow";
 import { createInitialMapFollowState } from "./state";
 
 describe("reduceMapFollow", () => {
-  it("starts with autoFollow when user location is available", () => {
-    const state = createInitialMapFollowState({ autoFollow: true });
-    expect(state.followUser).toBe(true);
+  it("starts with tracking when requested", () => {
+    const state = createInitialMapFollowState({ tracking: true });
+    expect(state.tracking).toBe(true);
     expect(state.hasBootFlown).toBe(false);
   });
 
-  it("stops follow on pan commit", () => {
-    const state = createInitialMapFollowState({ autoFollow: true });
-    const next = reduceMapFollow(state, { type: "stopFollowUser" });
-    expect(next.followUser).toBe(false);
+  it("stops tracking on pan commit", () => {
+    const state = createInitialMapFollowState({ tracking: true });
+    const next = reduceMapFollow(state, { type: "stopTracking" });
+    expect(next.tracking).toBe(false);
   });
 
-  it("records boot jump once", () => {
-    const state = createInitialMapFollowState({ autoFollow: true });
+  it("records boot jump once and starts tracking", () => {
+    const state = createInitialMapFollowState({ tracking: false });
     const next = reduceMapFollow(state, { type: "bootFlown" });
     expect(next.hasBootFlown).toBe(true);
-    expect(next.followUser).toBe(true);
+    expect(next.tracking).toBe(true);
   });
 
   it("resets boot when the map instance changes", () => {
     const booted = reduceMapFollow(
-      createInitialMapFollowState({ autoFollow: true }),
+      createInitialMapFollowState({ tracking: false }),
       { type: "bootFlown" },
     );
     const next = reduceMapFollow(booted, { type: "resetBoot" });
     expect(next.hasBootFlown).toBe(false);
-    expect(next.followUser).toBe(true);
+    expect(next.tracking).toBe(true);
   });
 });

@@ -5,15 +5,16 @@ import { describe, expect, it, vi } from "vitest";
 
 import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../../viewport/testing/mount-sheet-host-fixture";
+import { hasBootFlownForMapInstance } from "../instance/camera-state";
 import {
   createTestMapRef,
   type TestMapRefHarness,
 } from "../testing/create-test-map-ref";
 import { flushDeferredMapInstanceRelease } from "../testing/flush-deferred-map-instance-release";
-import type { MapUserLocationCoords } from "./use-map-follow-user";
-import { useMapFollowUser } from "./use-map-follow-user";
+import type { MapUserLocationCoords } from "./use-map-user-tracking";
+import { useMapUserTracking } from "./use-map-user-tracking";
 
-type FollowHookResult = ReturnType<typeof useMapFollowUser>;
+type UserTrackingHookResult = ReturnType<typeof useMapUserTracking>;
 
 function settleNavigation(
   map: TestMapRefHarness["map"],
@@ -31,19 +32,21 @@ function settleNavigation(
   });
 }
 
-function mountFollowUserWithMapRef(
+function mountUserTrackingWithMapRef(
   harness: TestMapRefHarness,
   options: {
     userLocation?: MapUserLocationCoords | null;
     liveSheetObscuredBottomPx?: number;
-    followZoom?: number;
+    bootZoom?: number;
     smoothFlyDurationMs?: number;
     onMapInstanceReleased?: () => void;
   } = {},
 ) {
   const container = document.createElement("div");
   const root: Root = createRoot(container);
-  const latestRef: { current: FollowHookResult | null } = { current: null };
+  const latestRef: { current: UserTrackingHookResult | null } = {
+    current: null,
+  };
 
   act(() => {
     root.render(
@@ -51,11 +54,11 @@ function mountFollowUserWithMapRef(
         StrictMode,
         null,
         createElement(() => {
-          latestRef.current = useMapFollowUser({
+          latestRef.current = useMapUserTracking({
             mapRef: harness.mapRef,
             userLocation: options.userLocation ?? null,
             liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
-            followZoom: options.followZoom,
+            bootZoom: options.bootZoom,
             smoothFlyDurationMs: options.smoothFlyDurationMs,
             onMapInstanceReleased: options.onMapInstanceReleased,
           });
@@ -67,7 +70,7 @@ function mountFollowUserWithMapRef(
 
   return {
     ...harness,
-    get latest(): FollowHookResult {
+    get latest(): UserTrackingHookResult {
       if (!latestRef.current) {
         throw new Error("hook not mounted");
       }
@@ -82,7 +85,7 @@ function mountFollowUserWithMapRef(
   };
 }
 
-function mountFollowUserWithLiveSheetPadding(
+function mountUserTrackingWithLiveSheetPadding(
   userLocation: MapUserLocationCoords | null,
   initialPx = 152,
 ) {
@@ -103,7 +106,7 @@ function mountFollowUserWithLiveSheetPadding(
     initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
   });
 
-  const mounted = mountFollowUserWithMapRef(harness, {
+  const mounted = mountUserTrackingWithMapRef(harness, {
     userLocation,
     liveSheetObscuredBottomPx: initialPx,
   });
@@ -117,7 +120,7 @@ function mountFollowUserWithLiveSheetPadding(
   };
 }
 
-function mountFollowUserWithDeferredLocation(initialPx = 152) {
+function mountUserTrackingWithDeferredLocation(initialPx = 152) {
   stubViewport();
   const fixture = mountSheetHostFixture(
     mockCanvas,
@@ -137,7 +140,9 @@ function mountFollowUserWithDeferredLocation(initialPx = 152) {
 
   const container = document.createElement("div");
   const root: Root = createRoot(container);
-  const latestRef: { current: FollowHookResult | null } = { current: null };
+  const latestRef: { current: UserTrackingHookResult | null } = {
+    current: null,
+  };
   let setUserLocation: ((next: MapUserLocationCoords | null) => void) | null =
     null;
 
@@ -147,7 +152,7 @@ function mountFollowUserWithDeferredLocation(initialPx = 152) {
         const [userLocation, setUserLocationState] =
           useState<MapUserLocationCoords | null>(null);
         setUserLocation = setUserLocationState;
-        latestRef.current = useMapFollowUser({
+        latestRef.current = useMapUserTracking({
           mapRef: harness.mapRef,
           userLocation,
           liveSheetObscuredBottomPx: initialPx,
@@ -159,7 +164,7 @@ function mountFollowUserWithDeferredLocation(initialPx = 152) {
 
   return {
     ...harness,
-    get latest(): FollowHookResult {
+    get latest(): UserTrackingHookResult {
       if (!latestRef.current) {
         throw new Error("hook not mounted");
       }
@@ -179,17 +184,17 @@ function mountFollowUserWithDeferredLocation(initialPx = 152) {
   };
 }
 
-describe("useMapFollowUser", () => {
+describe("useMapUserTracking", () => {
   const userLocation: MapUserLocationCoords = {
     lat: 40.7,
     lng: -74,
   };
 
   it("boots once when userLocation is present and padding is ready", () => {
-    const harness = mountFollowUserWithLiveSheetPadding(userLocation);
+    const harness = mountUserTrackingWithLiveSheetPadding(userLocation);
 
-    expect(harness.latest.followUser).toBe(true);
-    expect(harness.latest.hasBootFlown).toBe(true);
+    expect(harness.latest.tracking).toBe(true);
+    expect(hasBootFlownForMapInstance(harness.mapRef.getMap())).toBe(true);
     expect(harness.latest.mapPaddingReady).toBe(true);
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
     expect(harness.map.flyTo).toHaveBeenCalledWith(
@@ -203,15 +208,15 @@ describe("useMapFollowUser", () => {
   });
 
   it("boots when userLocation arrives after padding is ready", () => {
-    const harness = mountFollowUserWithDeferredLocation();
+    const harness = mountUserTrackingWithDeferredLocation();
 
-    expect(harness.latest.followUser).toBe(false);
+    expect(harness.latest.tracking).toBe(false);
     expect(harness.map.flyTo).not.toHaveBeenCalled();
 
     harness.setUserLocation(userLocation);
 
-    expect(harness.latest.followUser).toBe(true);
-    expect(harness.latest.hasBootFlown).toBe(true);
+    expect(harness.latest.tracking).toBe(true);
+    expect(hasBootFlownForMapInstance(harness.mapRef.getMap())).toBe(true);
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
 
     harness.unmount();
@@ -236,7 +241,7 @@ describe("useMapFollowUser", () => {
       initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
     });
 
-    const mounted = mountFollowUserWithMapRef(harness, {
+    const mounted = mountUserTrackingWithMapRef(harness, {
       userLocation,
       liveSheetObscuredBottomPx: 152,
     });
@@ -249,7 +254,7 @@ describe("useMapFollowUser", () => {
     });
 
     expect(mounted.latest.mapPaddingReady).toBe(true);
-    expect(mounted.latest.hasBootFlown).toBe(true);
+    expect(hasBootFlownForMapInstance(mounted.mapRef.getMap())).toBe(true);
     expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
 
     mounted.unmount();
@@ -275,13 +280,13 @@ describe("useMapFollowUser", () => {
       initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
     });
 
-    const mounted = mountFollowUserWithMapRef(harness, {
+    const mounted = mountUserTrackingWithMapRef(harness, {
       userLocation,
       liveSheetObscuredBottomPx: 152,
     });
 
     expect(mounted.latest.mapPaddingReady).toBe(true);
-    expect(mounted.latest.hasBootFlown).toBe(true);
+    expect(hasBootFlownForMapInstance(mounted.mapRef.getMap())).toBe(true);
     expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
 
     mounted.unmount();
@@ -289,10 +294,10 @@ describe("useMapFollowUser", () => {
   });
 
   it("does not boot when userLocation stays null", () => {
-    const harness = mountFollowUserWithLiveSheetPadding(null);
+    const harness = mountUserTrackingWithLiveSheetPadding(null);
 
-    expect(harness.latest.followUser).toBe(false);
-    expect(harness.latest.hasBootFlown).toBe(false);
+    expect(harness.latest.tracking).toBe(false);
+    expect(hasBootFlownForMapInstance(harness.mapRef.getMap())).toBe(false);
     expect(harness.latest.mapPaddingReady).toBe(true);
     expect(harness.map.flyTo).not.toHaveBeenCalled();
 
@@ -302,19 +307,19 @@ describe("useMapFollowUser", () => {
   it("can boot again after map instance release", async () => {
     const onMapInstanceReleased = vi.fn();
     const harness = createTestMapRef();
-    const first = mountFollowUserWithMapRef(harness, {
+    const first = mountUserTrackingWithMapRef(harness, {
       userLocation,
       onMapInstanceReleased,
     });
 
-    expect(first.latest.hasBootFlown).toBe(true);
+    expect(hasBootFlownForMapInstance(first.mapRef.getMap())).toBe(true);
     expect(first.map.flyTo).toHaveBeenCalledTimes(1);
     await first.unmount();
     expect(onMapInstanceReleased).toHaveBeenCalledTimes(1);
 
-    const second = mountFollowUserWithMapRef(harness, { userLocation });
+    const second = mountUserTrackingWithMapRef(harness, { userLocation });
     expect(second.map.flyTo).toHaveBeenCalledTimes(2);
-    expect(second.latest.hasBootFlown).toBe(true);
+    expect(hasBootFlownForMapInstance(second.mapRef.getMap())).toBe(true);
 
     await second.unmount();
   });
@@ -339,7 +344,9 @@ describe("useMapFollowUser", () => {
 
     const container = document.createElement("div");
     const root: Root = createRoot(container);
-    const latestRef: { current: FollowHookResult | null } = { current: null };
+    const latestRef: { current: UserTrackingHookResult | null } = {
+      current: null,
+    };
     let setCoords: ((next: MapUserLocationCoords) => void) | null = null;
 
     act(() => {
@@ -351,7 +358,7 @@ describe("useMapFollowUser", () => {
             const [coords, setCoordsState] =
               useState<MapUserLocationCoords>(userLocation);
             setCoords = setCoordsState;
-            latestRef.current = useMapFollowUser({
+            latestRef.current = useMapUserTracking({
               mapRef: harness.mapRef,
               userLocation: coords,
               liveSheetObscuredBottomPx: 152,
@@ -362,7 +369,7 @@ describe("useMapFollowUser", () => {
       );
     });
 
-    expect(latestRef.current?.hasBootFlown).toBe(true);
+    expect(hasBootFlownForMapInstance(harness.mapRef.getMap())).toBe(true);
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
     settleNavigation(harness.map, { ...userLocation, zoom: 15 });
     expect(latestRef.current?.session).toBe("idle");
@@ -385,7 +392,7 @@ describe("useMapFollowUser", () => {
   });
 
   it("does not reposition immediately after boot for the same coordinates", () => {
-    const harness = mountFollowUserWithLiveSheetPadding(userLocation);
+    const harness = mountUserTrackingWithLiveSheetPadding(userLocation);
 
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
     expect(harness.map.jumpTo).not.toHaveBeenCalled();
@@ -424,7 +431,7 @@ describe("useMapFollowUser", () => {
             const [coords, setCoordsState] =
               useState<MapUserLocationCoords>(userLocation);
             setCoords = setCoordsState;
-            useMapFollowUser({
+            useMapUserTracking({
               mapRef: harness.mapRef,
               userLocation: coords,
               liveSheetObscuredBottomPx: 152,
@@ -476,7 +483,9 @@ describe("useMapFollowUser", () => {
 
     const container = document.createElement("div");
     const root: Root = createRoot(container);
-    const latestRef: { current: FollowHookResult | null } = { current: null };
+    const latestRef: { current: UserTrackingHookResult | null } = {
+      current: null,
+    };
     let setCoords: ((next: MapUserLocationCoords) => void) | null = null;
 
     act(() => {
@@ -488,7 +497,7 @@ describe("useMapFollowUser", () => {
             const [coords, setCoordsState] =
               useState<MapUserLocationCoords>(userLocation);
             setCoords = setCoordsState;
-            latestRef.current = useMapFollowUser({
+            latestRef.current = useMapUserTracking({
               mapRef: harness.mapRef,
               userLocation: coords,
               liveSheetObscuredBottomPx: 152,
@@ -524,8 +533,46 @@ describe("useMapFollowUser", () => {
     fixture.remove();
   });
 
+  it("does not follow before boot and tracks after boot", () => {
+    stubViewport();
+    const fixture = mountSheetHostFixture(
+      mockCanvas,
+      {},
+      {
+        top: 800 - 152,
+        bottom: 800,
+        height: 152,
+        y: 800 - 152,
+      },
+    );
+
+    const harness = createTestMapRef({
+      canvas: fixture.canvas,
+      styleLoaded: false,
+      initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
+    });
+
+    const mounted = mountUserTrackingWithMapRef(harness, {
+      userLocation,
+      liveSheetObscuredBottomPx: 152,
+    });
+
+    expect(mounted.latest.tracking).toBe(false);
+    expect(mounted.latest.tracking).toBe(false);
+
+    act(() => {
+      mounted.map.emitLoad();
+    });
+
+    expect(mounted.latest.tracking).toBe(true);
+    expect(mounted.latest.tracking).toBe(true);
+
+    mounted.unmount();
+    fixture.remove();
+  });
+
   it("recenterOnUser flies to the user and enables tracking", () => {
-    const harness = mountFollowUserWithLiveSheetPadding(userLocation);
+    const harness = mountUserTrackingWithLiveSheetPadding(userLocation);
 
     vi.mocked(harness.map.flyTo).mockClear();
 
@@ -565,7 +612,7 @@ describe("useMapFollowUser", () => {
 
     const { result } = renderHook(
       () =>
-        useMapFollowUser({
+        useMapUserTracking({
           mapRef: harness.mapRef,
           userLocation,
           liveSheetObscuredBottomPx: 152,
@@ -585,7 +632,6 @@ describe("useMapFollowUser", () => {
     });
 
     expect(harness.map.flyTo).toHaveBeenCalledTimes(2);
-    expect(result.current.followUser).toBe(false);
     expect(result.current.tracking).toBe(false);
 
     fixture.remove();

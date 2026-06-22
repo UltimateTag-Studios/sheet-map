@@ -25,7 +25,7 @@ export type TryBootFlyInput = {
   mapPaddingReady: boolean;
   navigateTo: (
     position: MapPosition,
-    options?: { duration?: number; keepFollowing?: boolean },
+    options?: { duration?: number; keepTracking?: boolean },
   ) => boolean;
   smoothFlyDurationMs: number;
   bootDurationMs?: number;
@@ -96,7 +96,7 @@ export function tryBootFly(input: TryBootFlyInput): TryBootFlyResult {
 
   const applied = navigateTo(bootTarget, {
     duration: bootDurationMs ?? smoothFlyDurationMs,
-    keepFollowing: true,
+    keepTracking: true,
   });
   if (!applied) {
     return blocked("navigate_rejected", debug);
