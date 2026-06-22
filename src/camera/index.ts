@@ -31,10 +31,15 @@ export {
   type MapFollowState,
   reduceMapFollow,
 } from "./follow";
-export { releaseMapInstanceCameraState } from "./map-instance-camera-state";
+export {
+  hasBootFlownForMapInstance,
+  markBootFlownForMapInstance,
+  releaseMapInstanceCameraState,
+} from "./map-instance-camera-state";
 export type { MapPosition } from "./map-position";
 export { mergeMapAnchorPosition, positionKey } from "./map-position";
 export { readMapPaddingFromCanvas } from "./read-map-padding-from-canvas";
+export { repositionCamera } from "./reposition-camera";
 export {
   clearMapPaddingSyncState,
   consumePaddingSyncMoveEnd,

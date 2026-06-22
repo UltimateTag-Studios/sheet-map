@@ -59,7 +59,7 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 ---
 
-## Part 5B — `repositionCamera` + per-map boot latches (current)
+## Part 5B — `repositionCamera` + per-map boot latches ✅
 
 **Goal:** Instant GPS jump API and boot latch on map instance (separate from React follow state).
 
@@ -72,12 +72,12 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 **You verify:**
 
-- [ ] Unit tests pass
-- [ ] `releaseMapInstanceCameraState` clears padding **and** boot latch
+- [x] Unit tests pass
+- [x] `releaseMapInstanceCameraState` clears padding **and** boot latch
 
 ---
 
-## Part 5C — Boot fly (`tryBootFly` + minimal `useMapFollowUser`)
+## Part 5C — Boot fly (`tryBootFly` + minimal `useMapFollowUser`) (current)
 
 **Goal:** One smooth boot fly per map after padding is ready. **No gesture snap-back or GPS tick yet.**
 
