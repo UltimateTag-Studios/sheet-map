@@ -1,12 +1,7 @@
-import type { SheetSnap } from "@siegetag/sheet";
 import { type RefObject, useEffect, useState } from "react";
 
 import { readSheetHost } from "../dom";
-import type {
-  MapObscuredInsets,
-  MapViewportSyncState,
-  SheetSnapHeightsPx,
-} from "../types";
+import type { MapObscuredInsets, MapViewportSyncState } from "../types";
 import { areMapViewportsEqual } from "./are-map-viewports-equal";
 import { attachViewportObservers } from "./attach-viewport-observers";
 import { readSyncViewport } from "./read-sync-viewport";
@@ -19,20 +14,14 @@ const EMPTY_VIEWPORT: MapViewportSyncState = {
 
 export type UseVisibleViewportSyncOptions = {
   canvasRef: RefObject<HTMLCanvasElement | null>;
-  sheetSnap: SheetSnap;
-  snapHeights: SheetSnapHeightsPx;
   fixedChromeInsets?: Partial<MapObscuredInsets>;
-  useSnapGeometryOnly?: boolean;
   debug?: boolean;
 };
 
-/** Tracks visible map bounds from a canvas + sheet geometry; resizes with DOM changes. */
+/** Tracks visible map bounds from a canvas + live sheet DOM; resizes with layout changes. */
 export function useVisibleViewportSync({
   canvasRef,
-  sheetSnap,
-  snapHeights,
   fixedChromeInsets,
-  useSnapGeometryOnly = false,
   debug = false,
 }: UseVisibleViewportSyncOptions): MapViewportSyncState {
   const [viewport, setViewport] =
@@ -46,20 +35,9 @@ export function useVisibleViewportSync({
     }
 
     const sync = () => {
-      const next = readSyncViewport(
-        canvas,
-        sheetSnap,
-        snapHeights,
-        fixedChromeInsets,
-        useSnapGeometryOnly,
-      );
-      if (!next) {
-        return;
-      }
+      const next = readSyncViewport(canvas, fixedChromeInsets);
       if (debug) {
         console.info("[visible-viewport-sync]", {
-          sheetSnap,
-          snapHeights,
           hasVisibleArea: next.hasVisibleArea,
           clientRect: next.clientRect,
           centerOffset: next.centerOffset,
@@ -75,14 +53,7 @@ export function useVisibleViewportSync({
 
     sync();
     return attachViewportObservers(canvas, readSheetHost(canvas), sync);
-  }, [
-    canvasRef,
-    sheetSnap,
-    snapHeights,
-    fixedChromeInsets,
-    useSnapGeometryOnly,
-    debug,
-  ]);
+  }, [canvasRef, fixedChromeInsets, debug]);
 
   return viewport;
 }

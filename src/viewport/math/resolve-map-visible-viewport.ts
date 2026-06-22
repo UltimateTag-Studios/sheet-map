@@ -1,42 +1,36 @@
-import type { SheetSnap } from "@siegetag/sheet";
-
 import { readLiveSheetObscuredBottomPx } from "../dom";
 import type {
   MapObscuredInsets,
   MapVisibleViewport,
   PixelRect,
-  SheetSnapHeightsPx,
 } from "../types";
 import { mergeObscuredInsets } from "./merge-obscured-insets";
 import { readMapCanvasScreenGeometry } from "./read-map-canvas-screen-geometry";
 import { visibleClientRectFromLiveSheetObscured } from "./visible-client-rect-from-live-sheet-obscured";
-import { visibleClientRectFromScreenGeometry } from "./visible-client-rect-from-screen-geometry";
 
-export type ResolveMapVisibleViewportOptions = {
-  /** When true, ignore live `.sheet-slide` and use snap heights only. */
-  useSnapGeometryOnly?: boolean;
-};
-
-/** Resolve visible map bounds, center offset, and whether the region is usable. */
+/**
+ * Resolve visible map bounds from live `.sheet-slide` DOM geometry.
+ * Returns `null` when the canvas has no size or the sheet slide is not measurable.
+ */
 export function resolveMapVisibleViewport(
   canvas: HTMLCanvasElement,
-  snap: SheetSnap,
-  snapHeights: SheetSnapHeightsPx,
   extraObscuredInsets: Partial<MapObscuredInsets> = {},
-  options: ResolveMapVisibleViewportOptions = {},
-): MapVisibleViewport {
+): MapVisibleViewport | null {
+  if (canvas.clientWidth === 0 || canvas.clientHeight === 0) {
+    return null;
+  }
+
+  const sheetObscuredBottomPx = readLiveSheetObscuredBottomPx(canvas);
+  if (sheetObscuredBottomPx === null) {
+    return null;
+  }
+
   const geometry = readMapCanvasScreenGeometry(canvas);
   const chrome = mergeObscuredInsets(extraObscuredInsets);
-  const liveSheetObscuredBottomPx = options.useSnapGeometryOnly
-    ? null
-    : readLiveSheetObscuredBottomPx(canvas);
-  const baseRect =
-    liveSheetObscuredBottomPx !== null
-      ? visibleClientRectFromLiveSheetObscured(
-          geometry,
-          liveSheetObscuredBottomPx,
-        )
-      : visibleClientRectFromScreenGeometry(snap, snapHeights, geometry);
+  const baseRect = visibleClientRectFromLiveSheetObscured(
+    geometry,
+    sheetObscuredBottomPx,
+  );
 
   const clientRect: PixelRect = {
     x: baseRect.x + chrome.left,

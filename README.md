@@ -1,32 +1,30 @@
-# @siegetag/sheet-map (rebuild)
+# @siegetag/sheet-map
 
-Fresh implementation of the map + sheet shell. The previous package lives at [`packages/sheet-map-old`](../sheet-map-old) as `@siegetag/sheet-map-old` (reference only — do not extend).
+Fresh rebuild of the map + sheet shell. **Phase 0 — scaffold only.**
 
-**Product apps** (`apps/capacitor`) stay on `@siegetag/sheet-map-old` until this package reaches parity.
+| Package folder | npm name | Role |
+| -------------- | -------- | ---- |
+| `packages/sheet-map` | `@siegetag/sheet-map` | **Active rebuild** (this package) |
+| `packages/sheet-map-old` | `@siegetag/sheet-map-previous` | Abandoned rebuild attempt — reference only |
+| `packages/sheet-map-old-old` | `@siegetag/sheet-map-old` | Original package — Capacitor still uses this |
 
-**Demo app** (`apps/sheet-map-demo`) tracks this package and proves each phase before moving on.
+**Demo:** `apps/sheet-map-demo` tracks `@siegetag/sheet-map` one phase at a time.
 
-## Rebuild phases
+**Spec:** [`docs/camera-fsm-plan.md`](docs/camera-fsm-plan.md) — camera FSM behavior contract.
 
-Each phase must ship **unit tests + manual check in sheet-map-demo** before the next phase starts.
+**Phases (what to do each step):** [`docs/rebuild-phases.md`](docs/rebuild-phases.md)
+
+## Rebuild phases (summary)
 
 | Phase | Scope | Done when |
 | ----- | ----- | --------- |
-| **0** | Package scaffold | This README, empty export, demo home screen |
-| **1** | Visible viewport math | Live DOM sheet top + canvas geometry; golden tests for tab-bar inset; debug crosshair overlay |
-| **2** | Map canvas | Mapbox canvas fills host; no sheet yet |
-| **3** | Sheet on map | `MapFrame` + `@siegetag/sheet`; snap height callbacks |
-| **4** | Padding + anchor | Live `map.setPadding()` from sheet geometry; anchor on user pan settle or explicit `setAnchor` / `navigateTo`; no snap camera intents |
-| **5** | Follow user | Boot jump after measured heights; 40px snap-back while following; my-location control + dot in demo |
-| **6** | Routes + markers | `MapLayout`, `useRegisterMapRoute`, markers — port from old only when 1–5 are green |
-
-## Rules learned from the old package
-
-- Never apply camera from snap-height math alone when the sheet slide is in the DOM — read live `.sheet-slide` top.
-- Use **`map.setPadding()`** for live sheet sync — not `offset` on `jumpTo`/`flyTo`.
-- Padding never updates anchor; anchor commits on user **`moveend`** when `!map.isMoving()` (includes momentum).
-- App navigation calls **`setAnchor`** / **`navigateTo`** explicitly; follow-user boot and my-location button use smooth **`flyTo`** after padding is applied, ongoing GPS uses jump, 40px snap-back on pan.
-- Test tab-bar demo geometry (`canvasBottom` above viewport bottom + `bottomChromeReserve`), not only aligned canvas.
+| **0** | Package scaffold | This README, `SHEET_MAP_REBUILD_PHASE = 0`, demo home |
+| **1** | Visible viewport math | Live DOM + golden tests; debug crosshair |
+| **2** | Map canvas | Mapbox fills host |
+| **3** | Sheet on map | `MapFrame` + `@siegetag/sheet` |
+| **4** | Padding + anchor | `setPadding`, session FSM, `navigateTo` |
+| **5** | Follow user | Boot fly, 40px snap-back, my-location |
+| **6** | Routes + markers | Port from `@siegetag/sheet-map-old` when 1–5 are green |
 
 ## Scripts
 

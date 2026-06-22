@@ -1,18 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { readLiveSheetObscuredBottomPx } from "../dom";
-import {
-  mockCanvas,
-  noExtraInsets,
-  snapHeights700,
-  snapHeights750,
-  stubViewport,
-} from "../testing/fixtures";
+import { mockCanvas, snapHeights750, stubViewport } from "../testing/fixtures";
 import { mountSheetHostFixture } from "../testing/mount-sheet-host-fixture";
 import { resolveMapVisibleViewport } from "./resolve-map-visible-viewport";
 
 describe("resolveMapVisibleViewport live sheet DOM", () => {
-  it("prefers live sheet geometry over snap state when the sheet slide is in the DOM", () => {
+  it("reads visible bounds from the live sheet slide position", () => {
     stubViewport();
 
     const { canvas, remove } = mountSheetHostFixture(
@@ -30,9 +24,7 @@ describe("resolveMapVisibleViewport live sheet DOM", () => {
     );
 
     expect(readLiveSheetObscuredBottomPx(canvas)).toBe(375);
-    expect(
-      resolveMapVisibleViewport(canvas, "collapsed", snapHeights750),
-    ).toEqual({
+    expect(resolveMapVisibleViewport(canvas)).toEqual({
       clientRect: { x: 0, y: 50, width: 400, height: 375 },
       centerOffset: { x: 0, y: -212.5 },
       hasVisibleArea: true,
@@ -41,11 +33,11 @@ describe("resolveMapVisibleViewport live sheet DOM", () => {
     remove();
   });
 
-  it("matches live sheet geometry when the canvas ends above the viewport bottom", () => {
+  it("matches geometry when the canvas ends above the viewport bottom", () => {
     stubViewport();
 
     const canvasBottom = 766;
-    const collapsedHeight = snapHeights700.collapsed;
+    const collapsedHeight = snapHeights750.collapsed;
     const { canvas, remove } = mountSheetHostFixture(
       mockCanvas,
       {
@@ -59,21 +51,11 @@ describe("resolveMapVisibleViewport live sheet DOM", () => {
       },
     );
 
-    const snap = resolveMapVisibleViewport(
-      canvas,
-      "collapsed",
-      snapHeights700,
-      noExtraInsets,
-      { useSnapGeometryOnly: true },
-    );
-    const live = resolveMapVisibleViewport(
-      canvas,
-      "collapsed",
-      snapHeights700,
-      noExtraInsets,
-    );
-
-    expect(snap).toEqual(live);
+    expect(resolveMapVisibleViewport(canvas)).toEqual({
+      clientRect: { x: 0, y: 0, width: 400, height: 614 },
+      centerOffset: { x: 0, y: -76 },
+      hasVisibleArea: true,
+    });
 
     remove();
   });

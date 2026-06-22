@@ -4,7 +4,7 @@
   "private": true,
   "license": "AGPL-3.0-or-later",
   "type": "module",
-  "description": "Mapbox map + bottom sheet shell for React (rebuild)",
+  "description": "Mapbox map + bottom sheet shell for React (fresh rebuild)",
   "repository": {
     "type": "git",
     "url": "https://github.com/UltimateTag-Studios/sheet-map.git"

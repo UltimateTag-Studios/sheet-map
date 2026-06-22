@@ -14,5 +14,5 @@ export function readLiveSheetObscuredBottomPx(
 
   const canvasRect = canvas.getBoundingClientRect();
   const sheetTop = sheetSlide.getBoundingClientRect().top;
-  return Math.max(0, canvasRect.bottom - sheetTop);
+  return Math.round(Math.max(0, canvasRect.bottom - sheetTop));
 }

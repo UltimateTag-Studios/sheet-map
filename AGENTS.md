@@ -1,10 +1,10 @@
 # @siegetag/sheet-map
 
-Rebuild in progress. Read [README.md](./README.md) for phase order.
+Fresh rebuild. Read [docs/rebuild-phases.md](./docs/rebuild-phases.md) for step-by-step work per phase. Camera behavior: [docs/camera-fsm-plan.md](./docs/camera-fsm-plan.md).
 
-- Reference implementation (frozen): `packages/sheet-map-old`
-- Do not import from `@siegetag/sheet-map-old` in this package
-- Each phase: tests first, then demo proof, then bump `SHEET_MAP_REBUILD_PHASE`
+- Abandoned attempt: `packages/sheet-map-old` (`@siegetag/sheet-map-previous`) — do not import
+- Capacitor reference: `packages/sheet-map-old-old` (`@siegetag/sheet-map-old`)
+- Each phase: tests first, demo proof, bump `SHEET_MAP_REBUILD_PHASE`
 
 After code changes, from repo root:
 

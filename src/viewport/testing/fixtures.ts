@@ -1,21 +1,6 @@
 import { vi } from "vitest";
 
-export const alignedGeometry = {
-  canvasTop: 0,
-  canvasBottom: 800,
-  canvasLeft: 0,
-  canvasRight: 400,
-  viewportHeight: 800,
-  viewportWidth: 400,
-};
-
-export const tabBarGeometry = {
-  ...alignedGeometry,
-  canvasBottom: 766,
-};
-
 export const snapHeights700 = { collapsed: 152, half: 350, full: 700 };
-export const snapHeights800 = { collapsed: 152, half: 400, full: 800 };
 export const snapHeights750 = { collapsed: 152, half: 375, full: 750 };
 export const noExtraInsets = { top: 0, left: 0, right: 0, bottom: 0 };
 

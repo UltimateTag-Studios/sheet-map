@@ -1,8 +1,2 @@
-export {
-  MapVisibleAreaDebug,
-  type MapVisibleAreaDebugProps,
-} from "./visible-area-debug";
-export {
-  MapVisibleAreaOverlay,
-  type MapVisibleAreaOverlayProps,
-} from "./visible-area-overlay";
+export type { MapVisibleAreaDebugProps } from "./visible-area-debug";
+export { MapVisibleAreaDebug } from "./visible-area-debug";
