@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import type { MapObscuredInsets, SheetMotionPhase } from "../viewport";
-import { createInitialMapFollowState, reduceMapFollow } from "./follow";
-import type { MapPosition } from "./map-position";
+import type { MapObscuredInsets, SheetMotionPhase } from "../../viewport";
+import { createInitialMapFollowState, reduceMapFollow } from "../follow";
+import type { MapPosition } from "../shared/map-position";
 import { useMapAnchor } from "./use-map-anchor";
 
 export type MapUserLocationCoords = {
@@ -22,6 +22,10 @@ export type UseMapFollowUserOptions = {
   sheetPhase?: SheetMotionPhase;
   followZoom?: number;
   smoothFlyDurationMs?: number;
+  /**
+   * 5D: screen pixels before follow releases on user pan (app default often 40).
+   */
+  followReleaseThresholdPx?: number;
   onMapInstanceReleased?: () => void;
 };
 

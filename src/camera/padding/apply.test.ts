@@ -1,8 +1,8 @@
 import type { MapRef } from "react-map-gl/mapbox";
 import { describe, expect, it, vi } from "vitest";
 
-import type { MapAnchorState } from "./anchor/state";
-import { applyMapPadding } from "./apply-map-padding";
+import type { MapAnchorState } from "../anchor";
+import { applyMapPadding } from "./apply";
 
 function createMapRefMock() {
   const map = {

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import { releaseMapInstanceCameraState } from "../map-instance-camera-state";
+import { releaseMapInstanceCameraState } from "../../instance/camera-state";
 
 export type UseMapInstanceReleaseInput = {
   mapRef: MapRef | null;

@@ -1,4 +1,4 @@
-import type { MapPosition } from "../map-position";
+import type { MapPosition } from "../shared/map-position";
 import type { MapAnchorState, NavigationIntent } from "./state";
 
 export type MapAnchorEvent =

@@ -1,9 +1,6 @@
-import type { MapObscuredInsets } from "../viewport";
-import { readLiveSheetObscuredBottomPx } from "../viewport/dom";
-import {
-  computeMapPadding,
-  type MapPaddingOptions,
-} from "./compute-map-padding";
+import type { MapObscuredInsets } from "../../viewport";
+import { readLiveSheetObscuredBottomPx } from "../../viewport/dom";
+import { computeMapPadding, type MapPaddingOptions } from "./compute";
 
 export type ReadMapPaddingFromCanvasInput = {
   canvas: HTMLCanvasElement;

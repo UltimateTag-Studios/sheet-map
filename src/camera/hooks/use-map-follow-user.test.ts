@@ -2,13 +2,13 @@ import { act, createElement, StrictMode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 
-import { mockCanvas, stubViewport } from "../viewport/testing/fixtures";
-import { mountSheetHostFixture } from "../viewport/testing/mount-sheet-host-fixture";
+import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
+import { mountSheetHostFixture } from "../../viewport/testing/mount-sheet-host-fixture";
 import {
   createTestMapRef,
   type TestMapRefHarness,
-} from "./testing/create-test-map-ref";
-import { flushDeferredMapInstanceRelease } from "./testing/flush-deferred-map-instance-release";
+} from "../testing/create-test-map-ref";
+import { flushDeferredMapInstanceRelease } from "../testing/flush-deferred-map-instance-release";
 import type { MapUserLocationCoords } from "./use-map-follow-user";
 import { useMapFollowUser } from "./use-map-follow-user";
 

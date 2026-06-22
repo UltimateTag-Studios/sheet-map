@@ -3,15 +3,20 @@ export {
   applyMapAnchorCamera,
   flyToMapAnchor,
   jumpToMapAnchor,
-} from "./apply-map-anchor-camera";
+} from "./apply-camera";
 export { beginProgrammaticNavigation } from "./begin-programmatic-navigation";
-export { isAtMapAnchorPosition } from "./is-at-map-anchor-position";
+export { isAtMapAnchorPosition } from "./is-at-position";
 export { isUserMapGestureEvent } from "./is-user-map-gesture-event";
-export { readMapAnchorPosition } from "./read-map-anchor-position";
+export { readMapAnchorPosition } from "./read-position";
 export {
   type MapAnchorEvent,
   reduceMapAnchor,
-} from "./reduce-map-anchor";
+} from "./reduce";
+export {
+  type MoveEndFollowContext,
+  type MoveEndResolution,
+  resolveMoveEnd,
+} from "./resolve-move-end";
 export {
   createInitialMapAnchorState,
   isNavigationSession,

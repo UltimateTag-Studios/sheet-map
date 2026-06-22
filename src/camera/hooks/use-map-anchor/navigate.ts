@@ -6,9 +6,12 @@ import {
   beginProgrammaticNavigation,
   type NavigationIntent,
   reduceMapAnchor,
-} from "../anchor";
-import { canNavigateMap } from "../can-navigate-map";
-import { type MapPosition, mergeMapAnchorPosition } from "../map-position";
+} from "../../anchor";
+import { canNavigateMap } from "../../shared/can-navigate-map";
+import {
+  type MapPosition,
+  mergeMapAnchorPosition,
+} from "../../shared/map-position";
 import type { MapAnchorSessionRefs } from "./session-refs";
 import type {
   NavigateToMapAnchorOptions,

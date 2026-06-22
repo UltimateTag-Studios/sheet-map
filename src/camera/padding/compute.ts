@@ -1,5 +1,5 @@
-import type { MapObscuredInsets } from "../viewport";
-import { mergeObscuredInsets } from "../viewport/math/merge-obscured-insets";
+import type { MapObscuredInsets } from "../../viewport";
+import { mergeObscuredInsets } from "../../viewport/math/merge-obscured-insets";
 
 export type MapPaddingOptions = {
   top: number;

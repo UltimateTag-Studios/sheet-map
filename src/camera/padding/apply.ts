@@ -1,8 +1,11 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
-import { applyMapAnchorCamera } from "./anchor/apply-map-anchor-camera";
-import type { MapAnchorState } from "./anchor/state";
-import { type MapPosition, mergeMapAnchorPosition } from "./map-position";
+import type { MapAnchorState } from "../anchor";
+import { applyMapAnchorCamera } from "../anchor";
+import {
+  type MapPosition,
+  mergeMapAnchorPosition,
+} from "../shared/map-position";
 
 export type ApplyMapPaddingInput = {
   mapRef: MapRef;

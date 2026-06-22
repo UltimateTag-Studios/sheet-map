@@ -1,12 +1,12 @@
 import type { Map as MapboxMap } from "mapbox-gl";
 import { describe, expect, it, vi } from "vitest";
 
+import { hasSyncedMapPadding, syncMapPadding } from "../padding/sync";
 import {
   hasBootFlownForMapInstance,
   markBootFlownForMapInstance,
   releaseMapInstanceCameraState,
-} from "./map-instance-camera-state";
-import { hasSyncedMapPadding, syncMapPadding } from "./sync-map-padding";
+} from "./camera-state";
 
 function createMap() {
   let padding = { top: 0, left: 0, right: 0, bottom: 0 };

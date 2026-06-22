@@ -5,12 +5,13 @@ import type { MapRef } from "react-map-gl/mapbox";
 import {
   isUserMapGestureEvent,
   readMapAnchorPosition,
+  resolveMoveEnd,
   trySettleNavigatingSession,
-} from "../anchor";
+} from "../../anchor";
 import {
   consumePaddingSyncMoveEnd,
   drainPaddingSyncMoveEnd,
-} from "../sync-map-padding";
+} from "../../padding/sync";
 import type { MapAnchorSessionRefs } from "./session-refs";
 
 const mapListenerCleanupByMap = new WeakMap<
@@ -61,25 +62,21 @@ export function useMapAnchorListeners({
     };
 
     const handleMoveEnd = () => {
-      const paddingMoveEnd = consumePaddingSyncMoveEnd(map);
-      if (paddingMoveEnd) {
-        if (!map.isMoving() && stateRef.current.session === "userGesture") {
-          dispatch({
-            type: "userGestureSettled",
-            position: readMapAnchorPosition(map),
-          });
-        }
+      const resolution = resolveMoveEnd({
+        paddingMoveEnd: consumePaddingSyncMoveEnd(map),
+        isMoving: map.isMoving(),
+        session: stateRef.current.session,
+        readPosition: () => readMapAnchorPosition(map),
+      });
+
+      if (resolution.kind === "noop") {
         return;
       }
 
-      if (map.isMoving()) {
-        return;
-      }
-
-      if (stateRef.current.session === "userGesture") {
+      if (resolution.kind === "userGestureSettled") {
         dispatch({
           type: "userGestureSettled",
-          position: readMapAnchorPosition(map),
+          position: resolution.position,
         });
         return;
       }

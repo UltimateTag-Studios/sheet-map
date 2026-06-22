@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { noExtraInsets } from "../viewport/testing/fixtures";
-import { computeMapPadding } from "./compute-map-padding";
+import { noExtraInsets } from "../../viewport/testing/fixtures";
+import { computeMapPadding } from "./compute";
 
 describe("computeMapPadding", () => {
   it("maps sheet obscured height plus fixed chrome to padding.bottom", () => {

@@ -2,11 +2,11 @@ import type { ReactElement } from "react";
 import { act, createElement, StrictMode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
+import type { MapPosition } from "../../shared/map-position";
 import type { SheetMotionPhase } from "../../viewport";
 import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../../viewport/testing/mount-sheet-host-fixture";
-import type { MapPosition } from "../map-position";
-import { useMapAnchor } from "../use-map-anchor";
+import { useMapAnchor } from "../hooks/use-map-anchor";
 import {
   createTestMapRef,
   type TestMapRefHarness,

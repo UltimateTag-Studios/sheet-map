@@ -1,7 +1,7 @@
 import type { Dispatch, MutableRefObject } from "react";
 
+import type { MapAnchorEvent, MapAnchorState } from "../../anchor";
 import type { SheetMotionPhase } from "../../viewport";
-import type { MapAnchorEvent, MapAnchorState } from "../anchor";
 
 export type MapAnchorSessionRefs = {
   stateRef: MutableRefObject<MapAnchorState>;

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   hasBootFlownForMapInstance,
   markBootFlownForMapInstance,
-} from "./map-instance-camera-state";
+} from "../instance/camera-state";
 import { areBootFlyGatesReady, tryBootFly } from "./try-boot-fly";
 
 function createMapRef() {

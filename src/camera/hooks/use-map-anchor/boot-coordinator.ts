@@ -6,9 +6,9 @@ import {
 } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import { hasBootFlownForMapInstance } from "../map-instance-camera-state";
-import type { MapPosition } from "../map-position";
-import { areBootFlyGatesReady, tryBootFly } from "../try-boot-fly";
+import { areBootFlyGatesReady, tryBootFly } from "../../boot/try-boot-fly";
+import { hasBootFlownForMapInstance } from "../../instance/camera-state";
+import type { MapPosition } from "../../shared/map-position";
 import type { NavigateToMapAnchorOptions } from "./types";
 
 export type UseBootFlyCoordinatorInput = {
@@ -18,7 +18,6 @@ export type UseBootFlyCoordinatorInput = {
   bootDurationMs?: number;
   smoothFlyDurationMs: number;
   mapPaddingReadyRef: MutableRefObject<boolean>;
-  onBootAttemptRef: MutableRefObject<(() => void) | null>;
   navigateToRef: MutableRefObject<
     (position: MapPosition, options?: NavigateToMapAnchorOptions) => boolean
   >;
@@ -26,9 +25,13 @@ export type UseBootFlyCoordinatorInput = {
   mapPaddingDebug: boolean;
 };
 
+export type BootFlyCoordinatorHandle = {
+  attemptBoot: () => void;
+};
+
 /**
- * Promise.all-style boot: `maybeBoot` runs after commit when map / target gates
- * change, and synchronously when padding becomes ready via `onBootAttemptRef`.
+ * Promise.all-style boot: `attemptBoot` runs after commit when map / target gates
+ * change, and when padding becomes ready via `onPaddingReady`.
  */
 export function useBootFlyCoordinator({
   mapRef,
@@ -37,11 +40,10 @@ export function useBootFlyCoordinator({
   bootDurationMs,
   smoothFlyDurationMs,
   mapPaddingReadyRef,
-  onBootAttemptRef,
   navigateToRef,
   onBootIssued,
   mapPaddingDebug,
-}: UseBootFlyCoordinatorInput): void {
+}: UseBootFlyCoordinatorInput): BootFlyCoordinatorHandle {
   const onBootIssuedRef = useRef(onBootIssued);
   onBootIssuedRef.current = onBootIssued;
 
@@ -51,7 +53,7 @@ export function useBootFlyCoordinator({
   const bootDurationMsRef = useRef(bootDurationMs);
   bootDurationMsRef.current = bootDurationMs;
 
-  const maybeBoot = useCallback(() => {
+  const attemptBoot = useCallback(() => {
     if (
       !areBootFlyGatesReady({
         enabled,
@@ -89,9 +91,9 @@ export function useBootFlyCoordinator({
     mapPaddingDebug,
   ]);
 
-  onBootAttemptRef.current = maybeBoot;
-
   useLayoutEffect(() => {
-    maybeBoot();
-  }, [maybeBoot]);
+    attemptBoot();
+  }, [attemptBoot]);
+
+  return { attemptBoot };
 }

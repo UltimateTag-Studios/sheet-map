@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { mockCanvas, stubViewport } from "../viewport/testing/fixtures";
-import { mountSheetHostFixture } from "../viewport/testing/mount-sheet-host-fixture";
-import { readMapPaddingFromCanvas } from "./read-map-padding-from-canvas";
+import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
+import { mountSheetHostFixture } from "../../viewport/testing/mount-sheet-host-fixture";
+import { readMapPaddingFromCanvas } from "./read-from-canvas";
 
 describe("readMapPaddingFromCanvas", () => {
   it("returns null when the sheet slide is not in the DOM", () => {

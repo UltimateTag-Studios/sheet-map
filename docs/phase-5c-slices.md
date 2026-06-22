@@ -1,6 +1,6 @@
 # Phase 5C — boot fly (sliced plan)
 
-**Status:** Monolith cleanup done. 5C-4 demo wired to `useMapFollowUser` — **manual verify pending** before bumping `SHEET_MAP_PHASE_5_PART` to 4.
+**Status:** 5C-4 landed; `SHEET_MAP_PHASE_5_PART = 4`. Camera package cleanup complete — see **5C cleanup** below.
 
 Parent doc: [`phase-5-parts.md`](phase-5-parts.md). Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot).
 
@@ -17,7 +17,7 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 | Part | Touched at runtime? | Demo / `useMapAnchor`? |
 | ---- | ------------------- | ---------------------- |
 | **5A** | `camera/follow/*` reducer + tests only | **No** — nothing imports it in app or anchor hook |
-| **5B** | `reposition-camera.ts`, boot WeakMap on `map-instance-camera-state.ts` + tests | **No** — exported but **not called** until 5E GPS loop |
+| **5B** | `shared/reposition-camera.ts`, boot WeakMap on `instance/camera-state.ts` + tests | **No** — exported but **not called** until 5E GPS loop |
 
 `use-map-anchor.ts`, `apps/sheet-map-demo`, and padding sync are **identical to phase 4E** after reverting the abandoned 5C work.
 
@@ -105,25 +105,46 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 
 ---
 
-## Monolith cleanup (`useMapAnchor` split) — done
+## Monolith cleanup (`useMapAnchor` split + topic folders) — done
 
-Split `camera/use-map-anchor.ts` (~420 lines) into effect-sized modules under `camera/use-map-anchor/`:
+Split `camera/hooks/use-map-anchor/` into effect-sized modules; moved primitives into topic folders:
+
+```
+camera/
+  anchor/          # session FSM + resolve-move-end (5D prep)
+  follow/
+  padding/         # apply, compute, sync, sync-from-canvas
+  boot/            # try-boot-fly
+  instance/        # camera-state (per-map latches)
+  shared/          # map-position, reposition-camera, when-map-style-ready
+  hooks/
+    use-map-follow-user.ts
+    use-map-anchor/
+      boot-coordinator.ts    # returns attemptBoot; only boot caller
+      padding-sync.ts        # onPaddingReady callback (not ref slot)
+      navigate.ts
+      listeners.ts           # thin: resolveMoveEnd + dispatch
+      sheet-settle.ts
+      instance-release.ts
+      use-map-anchor.ts      # thin composer
+  testing/         # harness + index barrel
+```
 
 | Module | Responsibility |
 | ------ | -------------- |
-| `types.ts` | Public option types |
+| `types.ts` | Public option types (+ `followReleaseThresholdPx` stub for 5D) |
 | `session-refs.ts` | Shared ref bundle for sub-hooks |
-| `use-map-padding-sync.ts` | Padding state + four sync effects |
-| `use-map-anchor-navigate.ts` | `navigateTo` |
-| `use-map-anchor-boot.ts` | Boot fly effect |
-| `use-map-anchor-listeners.ts` | drag/zoom/moveend + bootAnchor |
-| `use-map-anchor-sheet-settle.ts` | Sheet idle → settle navigating |
-| `use-map-instance-release.ts` | Map instance cleanup |
-| `use-map-anchor.ts` | Thin composer (~100 lines) |
+| `padding-sync.ts` | Padding state + four sync effects; `onPaddingReady` once |
+| `navigate.ts` | `navigateTo` |
+| `boot-coordinator.ts` | `attemptBoot` via `tryBootFly` |
+| `listeners.ts` | drag/zoom/moveend + bootAnchor |
+| `sheet-settle.ts` | Sheet idle → settle navigating |
+| `instance-release.ts` | Map instance cleanup (StrictMode-safe) |
+| `use-map-anchor.ts` | Thin composer (~120 lines) |
 
-Also: shared test harness `camera/testing/mount-map-anchor-harness.ts`, `canvas/dot/index.ts` barrel.
+Also: shared test harness `camera/testing/`, `canvas/dot/index.ts` barrel.
 
-**Verify:** 91 tests green, typecheck + lint clean.
+**Verify:** 103 tests green, typecheck + lint clean.
 
 ---
 
@@ -163,8 +184,8 @@ Also: shared test harness `camera/testing/mount-map-anchor-harness.ts`, `canvas/
 
 **Automated verify:**
 
-- [ ] Full test suite green
-- [ ] `pnpm lint:fix` clean
+- [x] Full test suite green
+- [x] `pnpm lint:fix` clean
 
 **Manual verify (required):**
 
@@ -200,7 +221,7 @@ Also: shared test harness `camera/testing/mount-map-anchor-harness.ts`, `canvas/
 
 **5C-3 — padding race with early `MapUserLocation` mount (fixed):** Cached geolocation can return before `mapRef` is published and before the first `setPadding`. Mounting `MapUserLocation` inside `MapCanvas` adds style layers during that bootstrap window and intermittently left `mapPaddingReady` false (no debug overlay / no `setPadding` log). **Fix:** demo gates the dot on `mapPaddingReady`; `useMapAnchor` retries padding sync on `idle` + `resize` until ready.
 
-**5C-4 — boot fly (fixed):** Boot is one gate in `use-map-anchor-boot.ts`: `boot.getTarget()` (location) **and** `mapPaddingReady` (padding). Single `useEffect` — no padding callbacks, no idle/moveend listeners. Whichever gate flips last re-runs the effect and flies once (`tryBootFly` latch).
+**5C-4 — boot fly (fixed):** Boot coordinator (`boot-coordinator.ts`) gates on `bootTarget` + `mapPaddingReady`. Uses `navigateTo` (no session gate). Padding sync calls `onPaddingReady` → `attemptBoot` once when first `setPadding` succeeds. `tryBootFly` latch prevents double-fly.
 
 ---
 

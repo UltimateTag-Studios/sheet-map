@@ -1,13 +1,13 @@
 import type { Map as MapboxMap } from "mapbox-gl";
 
-import type { MapObscuredInsets } from "../viewport";
-import type { MapPaddingOptions } from "./compute-map-padding";
-import { readMapPaddingFromCanvas } from "./read-map-padding-from-canvas";
+import type { MapObscuredInsets } from "../../viewport";
+import type { MapPaddingOptions } from "./compute";
+import { readMapPaddingFromCanvas } from "./read-from-canvas";
 import {
   hasSyncedMapPadding,
   readSyncedMapPadding,
   syncMapPadding,
-} from "./sync-map-padding";
+} from "./sync";
 
 export type SyncMapPaddingFromCanvasInput = {
   map: MapboxMap;

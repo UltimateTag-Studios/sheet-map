@@ -4,16 +4,16 @@ import {
   createInitialMapAnchorState,
   type MapAnchorEvent,
   reduceMapAnchor,
-} from "../anchor";
-import type { MapPosition } from "../map-position";
+} from "../../anchor";
+import type { MapPosition } from "../../shared/map-position";
+import { useBootFlyCoordinator } from "./boot-coordinator";
+import { useMapInstanceRelease } from "./instance-release";
+import { useMapAnchorListeners } from "./listeners";
+import { useMapAnchorNavigate } from "./navigate";
+import { useMapPaddingSync } from "./padding-sync";
 import type { MapAnchorSessionRefs } from "./session-refs";
+import { useMapAnchorSheetSettle } from "./sheet-settle";
 import type { UseMapAnchorOptions } from "./types";
-import { useBootFlyCoordinator } from "./use-boot-fly-coordinator";
-import { useMapAnchorListeners } from "./use-map-anchor-listeners";
-import { useMapAnchorNavigate } from "./use-map-anchor-navigate";
-import { useMapAnchorSheetSettle } from "./use-map-anchor-sheet-settle";
-import { useMapInstanceRelease } from "./use-map-instance-release";
-import { useMapPaddingSync } from "./use-map-padding-sync";
 
 export function useMapAnchor({
   mapRef,
@@ -57,7 +57,7 @@ export function useMapAnchor({
     sheetMotionActiveRef,
   };
 
-  const onBootAttemptRef = useRef<(() => void) | null>(null);
+  const onPaddingReadyRef = useRef<(() => void) | undefined>(undefined);
 
   const padding = useMapPaddingSync({
     mapRef,
@@ -67,7 +67,7 @@ export function useMapAnchor({
     fixedChromeInsets,
     mapPaddingDebug,
     session,
-    onBootAttemptRef,
+    onPaddingReady: () => onPaddingReadyRef.current?.(),
   });
 
   const { navigateTo, navigateToRef } = useMapAnchorNavigate({
@@ -77,18 +77,18 @@ export function useMapAnchor({
     refreshMapPaddingFromCanvasRef: padding.refreshMapPaddingFromCanvasRef,
   });
 
-  useBootFlyCoordinator({
+  const { attemptBoot } = useBootFlyCoordinator({
     mapRef,
     enabled,
     bootTarget,
     bootDurationMs,
     smoothFlyDurationMs,
     mapPaddingReadyRef: padding.mapPaddingReadyRef,
-    onBootAttemptRef,
     navigateToRef,
     onBootIssued,
     mapPaddingDebug,
   });
+  onPaddingReadyRef.current = attemptBoot;
 
   useMapAnchorSheetSettle({
     mapRef,

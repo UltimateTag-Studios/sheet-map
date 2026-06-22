@@ -38,7 +38,7 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 - `useMapAnchor`: padding, sessions, `navigateTo`, single `moveend` dispatcher
 - `applyMapPadding`: full matrix (`idle` follow branch exists; not wired yet)
-- `map-instance-camera-state`: padding WeakMap release on unmount
+- `instance/camera-state`: padding WeakMap release on unmount
 
 ---
 
@@ -77,15 +77,11 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 ---
 
-## Part 5C — Boot fly (sliced — see dedicated doc)
+## Part 5C — Boot fly ✅ (5C-4 + cleanup landed)
 
-**Status:** Replanned. Previous monolithic attempt reverted; demo restored to phase 4 `useMapAnchor`.
+**Status:** 5C-4 demo wired to `useMapFollowUser`; camera package reorganized into topic folders (`padding/`, `boot/`, `instance/`, `shared/`, `hooks/`). See [`phase-5c-slices.md`](phase-5c-slices.md) and **5C cleanup** note there.
 
-**5A / 5B do not affect the demo** (reducer + exported helpers only; no `useMapAnchor` changes). What broke was uncommitted 5C wiring only.
-
-**Step through slices here:** [`phase-5c-slices.md`](phase-5c-slices.md)
-
-Summary:
+**5A / 5B do not affect the demo** (reducer + exported helpers only; no `useMapAnchor` changes). Boot uses `navigateTo` (no session gate); padding→boot via explicit `onPaddingReady` → `attemptBoot`.
 
 | Slice | Demo? | Manual verify? |
 | ----- | ----- | -------------- |
@@ -104,9 +100,12 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 | Module | Notes |
 | ------ | ----- |
+| `anchor/resolve-move-end.ts` | Pure moveend branching (5D extends with `evaluate-gesture-settle`) |
 | `evaluate-gesture-settle.ts` | Pure: `commitAnchor` \| `releaseFollow` \| `snapBackToUser` |
-| `map-user-location-follow.ts` | Distance read vs `centerOffset`; 40px default threshold |
-| `use-map-anchor.ts` | Optional `follow` config; `move` threshold during `userGesture`; extend `handleMoveEnd` per spec §7 |
+| `hooks/use-map-follow-user.ts` | Distance read vs `centerOffset`; threshold via **`followReleaseThresholdPx`** option (app default often 40 — not hardcoded in reducer) |
+| `hooks/use-map-anchor/listeners.ts` | Wire `resolveMoveEnd` + optional follow config |
+
+**Threshold:** `followReleaseThresholdPx` on `useMapFollowUser` / `useMapAnchor` — consumer-configurable screen pixels; demo default 40.
 
 **Behavior:**
 

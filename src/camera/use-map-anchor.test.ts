@@ -6,8 +6,8 @@ import { mountSheetHostFixture } from "../viewport/testing/mount-sheet-host-fixt
 import {
   hasBootFlownForMapInstance,
   markBootFlownForMapInstance,
-} from "./map-instance-camera-state";
-import { clearMapPaddingSyncState, syncMapPadding } from "./sync-map-padding";
+} from "./instance/camera-state";
+import { clearMapPaddingSyncState, syncMapPadding } from "./padding/sync";
 import {
   asTestMapboxMap,
   createTestMapRef,

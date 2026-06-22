@@ -1,6 +1,6 @@
 import type { Map as MapboxMap } from "mapbox-gl";
 
-import { clearMapPaddingSyncState } from "./sync-map-padding";
+import { clearMapPaddingSyncState } from "../padding/sync";
 
 const bootFlownByMap = new WeakMap<MapboxMap, boolean>();
 

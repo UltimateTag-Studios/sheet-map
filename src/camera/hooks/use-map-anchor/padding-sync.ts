@@ -7,11 +7,11 @@ import {
 } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import type { MapObscuredInsets } from "../../viewport";
-import { applyMapPadding } from "../apply-map-padding";
-import type { MapPaddingOptions } from "../compute-map-padding";
-import { syncMapPaddingFromCanvas } from "../sync-map-padding-from-canvas";
-import { whenMapStyleReady } from "../when-map-style-ready";
+import type { MapObscuredInsets } from "../../../viewport";
+import { applyMapPadding } from "../../padding/apply";
+import type { MapPaddingOptions } from "../../padding/compute";
+import { syncMapPaddingFromCanvas } from "../../padding/sync-from-canvas";
+import { whenMapStyleReady } from "../../shared/when-map-style-ready";
 import type { MapAnchorSessionRefs } from "./session-refs";
 import type { RefreshMapPaddingFromCanvasOptions } from "./types";
 
@@ -23,8 +23,8 @@ export type UseMapPaddingSyncInput = {
   fixedChromeInsets?: Partial<MapObscuredInsets>;
   mapPaddingDebug: boolean;
   session: MapAnchorSessionRefs;
-  /** Boot coordinator registers an attempt callback here. */
-  onBootAttemptRef: MutableRefObject<(() => void) | null>;
+  /** Called once when the first live-DOM padding sync succeeds. */
+  onPaddingReady?: () => void;
 };
 
 export type MapPaddingSyncHandle = {
@@ -44,7 +44,7 @@ export function useMapPaddingSync({
   fixedChromeInsets,
   mapPaddingDebug,
   session,
-  onBootAttemptRef,
+  onPaddingReady,
 }: UseMapPaddingSyncInput): MapPaddingSyncHandle {
   const { stateRef, sheetPhaseRef } = session;
 
@@ -57,6 +57,9 @@ export function useMapPaddingSync({
   const refreshMapPaddingFromCanvasRef = useRef<
     (options?: RefreshMapPaddingFromCanvasOptions) => boolean
   >(() => false);
+
+  const onPaddingReadyRef = useRef(onPaddingReady);
+  onPaddingReadyRef.current = onPaddingReady;
 
   const refreshMapPaddingFromCanvas = useCallback(
     (options: RefreshMapPaddingFromCanvasOptions = {}) => {
@@ -87,7 +90,7 @@ export function useMapPaddingSync({
       if (result.mapPaddingSynced && !mapPaddingReadyRef.current) {
         mapPaddingReadyRef.current = true;
         setMapPaddingReady(true);
-        onBootAttemptRef.current?.();
+        onPaddingReadyRef.current?.();
       }
 
       return result.changed;
@@ -100,7 +103,6 @@ export function useMapPaddingSync({
       mapPaddingDebug,
       stateRef,
       sheetPhaseRef,
-      onBootAttemptRef,
     ],
   );
 

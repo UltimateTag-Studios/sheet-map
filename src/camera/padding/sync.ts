@@ -1,9 +1,6 @@
 import type { Map as MapboxMap } from "mapbox-gl";
 
-import {
-  areMapPaddingOptionsEqual,
-  type MapPaddingOptions,
-} from "./compute-map-padding";
+import { areMapPaddingOptionsEqual, type MapPaddingOptions } from "./compute";
 
 type PaddingSyncState = {
   synced: MapPaddingOptions;

@@ -176,14 +176,16 @@ Reference: `screens/reference/sheet-on-map-screen.tsx` (camera hooks come in pha
 
 ### Package (`src/camera/`)
 
+Topic folders: `anchor/`, `follow/`, `padding/`, `boot/`, `instance/`, `shared/`, `hooks/`, `testing/`.
+
 | Deliverable | Notes |
 | ----------- | ----- |
-| `reduceMapAnchor` | Sessions: `idle` \| `userGesture` \| `navigating` |
-| `syncMapPadding` + `applyMapPadding` | Padding matrix; **no defer/flush** |
-| `whenMapStyleReady` | Style load + idle recovery |
-| `useMapAnchor` | `navigateTo`, `setAnchor`, padding lifecycle, **single** `moveend` dispatcher |
-| `evaluateGestureAtGestureSettle` | Pure settle decision (snap-back calls `navigateTo` in phase 5) |
-| `map-instance-camera-state` | Per-map latches; release on unmount |
+| `anchor/reduce.ts` | Sessions: `idle` \| `userGesture` \| `navigating` |
+| `padding/sync.ts` + `padding/apply.ts` | Padding matrix; **no defer/flush** |
+| `shared/when-map-style-ready.ts` | Style load + idle recovery |
+| `hooks/use-map-anchor/` | `navigateTo`, `setAnchor`, padding lifecycle, boot coordinator, single `moveend` dispatcher |
+| `anchor/resolve-move-end.ts` | Pure moveend branching (5D adds gesture settle) |
+| `instance/camera-state.ts` | Per-map latches; release on unmount |
 
 **Invariants:**
 
@@ -196,7 +198,7 @@ Reference: `screens/reference/sheet-on-map-screen.tsx` (camera hooks come in pha
 
 | Test | Covers |
 | ---- | ------ |
-| `sync-map-padding.test.ts` | Deduped setPadding |
+| `padding/sync.test.ts` | Deduped setPadding |
 | `padding-anchor.integration.test.ts` | Padding + session matrix |
 | `use-map-anchor.test.ts` | Gesture, navigating, threshold |
 
@@ -248,7 +250,7 @@ style ready → syncMapPaddingFromCanvas → mapPaddingReady → tryBootFly → 
 | Test | Covers |
 | ---- | ------ |
 | `use-map-follow-user.test.ts` | Boot once, GPS jump, no stack overflow |
-| `map-instance-camera-state.test.ts` | Refresh / unmount boot latch |
+| `instance/camera-state.test.ts` | Refresh / unmount boot latch |
 | Integration | Pan + sheet during momentum; snap-back ≤40px |
 
 ### Demo

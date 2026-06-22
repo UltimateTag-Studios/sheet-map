@@ -1,6 +1,6 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
-import { jumpToMapAnchor } from "./anchor/apply-map-anchor-camera";
+import { jumpToMapAnchor } from "../anchor";
 import { type MapPosition, mergeMapAnchorPosition } from "./map-position";
 
 /** Instant camera move without entering the navigating session (e.g. GPS ticks). */

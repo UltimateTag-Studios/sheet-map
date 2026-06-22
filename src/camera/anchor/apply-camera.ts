@@ -1,6 +1,6 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
-import type { MapPosition } from "../map-position";
+import type { MapPosition } from "../shared/map-position";
 
 export type ApplyMapAnchorCameraOptions = {
   duration?: number;

@@ -94,13 +94,15 @@ While **`navigating`** + sheet geometry changes: after `setPadding`, **jump** to
 
 ### Gesture settle (`moveend` when `!map.isMoving()`)
 
-Single dispatcher ([`use-map-anchor.ts`](../src/camera/use-map-anchor.ts) `handleMoveEnd`):
+Single dispatcher ([`listeners.ts`](../src/camera/hooks/use-map-anchor/listeners.ts) via `resolveMoveEnd`):
 
-1. `consumePaddingSyncMoveEnd` → return (padding-only moveend)
-2. If still `map.isMoving()` → return (wait; momentum not done)
-3. If following and over 40px → `stopFollowingUser` + `userGestureSettled` → `idle`
-4. If following and ≤40px → **`navigateTo` snap-back fly** → `navigating` (do not `userGestureSettled` first)
+1. `consumePaddingSyncMoveEnd` → padding-only branch in `resolveMoveEnd`
+2. If still `map.isMoving()` → noop (momentum not done)
+3. If following and over threshold → `stopFollowingUser` + `userGestureSettled` → `idle` (**5D**)
+4. If following and ≤ threshold → **`navigateTo` snap-back fly** → `navigating` (**5D**)
 5. Else → `userGestureSettled` → `idle` (commit anchor)
+
+Threshold: **`followReleaseThresholdPx`** on `useMapFollowUser` / `useMapAnchor` (app default often 40 — not hardcoded in `anchor/`).
 
 **No snap from deferred padding on momentum end.** The only camera move when the finger lifts (while following, ≤40px) is the mandatory programmatic snap-back fly.
 
@@ -122,7 +124,7 @@ The sheet package owns snap heights, drag phase, and `sheetObscuredBottomPx`. Th
 | `userGesture` | on | yes | no jumpTo/flyTo from our code; snap-back at pan settle |
 | `navigating` | * | yes | jump to `navigationIntent.target` |
 
-Entry point: [`apply-map-padding.ts`](../src/camera/apply-map-padding.ts).
+Entry point: [`padding/apply.ts`](../src/camera/padding/apply.ts).
 
 ---
 
@@ -165,10 +167,10 @@ sequenceDiagram
 
 | Step | Module | Rule |
 | ---- | ------ | ---- |
-| Style ready | `when-map-style-ready.ts` | `load` + `idle` until `isStyleLoaded()`; MapCanvas publishes `mapRef` on **load only** |
-| Padding | `apply-map-padding.ts` | After style ready; latch `mapPaddingReady` |
-| Boot | `use-map-anchor.ts` `tryBootFly` | After `mapPaddingReady`; **never** from padding sync path |
-| Release | `map-instance-camera-state.ts` + `onMapInstanceReleased` | On map unmount: clear padding + boot WeakMaps; reset follow `hasBootFlown` |
+| Style ready | `shared/when-map-style-ready.ts` | `load` + `idle` until `isStyleLoaded()`; MapCanvas publishes `mapRef` on **load only** |
+| Padding | `padding/apply.ts` | After style ready; latch `mapPaddingReady` |
+| Boot | `boot-coordinator.ts` + `boot/try-boot-fly.ts` | After `mapPaddingReady` via `onPaddingReady` → `attemptBoot`; uses `navigateTo` (no session gate) |
+| Release | `instance/camera-state.ts` + `onMapInstanceReleased` | On map unmount: clear padding + boot WeakMaps; reset follow `hasBootFlown` |
 
 **Do not** gate boot on React `hasBootFlown` alone — Strict Mode preserves that state across effect re-runs while the visible map instance is reset.
 
@@ -186,14 +188,14 @@ Optional: `NavigationIntent.reason` (`boot` | `myLocation` | `snapBack` | `mapIt
 
 | Module | Role |
 | ------ | ---- |
-| `reduce-map-anchor.ts` | Session reducer |
-| `reduce-map-follow.ts` | Follow latch |
-| `apply-map-padding.ts` | Padding sync + realign matrix |
-| `evaluate-gesture-settle.ts` | Pure gesture settle decision |
-| `reposition-camera.ts` | GPS instant jump without session |
-| `sync-map-padding.ts` | Mapbox `setPadding` + padding moveend flag |
-| `use-map-anchor.ts` | Listeners, `navigateTo`, padding, **boot pipeline**, single `moveend` dispatcher |
-| `use-map-follow-user.ts` | Boot, GPS, threshold data, composes anchor |
+| `anchor/reduce.ts` | Session reducer |
+| `follow/reduce-map-follow.ts` | Follow latch |
+| `padding/apply.ts` | Padding sync + realign matrix |
+| `anchor/resolve-move-end.ts` | Pure moveend branching (5D: gesture settle) |
+| `shared/reposition-camera.ts` | GPS instant jump without session |
+| `padding/sync.ts` | Mapbox `setPadding` + padding moveend flag |
+| `hooks/use-map-anchor/` | Listeners, `navigateTo`, padding, **boot coordinator**, single `moveend` dispatcher |
+| `hooks/use-map-follow-user.ts` | Boot target, GPS, threshold option, composes anchor |
 
 ---
 

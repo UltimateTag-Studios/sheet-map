@@ -362,14 +362,16 @@ flowchart TD
 
 ```
 camera/
-  apply-map-padding.ts       # syncMapPaddingFromCanvas + realign matrix (pure)
-  evaluate-gesture-settle.ts   # pure settle decision
-  reposition-camera.ts         # GPS jump, no session
-  sync-map-padding.ts          # Mapbox setPadding + padding moveend flag
-  when-map-style-ready.ts      # style load subscription
-  map-instance-camera-state.ts # per-map boot + padding latches
-  use-map-anchor.ts            # session FSM, listeners, navigateTo, padding lifecycle, boot
-  use-map-follow-user.ts       # follow reducer, boot config, GPS
+  anchor/                      # session FSM, resolve-move-end (→ 5D evaluate-gesture-settle)
+  follow/
+  padding/                     # apply, compute, sync, sync-from-canvas
+  boot/                        # try-boot-fly
+  instance/                    # camera-state (per-map latches)
+  shared/                      # map-position, reposition-camera, when-map-style-ready
+  hooks/
+    use-map-anchor/            # listeners, navigate, padding-sync, boot-coordinator
+    use-map-follow-user.ts
+  testing/
 
 viewport/
   use-live-sheet-obscured-bottom-px.ts

@@ -1,4 +1,5 @@
 export {
+  type ApplyMapAnchorCameraOptions,
   applyMapAnchorCamera,
   beginProgrammaticNavigation,
   createInitialMapAnchorState,
@@ -16,53 +17,51 @@ export {
   stopMapMotion,
   trySettleNavigatingSession,
 } from "./anchor";
-export type { ApplyMapAnchorCameraOptions } from "./anchor/apply-map-anchor-camera";
-export type { ApplyMapPaddingInput } from "./apply-map-padding";
-export { applyMapPadding } from "./apply-map-padding";
-export {
-  areMapPaddingOptionsEqual,
-  type ComputeMapPaddingInput,
-  computeMapPadding,
-  type MapPaddingOptions,
-} from "./compute-map-padding";
+export type { BootFlyBlockReason, TryBootFlyResult } from "./boot";
+export { areBootFlyGatesReady, tryBootFly } from "./boot";
 export {
   createInitialMapFollowState,
   type MapFollowEvent,
   type MapFollowState,
   reduceMapFollow,
 } from "./follow";
+export type {
+  NavigateToMapAnchorOptions,
+  UseMapAnchorOptions,
+} from "./hooks/use-map-anchor";
+export { useMapAnchor } from "./hooks/use-map-anchor";
+export type {
+  MapUserLocationCoords,
+  UseMapFollowUserOptions,
+} from "./hooks/use-map-follow-user";
+export { useMapFollowUser } from "./hooks/use-map-follow-user";
 export {
   hasBootFlownForMapInstance,
   markBootFlownForMapInstance,
   releaseMapInstanceCameraState,
-} from "./map-instance-camera-state";
-export type { MapPosition } from "./map-position";
-export { mergeMapAnchorPosition, positionKey } from "./map-position";
-export { readMapPaddingFromCanvas } from "./read-map-padding-from-canvas";
-export { repositionCamera } from "./reposition-camera";
+} from "./instance";
+export type { ApplyMapPaddingInput } from "./padding";
 export {
+  applyMapPadding,
+  areMapPaddingOptionsEqual,
+  type ComputeMapPaddingInput,
   clearMapPaddingSyncState,
+  computeMapPadding,
   consumePaddingSyncMoveEnd,
   drainPaddingSyncMoveEnd,
   hasSyncedMapPadding,
+  type MapPaddingOptions,
+  readMapPaddingFromCanvas,
   readSyncedMapPadding,
+  type SyncMapPaddingFromCanvasInput,
+  type SyncMapPaddingFromCanvasResult,
   syncMapPadding,
-} from "./sync-map-padding";
-export type {
-  SyncMapPaddingFromCanvasInput,
-  SyncMapPaddingFromCanvasResult,
-} from "./sync-map-padding-from-canvas";
-export { syncMapPaddingFromCanvas } from "./sync-map-padding-from-canvas";
-export type { BootFlyBlockReason, TryBootFlyResult } from "./try-boot-fly";
-export { areBootFlyGatesReady, tryBootFly } from "./try-boot-fly";
-export type {
-  NavigateToMapAnchorOptions,
-  UseMapAnchorOptions,
-} from "./use-map-anchor";
-export { useMapAnchor } from "./use-map-anchor";
-export type {
-  MapUserLocationCoords,
-  UseMapFollowUserOptions,
-} from "./use-map-follow-user";
-export { useMapFollowUser } from "./use-map-follow-user";
-export { whenMapStyleReady } from "./when-map-style-ready";
+  syncMapPaddingFromCanvas,
+} from "./padding";
+export type { MapPosition } from "./shared";
+export {
+  mergeMapAnchorPosition,
+  positionKey,
+  repositionCamera,
+  whenMapStyleReady,
+} from "./shared";

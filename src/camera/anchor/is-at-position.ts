@@ -1,6 +1,6 @@
 import type { Map as MapboxMap } from "mapbox-gl";
 
-import type { MapPosition } from "../map-position";
+import type { MapPosition } from "../shared/map-position";
 
 const CENTER_EPSILON = 1e-5;
 const ZOOM_EPSILON = 0.01;

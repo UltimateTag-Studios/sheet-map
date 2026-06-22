@@ -1,8 +1,8 @@
 import type { Map as MapboxMap } from "mapbox-gl";
 import type { Dispatch, MutableRefObject } from "react";
 
-import { isAtMapAnchorPosition } from "./is-at-map-anchor-position";
-import type { MapAnchorEvent } from "./reduce-map-anchor";
+import { isAtMapAnchorPosition } from "./is-at-position";
+import type { MapAnchorEvent } from "./reduce";
 import type { MapAnchorState } from "./state";
 
 export function trySettleNavigatingSession(

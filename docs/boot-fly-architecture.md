@@ -1,6 +1,6 @@
 # Boot fly — behavior spec and target architecture
 
-**Status:** Draft (5C-4 still failing manual verify). Parent: `[phase-5c-slices.md](phase-5c-slices.md)`, `[camera-fsm-plan.md](camera-fsm-plan.md)` §2 Rule 1.
+**Status:** 5C-4 landed (`SHEET_MAP_PHASE_5_PART = 4`). Parent: [`phase-5c-slices.md`](phase-5c-slices.md), [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1.
 
 ---
 
@@ -119,9 +119,7 @@ Single module; **only** place that calls `tryBootFly` from React.
 
 1. **`useLayoutEffect`** — deps: `[bootTarget, mapPaddingReady, mapRef, enabled, …]`
   Run `attemptBoot()` after DOM/state flush when any gate changes.
-2. **Padding completion hook** — `refreshMapPaddingFromCanvas` calls `onPaddingFirstSyncedRef.current?.()` **after** `mapPaddingReadyRef.current = true` (same synchronous stack as today’s ref flip).
-  Coordinator registers: `() => attemptBoot()`.  
-   **Safe:** `attemptBoot` → `tryBootFly` → `navigateTo` → padding refresh does **not** call `onPaddingFirstSynced` again once latched; latch prevents re-entry.
+2. **Padding completion hook** — `padding-sync.ts` calls `onPaddingReady?.()` **after** `mapPaddingReadyRef.current = true`. Composer wires `onPaddingReady: attemptBoot`.
 3. **Style load** — if `!map.isStyleLoaded()`, `map.once('load', attemptBoot)` (keep; cleanup on unmount).
 
 **Do not gate boot on session** — boot uses `navigateTo`, which calls `beginProgrammaticNavigation` (`map.stop()` + fly). Same as my-location / demo fly: preempts user pan momentum.
@@ -184,13 +182,12 @@ session → navigating (same as any programmatic fly)
 
 ```
 camera/
-  try-boot-fly.ts              # pure gates + latch + result reason
-  use-map-anchor/
-    use-map-padding-sync.ts    # + onPaddingFirstSynced ref callback slot
-    use-boot-fly-coordinator.ts  # NEW — only boot caller
-    use-map-anchor-boot.ts     # DELETE (merged into coordinator)
-    use-map-anchor.ts          # wire bootTarget, coordinator
-  use-map-follow-user.ts       # bootTarget + onBootIssued, no boot object
+  boot/try-boot-fly.ts              # pure gates + latch + result reason
+  hooks/use-map-anchor/
+    padding-sync.ts                 # onPaddingReady callback
+    boot-coordinator.ts             # returns attemptBoot; only boot caller
+    use-map-anchor.ts               # wire bootTarget, coordinator, padding
+  hooks/use-map-follow-user.ts      # bootTarget + onBootIssued, no boot object
 ```
 
 `useMapAnchor` **still owns** boot (satisfies phase-5c lesson #2). `useMapFollowUser` only supplies **data**, not a second effect graph.
@@ -200,7 +197,7 @@ camera/
 ## What we delete
 
 - `MapAnchorBootConfig` with `getTarget()` / `enabled`
-- `use-map-anchor-boot.ts` as a thin `bootReady` effect-only module
+- `onBootAttemptRef` / padding→boot ref slot
 - Any `attemptBootRef` / padding→boot ref wiring from abandoned attempts
 - Extra map listeners for boot-only retries
 
@@ -208,7 +205,7 @@ camera/
 
 ## What stays unchanged
 
-- `map-instance-camera-state` WeakMap latch + `releaseMapInstanceCameraState`
+- `instance/camera-state` WeakMap latch + `releaseMapInstanceCameraState`
 - Follow reducer `bootFlown` / `resetBoot` (UI `hasBootFlown`)
 - `MapCanvas` publish-on-load contract
 - `syncMapPaddingFromCanvas` / `applyMapPadding` — no boot inside

@@ -1,4 +1,4 @@
-import type { MapPosition } from "../map-position";
+import type { MapPosition } from "../shared/map-position";
 
 export type MapAnchorSession = "idle" | "userGesture" | "navigating";
 

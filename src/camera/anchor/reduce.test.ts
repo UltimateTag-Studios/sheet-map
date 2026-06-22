@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { reduceMapAnchor } from "./reduce-map-anchor";
+import { reduceMapAnchor } from "./reduce";
 import { createInitialMapAnchorState } from "./state";
 
 const samplePosition = { lat: 1, lng: 2, zoom: 15 };

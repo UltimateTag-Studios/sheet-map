@@ -3,8 +3,8 @@ import type { MapRef } from "react-map-gl/mapbox";
 import {
   hasBootFlownForMapInstance,
   markBootFlownForMapInstance,
-} from "./map-instance-camera-state";
-import type { MapPosition } from "./map-position";
+} from "../instance/camera-state";
+import type { MapPosition } from "../shared/map-position";
 
 export type BootFlyBlockReason =
   | "disabled"
