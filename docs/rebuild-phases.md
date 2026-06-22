@@ -179,7 +179,7 @@ Reference: `screens/reference/sheet-on-map-screen.tsx` (camera hooks come in pha
 | Deliverable | Notes |
 | ----------- | ----- |
 | `reduceMapAnchor` | Sessions: `idle` \| `userGesture` \| `navigating` |
-| `syncMapPadding` + `applySheetPadding` | Padding matrix; **no defer/flush** |
+| `syncMapPadding` + `applyMapPadding` | Padding matrix; **no defer/flush** |
 | `whenMapStyleReady` | Style load + idle recovery |
 | `useMapAnchor` | `navigateTo`, `setAnchor`, padding lifecycle, **single** `moveend` dispatcher |
 | `evaluateGestureAtGestureSettle` | Pure settle decision (snap-back calls `navigateTo` in phase 5) |
@@ -187,7 +187,7 @@ Reference: `screens/reference/sheet-on-map-screen.tsx` (camera hooks come in pha
 
 **Invariants:**
 
-- `syncSheetPadding` and `navigateTo` are **acyclic** (never boot/padding loop).
+- `syncMapPaddingFromCanvas` and `navigateTo` are **acyclic** (never boot/padding loop).
 - Padding `moveend` → `consumePaddingSyncMoveEnd` only.
 - During `userGesture` (incl. momentum): **`setPadding` only** from our code — no `jumpTo` / `flyTo` / `map.stop()`.
 - **Accepted:** sheet-driven `setPadding` may stop pan coasting (Mapbox) — see [`camera-fsm-plan.md` §3.1](camera-fsm-plan.md#31-accepted-sheet-drag-stops-pan-momentum). No defer/coalesce to preserve momentum.
@@ -205,7 +205,7 @@ Reference: `screens/reference/sheet-on-map-screen.tsx` (camera hooks come in pha
 Extend `/sheet` screens:
 
 - Show `session`, `padding.bottom`, anchor coords
-- Optional: `VITE_SHEET_MAP_DEBUG=true` → `[map-padding-sync]` logs
+- Optional: `VITE_SHEET_MAP_DEBUG=true` → `[map-padding-from-canvas]` logs
 - **No** boot fly yet — manual `navigateTo` or pan-to-settle anchor only
 
 ### Done when
@@ -233,12 +233,12 @@ Extend `/sheet` screens:
 | `useMapFollowUser` | Composes `useMapAnchor`; boot config; GPS via `repositionCamera` |
 | `repositionCamera` | Instant jump, session stays `idle` |
 | `MapUserLocation` + `MapMyLocationButton` | Dot + button; `isFollowFocused` = blue when boot issued |
-| `tryBootFly` | Separate from padding sync — after `paddingReady` only |
+| `tryBootFly` | Separate from padding sync — after `mapPaddingReady` only |
 
 **Boot order:**
 
 ```
-style ready → syncSheetPadding → paddingReady → tryBootFly → navigateTo (once per map)
+style ready → syncMapPaddingFromCanvas → mapPaddingReady → tryBootFly → navigateTo (once per map)
 ```
 
 ### Tests
@@ -321,6 +321,6 @@ Port relevant tests from `sheet-map-old-old` or write new integration tests.
 
 - Import from `@siegetag/sheet-map-previous` in the new package
 - Defer/batch padding on momentum `moveend`
-- Boot or `navigateTo` from inside `syncSheetPadding`
+- Boot or `navigateTo` from inside `syncMapPaddingFromCanvas`
 - `biome-ignore` on effect deps instead of fixing architecture
 - Skip tests and jump phases because demo “looks fine once”

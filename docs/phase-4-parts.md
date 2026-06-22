@@ -55,7 +55,7 @@ Track progress via `SHEET_MAP_PHASE_4_PART` in `src/index.ts`.
 
 ## Part 4E — Full padding matrix + phase complete
 
-**Goal:** `applySheetPadding` realign rules; `padding-anchor.integration.test.ts`; fold `useMapPaddingSync` into `useMapAnchor`.
+**Goal:** `applyMapPadding` realign rules; `padding-anchor.integration.test.ts`.
 
 **Bump:** `SHEET_MAP_REBUILD_PHASE = 4`, `SHEET_MAP_PHASE_4_PART` removed or set to `5`.
 

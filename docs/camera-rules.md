@@ -50,12 +50,12 @@ Recenter while following during a gesture happens at **gesture settle** (mandato
 ## Rule 1 — Boot and padding (always first)
 
 1. As soon as `mapRef` + `sheetObscuredBottomPx` exist → `syncMapPadding` (no snap-height gate for padding).
-2. Latch `paddingReady` on first successful `setPadding`.
-3. Boot fly **once** when: `paddingReady && styleLoaded && userLocation && !hasBootFlown`.
+2. Latch `mapPaddingReady` on first successful `setPadding`.
+3. Boot fly **once** when: `mapPaddingReady && styleLoaded && userLocation && !hasBootFlown`.
 4. Boot uses `navigateTo` with smooth fly + explicit zoom.
 5. Set `hasBootFlown` when boot `navigateTo` is **issued** (not only after settle).
 
-**Critical:** `syncSheetPadding` and boot are **separate steps**. Boot runs only from `tryBootFly` (never from inside padding sync or `applyPaddingBeforeNavigation`) — otherwise `navigateTo → padding → boot → navigateTo` overflows the stack.
+**Critical:** `syncMapPaddingFromCanvas` and boot are **separate steps**. Boot runs only from `tryBootFly` (never from inside padding sync or `applyPaddingBeforeNavigation`) — otherwise `navigateTo → padding → boot → navigateTo` overflows the stack.
 
 ---
 
@@ -112,7 +112,7 @@ The sheet package owns snap heights, drag phase, and `sheetObscuredBottomPx`. Th
 
 ---
 
-## Padding + camera matrix (`applySheetPadding`)
+## Padding + camera matrix (`applyMapPadding`)
 
 | Session | Follow | Sheet moves | Camera after `setPadding` |
 | ------- | ------ | ----------- | ------------------------- |
@@ -122,7 +122,7 @@ The sheet package owns snap heights, drag phase, and `sheetObscuredBottomPx`. Th
 | `userGesture` | on | yes | no jumpTo/flyTo from our code; snap-back at pan settle |
 | `navigating` | * | yes | jump to `navigationIntent.target` |
 
-Entry point: [`apply-sheet-padding.ts`](../src/camera/apply-sheet-padding.ts).
+Entry point: [`apply-map-padding.ts`](../src/camera/apply-map-padding.ts).
 
 ---
 
@@ -133,7 +133,7 @@ Entry point: [`apply-sheet-padding.ts`](../src/camera/apply-sheet-padding.ts).
 - GPS updates: `repositionCamera` only when `session === "idle"`.
 - Snap-back at gesture settle: `navigateTo` (same path as my-location).
 
-**Demo padding logs:** set `VITE_SHEET_MAP_DEBUG=true` in `apps/sheet-map-demo/.env` to see `[map-padding-sync] setPadding` in the console.
+**Demo padding logs:** set `VITE_SHEET_MAP_DEBUG=true` in `apps/sheet-map-demo/.env` to see `[map-padding-from-canvas] setPadding` in the console.
 
 ---
 
@@ -150,7 +150,7 @@ sequenceDiagram
 
   App->>Anchor: mapRef attached
   Anchor->>Map: whenMapStyleReady
-  Anchor->>Map: applySheetPadding → paddingReady
+  Anchor->>Map: applyMapPadding → mapPaddingReady
   Follow->>Map: whenMapStyleReady + navigateTo boot
   Follow->>Map: markBootFlownForMapInstance
 
@@ -159,15 +159,15 @@ sequenceDiagram
   Follow->>Follow: resetBoot react state
 
   App->>Anchor: mapRef attached again
-  Anchor->>Map: padding + paddingReady
+  Anchor->>Map: padding + mapPaddingReady
   Follow->>Map: boot fly again
 ```
 
 | Step | Module | Rule |
 | ---- | ------ | ---- |
 | Style ready | `when-map-style-ready.ts` | `load` + `idle` until `isStyleLoaded()`; MapCanvas publishes `mapRef` on **load only** |
-| Padding | `apply-sheet-padding.ts` | After style ready; latch `paddingReady` |
-| Boot | `use-map-anchor.ts` `tryBootFly` | After `paddingReady`; **never** from padding sync path |
+| Padding | `apply-map-padding.ts` | After style ready; latch `mapPaddingReady` |
+| Boot | `use-map-anchor.ts` `tryBootFly` | After `mapPaddingReady`; **never** from padding sync path |
 | Release | `map-instance-camera-state.ts` + `onMapInstanceReleased` | On map unmount: clear padding + boot WeakMaps; reset follow `hasBootFlown` |
 
 **Do not** gate boot on React `hasBootFlown` alone — Strict Mode preserves that state across effect re-runs while the visible map instance is reset.
@@ -188,7 +188,7 @@ Optional: `NavigationIntent.reason` (`boot` | `myLocation` | `snapBack` | `mapIt
 | ------ | ---- |
 | `reduce-map-anchor.ts` | Session reducer |
 | `reduce-map-follow.ts` | Follow latch |
-| `apply-sheet-padding.ts` | Padding sync + realign matrix |
+| `apply-map-padding.ts` | Padding sync + realign matrix |
 | `evaluate-gesture-settle.ts` | Pure gesture settle decision |
 | `reposition-camera.ts` | GPS instant jump without session |
 | `sync-map-padding.ts` | Mapbox `setPadding` + padding moveend flag |

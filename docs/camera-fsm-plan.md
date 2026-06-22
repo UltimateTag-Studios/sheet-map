@@ -55,7 +55,7 @@ While coasting, session stays `userGesture`. Sheet padding during momentum = **`
 
 1. As soon as `mapRef` exists **and style is loaded** **and** `sheetObscuredBottomPx` is provided → call `syncMapPadding` (Mapbox `setPadding`).
 2. **No** `snapHeightsMeasured` gate for padding. Sheet height may be `0` on first sync — see [§5 Double setPadding](#5-double-setpadding-expected-vs-bug).
-3. Latch `paddingReady` on first successful sync (WeakMap / ref: “this map instance has had `setPadding` at least once”).
+3. Latch `mapPaddingReady` on first successful sync (WeakMap / ref: “this map instance has had `setPadding` at least once”).
 4. Every subsequent `sheetObscuredBottomPx` change → sync again if values differ.
 
 **Boot (once per map instance)**
@@ -63,7 +63,7 @@ While coasting, session stays `userGesture`. Sheet padding during momentum = **`
 Boot runs **only when all** of:
 
 - Map style loaded (`map.isStyleLoaded()`)
-- `paddingReady === true`
+- `mapPaddingReady === true`
 - `userLocation` available and `followUser === true`
 - Per-map boot latch not set (`!hasBootFlownForMapInstance(map)`)
 - Anchor session `idle` (not mid-gesture or mid-nav)
@@ -77,10 +77,10 @@ Then:
 **Boot order (strict, acyclic):**
 
 ```
-style ready → syncSheetPadding → paddingReady → tryBootFly → navigateTo
+style ready → syncMapPaddingFromCanvas → mapPaddingReady → tryBootFly → navigateTo
 ```
 
-**Never:** call boot from inside `syncSheetPadding` or from `applyPaddingBeforeNavigation` (used by `navigateTo`). That creates `padding → boot → navigateTo → padding → …` stack overflow.
+**Never:** call boot from inside `syncMapPaddingFromCanvas` or from `applyPaddingBeforeNavigation` (used by `navigateTo`). That creates `padding → boot → navigateTo → padding → …` stack overflow.
 
 **Map instance lifecycle**
 
@@ -125,7 +125,7 @@ All programmatic camera moves use **one path:**
 1. Update `stateRef` to `navigating` **before** camera commands (re-entrancy safety).
 2. `beginProgrammaticNavigation(map, applyPaddingBeforeNavigation)`:
    - `map.stop()` — preempts user momentum (intentional).
-   - `syncSheetPadding({ realign: false })` — padding only, **no boot**, **no** follow realign.
+   - `applyMapPadding({ realign: false })` — padding only, **no boot**, **no** follow realign.
 3. `applyMapAnchorCamera` — fly or jump (`duration: 0` when `sheetMotionActive`).
 
 **While `navigating` + sheet geometry changes:**
@@ -192,9 +192,9 @@ Camera hook **reacts** to sheet inputs. No duplicate sheet FSM in camera code.
 
 ---
 
-## 3. Padding + camera matrix (`applySheetPadding`)
+## 3. Padding + camera matrix (`applyMapPadding`)
 
-After `syncMapPadding`, optionally realign camera:
+After `syncMapPaddingFromCanvas`, optionally realign camera:
 
 | Session | Follow | Sheet moves | Camera after `setPadding` |
 | ------- | ------ | ----------- | ------------------------- |
@@ -254,7 +254,7 @@ Renders **only if** `clientRect !== null`.
 
 | Variable | Effect |
 | -------- | ------ |
-| `VITE_SHEET_MAP_DEBUG=true` | `[map-padding-sync] setPadding` logs |
+| `VITE_SHEET_MAP_DEBUG=true` | `[map-padding-from-canvas] setPadding` logs |
 | (viewport) | Pass `debug: true` to `useMapVisibleViewportSync` for `[map-visible-viewport-sync]` logs |
 
 ### Relationship: padding vs visible rect
@@ -289,7 +289,7 @@ There is **no single “layout settled forever”** signal for padding. Padding 
 
 | Policy | Behavior |
 | ------ | -------- |
-| **A (permissive)** | Boot after first `paddingReady` from live DOM |
+| **A (permissive)** | Boot after first `mapPaddingReady` from live DOM |
 | **B (strict)** | Boot only after `sheetObscuredBottomPx > 0` or first sheet `idle` — avoids fly with wrong padding |
 
 ---
@@ -335,7 +335,7 @@ flowchart TD
 
   subgraph padding [Padding module]
     WSR[whenMapStyleReady]
-    SSP[syncSheetPadding]
+    SMPC[syncMapPaddingFromCanvas]
     SMP[syncMapPadding]
   end
 
@@ -349,12 +349,12 @@ flowchart TD
     TBF[tryBootFly]
   end
 
-  MR --> WSR --> SSP --> SMP
-  SO --> SSP
+  MR --> WSR --> SMPC --> SMP
+  SO --> SMPC
   GPS --> TBF
-  SSP -->|paddingReady| TBF
+  SMPC -->|mapPaddingReady| TBF
   TBF --> NT
-  NT --> BPN --> SSP
+  NT --> BPN --> SMPC
   NT --> RC
 ```
 
@@ -362,7 +362,7 @@ flowchart TD
 
 ```
 camera/
-  apply-sheet-padding.ts       # sync + realign matrix (pure)
+  apply-map-padding.ts       # syncMapPaddingFromCanvas + realign matrix (pure)
   evaluate-gesture-settle.ts   # pure settle decision
   reposition-camera.ts         # GPS jump, no session
   sync-map-padding.ts          # Mapbox setPadding + padding moveend flag
@@ -381,7 +381,7 @@ viewport/
 
 | API | Enters `navigating`? | Calls padding? |
 | --- | -------------------- | -------------- |
-| `syncSheetPadding` | No | Yes |
+| `syncMapPaddingFromCanvas` | No | Yes |
 | `navigateTo` | Yes | Yes via `applyPaddingBeforeNavigation` only |
 | `repositionCamera` | No | No |
 | `tryBootFly` | Via `navigateTo` once | No direct call |

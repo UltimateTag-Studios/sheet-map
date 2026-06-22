@@ -82,7 +82,7 @@ type MapAnchorHookResult = ReturnType<typeof useMapAnchor>;
 
 function mountAnchorWithMapRef(
   harness: ReturnType<typeof createMapRefWithEvents>,
-  options: { sheetObscuredBottomPx?: number } = {},
+  options: { liveSheetObscuredBottomPx?: number } = {},
 ) {
   const { mapRef, map } = harness;
   const container = document.createElement("div");
@@ -94,7 +94,7 @@ function mountAnchorWithMapRef(
       createElement(() => {
         latestRef.current = useMapAnchor({
           mapRef,
-          sheetObscuredBottomPx: options.sheetObscuredBottomPx,
+          liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
         });
         return null;
       }),
@@ -118,7 +118,7 @@ function mountAnchorWithMapRef(
   };
 }
 
-function mountAnchor(options: { sheetObscuredBottomPx?: number } = {}) {
+function mountAnchor(options: { liveSheetObscuredBottomPx?: number } = {}) {
   return mountAnchorWithMapRef(createMapRefWithEvents(), options);
 }
 

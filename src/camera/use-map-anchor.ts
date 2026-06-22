@@ -12,14 +12,11 @@ import {
 import type { MapPaddingOptions } from "./compute-map-padding";
 import { releaseMapInstanceCameraState } from "./map-instance-camera-state";
 import type { MapPosition } from "./map-position";
-import { readMapPaddingFromCanvas } from "./read-map-padding-from-canvas";
 import {
   consumePaddingSyncMoveEnd,
   drainPaddingSyncMoveEnd,
-  hasSyncedMapPadding,
-  readSyncedMapPadding,
-  syncMapPadding,
 } from "./sync-map-padding";
+import { syncMapPaddingFromCanvas } from "./sync-map-padding-from-canvas";
 import { whenMapStyleReady } from "./when-map-style-ready";
 
 const mapListenerCleanupByMap = new WeakMap<
@@ -30,117 +27,118 @@ const mapListenerCleanupByMap = new WeakMap<
 export type UseMapAnchorOptions = {
   mapRef: MapRef | null;
   enabled?: boolean;
-  /** When set, sync padding from live DOM (value is a re-sync trigger only). */
-  sheetObscuredBottomPx?: number;
+  /**
+   * Re-sync trigger from `useLiveSheetObscuredBottomPx` — not used as padding input.
+   * Mapbox padding is always read from live DOM at apply time.
+   */
+  liveSheetObscuredBottomPx?: number;
   fixedChromeInsets?: Partial<MapObscuredInsets>;
-  paddingDebug?: boolean;
+  mapPaddingDebug?: boolean;
   onMapInstanceReleased?: () => void;
 };
 
 export function useMapAnchor({
   mapRef,
   enabled = true,
-  sheetObscuredBottomPx,
+  liveSheetObscuredBottomPx,
   fixedChromeInsets,
-  paddingDebug = false,
+  mapPaddingDebug = false,
   onMapInstanceReleased,
 }: UseMapAnchorOptions) {
-  const paddingEnabled = sheetObscuredBottomPx !== undefined;
+  const mapPaddingFromCanvasEnabled = liveSheetObscuredBottomPx !== undefined;
 
   const [state, dispatch] = useReducer(
     reduceMapAnchor,
     undefined,
     createInitialMapAnchorState,
   );
-  const [padding, setPadding] = useState<MapPaddingOptions | null>(null);
-  const [paddingReady, setPaddingReady] = useState(!paddingEnabled);
-  const paddingReadyRef = useRef(paddingReady);
+  const [mapPadding, setMapPadding] = useState<MapPaddingOptions | null>(null);
+  const [mapPaddingReady, setMapPaddingReady] = useState(
+    !mapPaddingFromCanvasEnabled,
+  );
+  const mapPaddingReadyRef = useRef(mapPaddingReady);
 
   const stateRef = useRef(state);
   stateRef.current = state;
   const onMapInstanceReleasedRef = useRef(onMapInstanceReleased);
   onMapInstanceReleasedRef.current = onMapInstanceReleased;
 
-  const syncSheetPaddingRef = useRef<() => boolean>(() => false);
+  const refreshMapPaddingFromCanvasRef = useRef<() => boolean>(() => false);
 
-  const syncSheetPadding = useCallback(() => {
-    if (!mapRef || !enabled || !paddingEnabled) {
+  const refreshMapPaddingFromCanvas = useCallback(() => {
+    if (!mapRef || !enabled || !mapPaddingFromCanvasEnabled) {
       return false;
     }
 
-    const map = mapRef.getMap();
-    if (!map.isStyleLoaded()) {
-      return false;
-    }
-
-    const nextPadding = readMapPaddingFromCanvas({
-      canvas: map.getCanvas(),
+    const result = syncMapPaddingFromCanvas({
+      map: mapRef.getMap(),
       fixedChromeInsets,
+      debug: mapPaddingDebug,
     });
-    if (!nextPadding) {
-      return false;
+
+    if (result.changed && result.padding) {
+      setMapPadding(result.padding);
     }
 
-    const changed = syncMapPadding(map, nextPadding);
-
-    if (paddingDebug && changed) {
-      console.info("[map-padding-sync] setPadding", nextPadding);
+    if (result.mapPaddingSynced && !mapPaddingReadyRef.current) {
+      mapPaddingReadyRef.current = true;
+      setMapPaddingReady(true);
     }
 
-    if (changed) {
-      setPadding(readSyncedMapPadding(map) ?? nextPadding);
-    }
+    return result.changed;
+  }, [
+    mapRef,
+    enabled,
+    mapPaddingFromCanvasEnabled,
+    fixedChromeInsets,
+    mapPaddingDebug,
+  ]);
 
-    if (hasSyncedMapPadding(map) && !paddingReadyRef.current) {
-      paddingReadyRef.current = true;
-      setPaddingReady(true);
-    }
-
-    return changed;
-  }, [mapRef, enabled, paddingEnabled, fixedChromeInsets, paddingDebug]);
-
-  syncSheetPaddingRef.current = syncSheetPadding;
+  refreshMapPaddingFromCanvasRef.current = refreshMapPaddingFromCanvas;
 
   const setAnchor = useCallback((position: MapPosition) => {
     dispatch({ type: "setAnchor", position });
   }, []);
 
   useEffect(() => {
-    if (!mapRef || !enabled || !paddingEnabled) {
-      paddingReadyRef.current = !paddingEnabled;
-      setPadding(null);
-      setPaddingReady(!paddingEnabled);
+    if (!mapRef || !enabled || !mapPaddingFromCanvasEnabled) {
+      mapPaddingReadyRef.current = !mapPaddingFromCanvasEnabled;
+      setMapPadding(null);
+      setMapPaddingReady(!mapPaddingFromCanvasEnabled);
       return;
     }
 
     const map = mapRef.getMap();
-    paddingReadyRef.current = false;
-    setPaddingReady(false);
+    mapPaddingReadyRef.current = false;
+    setMapPaddingReady(false);
 
     const cancelWhenStyleReady = whenMapStyleReady(map, () => {
-      syncSheetPaddingRef.current();
+      refreshMapPaddingFromCanvasRef.current();
     });
 
     return () => {
       cancelWhenStyleReady();
     };
-  }, [mapRef, enabled, paddingEnabled]);
+  }, [mapRef, enabled, mapPaddingFromCanvasEnabled]);
 
   useEffect(() => {
-    if (!paddingEnabled) {
+    if (!mapPaddingFromCanvasEnabled) {
       return;
     }
 
-    syncSheetPadding();
-  }, [syncSheetPadding, paddingEnabled]);
+    refreshMapPaddingFromCanvas();
+  }, [refreshMapPaddingFromCanvas, mapPaddingFromCanvasEnabled]);
 
   useEffect(() => {
-    if (!paddingEnabled || sheetObscuredBottomPx === undefined) {
+    if (
+      !mapPaddingFromCanvasEnabled ||
+      liveSheetObscuredBottomPx === undefined
+    ) {
       return;
     }
 
-    syncSheetPaddingRef.current();
-  }, [paddingEnabled, sheetObscuredBottomPx]);
+    refreshMapPaddingFromCanvasRef.current();
+  }, [mapPaddingFromCanvasEnabled, liveSheetObscuredBottomPx]);
 
   useEffect(() => {
     if (!mapRef || !enabled) {
@@ -234,8 +232,10 @@ export function useMapAnchor({
     anchor: state.anchor,
     session: state.session,
     navigationIntent: state.navigationIntent,
-    padding,
-    paddingReady,
+    /** Last Mapbox padding applied from live sheet DOM. */
+    mapPadding,
+    /** True after the first successful `setPadding` from measurable live DOM. */
+    mapPaddingReady,
     setAnchor,
   };
 }

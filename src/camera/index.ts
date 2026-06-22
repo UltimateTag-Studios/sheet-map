@@ -27,11 +27,11 @@ export {
   readSyncedMapPadding,
   syncMapPadding,
 } from "./sync-map-padding";
+export type {
+  SyncMapPaddingFromCanvasInput,
+  SyncMapPaddingFromCanvasResult,
+} from "./sync-map-padding-from-canvas";
+export { syncMapPaddingFromCanvas } from "./sync-map-padding-from-canvas";
 export type { UseMapAnchorOptions } from "./use-map-anchor";
 export { useMapAnchor } from "./use-map-anchor";
-export type {
-  UseMapPaddingSyncOptions,
-  UseMapPaddingSyncResult,
-} from "./use-map-padding-sync";
-export { useMapPaddingSync } from "./use-map-padding-sync";
 export { whenMapStyleReady } from "./when-map-style-ready";
