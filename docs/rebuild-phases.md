@@ -10,7 +10,7 @@ Step-by-step guide for `@siegetag/sheet-map`. Do **one phase at a time**. Do not
 | ------ | ------- |
 | `packages/sheet-map-old` (`@siegetag/sheet-map-previous`) | Recent rebuild attempt — viewport, camera, demo patterns |
 | `packages/sheet-map-old-old` (`@siegetag/sheet-map-old`) | Routes, markers, Capacitor shell |
-| `apps/sheet-map-demo/src/screens/reference/` | Demo screens from previous attempt |
+| `apps/sheet-map-demo/src/screens/` | Active demo screens per phase |
 
 ---
 
@@ -80,7 +80,7 @@ Port from `@siegetag/sheet-map-previous` — rewrite, do not re-export.
 | `/viewport` | Sheet + **canvas placeholder** + `MapVisibleAreaDebug` |
 | `/viewport/tab-bar` | Same with tab bar `bottomChromeReserve` |
 
-Copy starting point: `apps/sheet-map-demo/src/screens/reference/viewport-debug-screen.tsx` — strip `@siegetag/sheet-map` imports; use new exports.
+Port from `@siegetag/sheet-map-previous` — rewrite, do not re-export.
 
 ### Done when
 
@@ -115,8 +115,6 @@ Copy starting point: `apps/sheet-map-demo/src/screens/reference/viewport-debug-s
 | Route | Screen |
 | ----- | ------ |
 | `/canvas` | `SheetHost` + `MapCanvas`, pan/zoom |
-
-Reference: `screens/reference/map-canvas-screen.tsx`
 
 ### Done when
 
@@ -154,8 +152,6 @@ Reference: `screens/reference/map-canvas-screen.tsx`
 | ----- | ------ |
 | `/sheet` | Map + sheet, debug line showing obscured px / center offset |
 | `/sheet/tab-bar` | With `bottomChromeReserve` |
-
-Reference: `screens/reference/sheet-on-map-screen.tsx` (camera hooks come in phase 4–5).
 
 ### Done when
 
@@ -233,9 +229,8 @@ Extend `/sheet` screens:
 
 | Deliverable | Notes |
 | ----------- | ----- |
-| `reduceMapFollow` | `followUser`, `hasBootFlown` |
-| `useMapFollowUser` | Composes `useMapAnchor`; boot config; GPS via `repositionCamera` |
-| `repositionCamera` | Instant jump, session stays `idle` |
+| `reduceMapFollow` | `tracking` boolean |
+| `useMapUserTracking` | Composes `useMapAnchor`; boot config; GPS via instant `navigateTo` |
 | `MapUserLocation` + `MapMyLocationControl` | Dot + button; `tracking` = blue when following |
 | `tryBootFly` | Separate from padding sync — after `mapPaddingReady` only |
 
@@ -249,7 +244,7 @@ style ready → syncMapPaddingFromCanvas → mapPaddingReady → tryBootFly → 
 
 | Test | Covers |
 | ---- | ------ |
-| `use-map-follow-user.test.ts` | Boot once, GPS jump, no stack overflow |
+| `hooks/use-map-user-tracking.test.ts` | Boot once, GPS jump, no stack overflow |
 | `instance/camera-state.test.ts` | Refresh / unmount boot latch |
 | Integration | Pan + sheet during momentum; snap-back ≤40px |
 
@@ -263,7 +258,7 @@ style ready → syncMapPaddingFromCanvas → mapPaddingReady → tryBootFly → 
 | Pan ≤40px + lift | Snap-back fly |
 | GPS while following | Instant jump, not fly |
 
-Reference: `screens/reference/sheet-on-map-screen.tsx`, `use-demo-user-location.ts`
+Active demo: `apps/sheet-map-demo/src/screens/sheet-on-map-screen.tsx`
 
 ### Done when
 

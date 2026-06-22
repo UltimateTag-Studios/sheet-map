@@ -76,7 +76,7 @@ Tests pass (93+). Demo shows `mapPaddingReady` + user dot in many cases, but **c
 
 ```
 ┌────────────────────────┐     ┌─────────────────────────┐
-│ useMapPaddingSync      │     │ useMapFollowUser        │
+│ useMapPaddingSync      │     │ useMapUserTracking      │
 │ out: mapPaddingReady   │     │ in: userLocation        │
 │      mapPaddingReadyRef│     │ out: bootTarget         │
 └───────────┬────────────┘     └────────────┬────────────┘
@@ -97,11 +97,11 @@ Tests pass (93+). Demo shows `mapPaddingReady` + user dot in many cases, but **c
 
 ```typescript
 // useMapAnchor options
-bootTarget: MapPosition | null;   // from useMapFollowUser when hasUserLocation
-onBootIssued?: () => void;        // followDispatch bootFlown
+bootTarget: MapPosition | null;   // from useMapUserTracking when hasUserLocation
+onBootIssued?: () => void;        // trackingDispatch bootIssued
 ```
 
-`useMapFollowUser` builds `bootTarget` from coords + `followZoom` — no closure indirection.
+`useMapUserTracking` builds `bootTarget` from coords + `bootZoom` — no closure indirection.
 
 ### Boot coordinator (`use-boot-fly-coordinator.ts`)
 
@@ -187,10 +187,10 @@ camera/
     padding-sync.ts                 # onPaddingReady callback
     boot-coordinator.ts             # returns attemptBoot; only boot caller
     use-map-anchor.ts               # wire bootTarget, coordinator, padding
-  hooks/use-map-follow-user.ts      # bootTarget + onBootIssued, no boot object
+  hooks/use-map-user-tracking.ts      # bootTarget + onBootIssued, no boot object
 ```
 
-`useMapAnchor` **still owns** boot (satisfies phase-5c lesson #2). `useMapFollowUser` only supplies **data**, not a second effect graph.
+`useMapAnchor` **still owns** boot (satisfies phase-5c lesson #2). `useMapUserTracking` only supplies **data**, not a second effect graph.
 
 ---
 
@@ -206,7 +206,7 @@ camera/
 ## What stays unchanged
 
 - `instance/camera-state` WeakMap latch + `releaseMapInstanceCameraState`
-- Follow reducer `bootFlown` / `resetBoot` (UI `hasBootFlown`)
+- Follow reducer `bootIssued` event; per-map latch `hasBootIssuedForMapInstance`
 - `MapCanvas` publish-on-load contract
 - `syncMapPaddingFromCanvas` / `applyMapPadding` — no boot inside
 - 5D gesture settle — **not** in this work

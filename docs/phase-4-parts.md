@@ -14,7 +14,7 @@ Historical incremental guide — all parts landed.
 
 ## Part 4A — Padding sync only ✅
 
-**Frozen** — primitives in `sync-map-padding.ts`, `read-map-padding-from-canvas.ts`, etc.
+**Frozen** — primitives in `padding/sync.ts`, `padding/read-from-canvas.ts`, etc.
 
 ---
 

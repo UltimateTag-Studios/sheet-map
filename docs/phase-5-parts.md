@@ -2,7 +2,7 @@
 
 Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot), Rule 3 (gesture settle), §6. **`SHEET_MAP_REBUILD_PHASE = 5`** — phase 5 complete.
 
-Reference implementation (port selectively, do not copy defer/flush): `packages/sheet-map-old/src/camera/`, demo `apps/sheet-map-demo/src/screens/reference/sheet-on-map-screen.tsx`.
+Reference implementation (port selectively, do not copy defer/flush): `packages/sheet-map-old/src/camera/`, demo `apps/sheet-map-demo/src/screens/sheet-on-map-screen.tsx`.
 
 ---
 
@@ -46,8 +46,8 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 | Module | Notes |
 | ------ | ----- |
-| `camera/follow/state.ts` | `followUser`, `hasBootFlown` |
-| `camera/follow/reduce-map-follow.ts` | `startFollowUser`, `stopFollowUser`, `bootFlown`, `resetBoot` |
+| `camera/follow/state.ts` | `tracking` boolean |
+| `camera/follow/reduce-map-follow.ts` | `startTracking`, `stopTracking`, `bootIssued` |
 | `reduce-map-follow.test.ts` | Pure reducer coverage |
 
 **You verify:**
@@ -57,15 +57,14 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 ---
 
-## Part 5B — `repositionCamera` + per-map boot latches ✅
+## Part 5B — Boot latches + movement ✅
 
-**Goal:** Instant GPS jump API and boot latch on map instance.
+**Goal:** Per-map boot latch on map instance; GPS via instant `navigateTo`.
 
 | Module | Notes |
 | ------ | ----- |
-| `movement/reposition-camera.ts` | `jumpTo` only; session stays `idle`; no padding sync |
-| `map-instance-camera-state.ts` | Boot + follow latches; release on unmount |
-| `movement/reposition-camera.test.ts` | Does not enter `navigating` |
+| `instance/camera-state.ts` | `hasBootIssuedForMapInstance`, `markBootIssuedForMapInstance`; release on unmount |
+| `movement/programmatic.ts` | Instant jumps; session stays `idle` when `duration === 0` |
 
 **You verify:**
 
@@ -76,16 +75,16 @@ Reference implementation (port selectively, do not copy defer/flush): `packages/
 
 ## Part 5C — Boot fly ✅ (5C-4 + cleanup landed)
 
-**Status:** 5C-4 demo wired to `useMapFollowUser`; camera package reorganized into topic folders (`padding/`, `boot/`, `instance/`, `shared/`, `hooks/`). See [`phase-5c-slices.md`](phase-5c-slices.md) and **5C cleanup** note there.
+**Status:** 5C-4 demo wired to `useMapUserTracking`; camera package reorganized into topic folders (`padding/`, `boot/`, `instance/`, `shared/`, `hooks/`). See [`phase-5c-slices.md`](phase-5c-slices.md).
 
 **5A / 5B do not affect the demo** (reducer + exported helpers only; no `useMapAnchor` changes). Boot uses `navigateTo` (no session gate); padding→boot via explicit `onPaddingReady` → `attemptBoot`.
 
 | Slice | Demo? | Manual verify? |
 | ----- | ----- | -------------- |
 | 5C-1 Boot config inside `useMapAnchor` | No | No (tests only) |
-| 5C-2 `useMapFollowUser` wrapper | No | No (tests only) |
+| 5C-2 `useMapUserTracking` wrapper | No | No (tests only) |
 | 5C-3 `MapUserLocation` + geolocation hook | Dot only; camera still `useMapAnchor` | Padding + overlay must still work |
-| 5C-4 Swap demo to `useMapFollowUser` | Yes | Full boot + padding checklist |
+| 5C-4 Swap demo to `useMapUserTracking` | Yes | Full boot + padding checklist |
 
 Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
@@ -99,16 +98,16 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 | ------ | ----- |
 | `anchor/resolve-move-end.ts` | Pure moveend branching (5D extends with `evaluate-gesture-settle`) |
 | `evaluate-gesture-settle.ts` | Pure: `commitAnchor` \| `releaseFollow` \| `snapBackToUser` |
-| `hooks/use-map-follow-user.ts` | Distance read vs `centerOffset`; threshold via **`followReleaseThresholdPx`** option (app default often 40 — not hardcoded in reducer) |
-| `hooks/use-map-anchor/listeners.ts` | Wire `resolveMoveEnd` + optional follow config |
+| `hooks/use-map-user-tracking.ts` | Distance read vs `centerOffset`; threshold via **`trackingReleaseThresholdPx`** option (app default often 40 — not hardcoded in reducer) |
+| `hooks/use-map-anchor/listeners.ts` | Wire `resolveMoveEnd` + optional tracking config |
 
-**Threshold:** `followReleaseThresholdPx` on `useMapFollowUser` / `useMapAnchor` — consumer-configurable screen pixels; demo default 40.
+**Threshold:** `trackingReleaseThresholdPx` on `useMapUserTracking` / `useMapAnchor` — consumer-configurable screen pixels; demo default 40.
 
 **Behavior:**
 
 - During `userGesture` (incl. momentum): sheet padding → `setPadding` only
 - `moveend` + following + ≤40px → `navigateTo` snap-back fly → `navigating`
-- `moveend` + following + >40px → `stopFollowUser` + `userGestureSettled` → `idle`
+- `moveend` + tracking + >40px → `stopTracking` + `userGestureSettled` → `idle`
 - Not following → existing anchor commit
 
 **You verify:**
@@ -127,10 +126,10 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 | Module | Notes |
 | ------ | ----- |
-| `use-map-follow-user.ts` | GPS `repositionCamera` when `session === idle` only; dedupe by position key |
+| `hooks/use-map-user-tracking.ts` | GPS instant `navigateTo` when `tracking && session === idle`; dedupe by position key |
 | `MapUserLocation` + `MapMyLocationControl` | Default button + injectable `renderButton`; `tracking` = blue when following |
-| `use-map-follow-user.test.ts` | GPS jump, my-location uses `navigateTo`, no double boot |
-| Demo `/sheet` | Full parity with reference screen |
+| `hooks/use-map-user-tracking.test.ts` | GPS jump, my-location uses `navigateTo`, no double boot |
+| Demo `/sheet` | Full camera parity in `sheet-on-map-screen.tsx` |
 
 **My-location button (web + Capacitor):**
 
@@ -139,7 +138,7 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 **You verify:**
 
-- [x] GPS while following: instant jump (`repositionCamera`), session stays `idle`
+- [x] GPS while tracking: instant `navigateTo({ duration: 0 })`, session stays `idle`
 - [x] My-location button: smooth `navigateTo` fly when coords exist (`recenterOnUser`)
 - [ ] §11 manual checklist in `camera-fsm-plan.md` passes with `VITE_SHEET_MAP_DEBUG=true`
 - [x] All tests pass
@@ -155,24 +154,24 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 | ------ | ----- |
 | `anchor` only | Removed `navigationIntent`, `followTarget` padding inputs |
 | `navigateTo` only | GPS uses instant `navigateTo`; `flying` session only for `duration > 0` |
-| `keepFollowing` | Renamed from `retainFollow` |
+| `keepTracking` | Renamed from `retainFollow` |
 | `padding/apply.ts` | One rule: sheet moving + not `userGesture` → jump to `anchor` |
-| `movement/programmatic.ts` | Padding uses `stopUserMotion: false`; deleted `reposition-camera.ts` |
-| Public exports | `useMapFollowUser` only; `useMapAnchor` internal to package |
+| `movement/programmatic.ts` | Padding uses `stopUserMotion: false` |
+| Public exports | `useMapUserTracking` + `MapUserTrackingProvider`; `useMapAnchor` internal |
 
 **Manual verify (re-run phase 5 checklist):**
 
 - [ ] Boot fly + padding
 - [ ] GPS follow while idle
 - [ ] Pan threshold + snap-back
-- [ ] Fly to demo point **releases** follow (gray button); sheet drag does not snap back to user
-- [ ] My-location re-enables follow (blue button)
+- [ ] Fly to demo point **releases** tracking (gray button); sheet drag does not snap back to user
+- [ ] My-location re-enables tracking (blue button)
 
 ## Part dependency graph
 
 ```
 5A reduceMapFollow ✅
- └─► 5B repositionCamera + boot latches ✅
+ └─► 5B boot latches + movement ✅
       └─► 5C boot fly — see phase-5c-slices.md (5C-1 … 5C-4)
            └─► 5D gesture settle + threshold
                 └─► 5E GPS + UI + bump ✅
@@ -185,7 +184,7 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 
 - Boot or `navigateTo` from inside `syncMapPaddingFromCanvas`
 - Defer/coalesce padding to preserve pan momentum
-- GPS updates via `navigateTo({ duration: 0, keepFollowing: true })` when `session === "idle"`
+- GPS updates via `navigateTo({ duration: 0, keepTracking: true })` when `tracking && session === idle`
 - Snap-back or threshold checks on every sheet padding tick (settle only)
 - Silent fallback coordinates when location is denied (demo dev flag only if ever)
 - Bundle unrelated parts in one PR — land and verify each part before the next

@@ -1,12 +1,10 @@
 # Phase 5C — boot fly (sliced plan)
 
-**Status:** 5C-4 landed; `SHEET_MAP_PHASE_5_PART = 4`. Camera package cleanup complete — see **5C cleanup** below.
+**Status:** 5C-4 landed. Shipped public hook: **`useMapUserTracking`** (`hooks/use-map-user-tracking.ts`). Historical slice text below may say `useMapUserTracking` — same hook, renamed at ship.
 
 Parent doc: [`phase-5-parts.md`](phase-5-parts.md). Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot).
 
-Track sub-slices via checklist below. Bump `SHEET_MAP_PHASE_5_PART` only when **5C-4** lands and manual verification passes.
-
-Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.ts` (`boot` config + internal `tryBootFly`), `use-map-follow-user.ts`.
+Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.ts` (`boot` config + internal `tryBootFly`), `use-map-user-tracking.ts` (→ `use-map-user-tracking.ts`).
 
 ---
 
@@ -25,8 +23,8 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 
 - Splitting padding sync across two hooks (`syncMapPaddingRef`)
 - Removing `useMapAnchor`'s `liveSheetObscuredBottomPx` effects
-- Wiring `followUser` into `applyMapPadding` before boot / gesture spec
-- Swapping the demo to `useMapFollowUser` before boot was stable
+- Wiring `tracking` into `applyMapPadding` before boot / gesture spec
+- Swapping the demo to `useMapUserTracking` before boot was stable
 
 **5A / 5B manual verify:** none required for demo behavior. Verification is `pnpm --filter @siegetag/sheet-map test` only. Keep them unless you want to delete phase 5 library prep entirely.
 
@@ -46,21 +44,21 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 
 ```
 5C-1  boot config + tryBootFly inside useMapAnchor     (library, tests only)
- └─► 5C-2  useMapFollowUser thin wrapper               (library, tests only)
+ └─► 5C-2  useMapUserTracking thin wrapper               (library, tests only)
       └─► 5C-3  MapUserLocation + useDemoUserLocation (visual + app hook, no camera change)
-           └─► 5C-4  Wire demo to useMapFollowUser    (manual verify)
+           └─► 5C-4  Wire demo to useMapUserTracking    (manual verify)
 ```
 
 ---
 
 ## 5C-1 — Boot gate inside `useMapAnchor`
 
-**Goal:** One-shot boot fly after `mapPaddingReady` + style loaded. **No demo. No `useMapFollowUser`. No follow padding.**
+**Goal:** One-shot boot fly after `mapPaddingReady` + style loaded. **No demo. No `useMapUserTracking`. No follow padding.**
 
 | Module | Action |
 | ------ | ------ |
 | `use-map-anchor.ts` | Add optional `boot?: MapAnchorBootConfig \| null` (port from `sheet-map-old`) |
-| `use-map-anchor.ts` | Internal `tryBootFly`: gate on `paddingReady`, `isStyleLoaded`, `session === idle`, `!hasBootFlownForMapInstance`, `getTarget()` |
+| `use-map-anchor.ts` | Internal `tryBootFly`: gate on `paddingReady`, `isStyleLoaded`, `session === idle`, `!hasBootIssuedForMapInstance`, `getTarget()` |
 | `use-map-anchor.ts` | On successful boot `navigateTo`: `markBootFlownForMapInstance` + `boot.onIssued()` |
 | `use-map-anchor.ts` | `useEffect` on `[tryBootFly]` deps (same as old: padding ready, boot enabled, mapRef) |
 | `try-boot-fly.ts` | Optional pure extract for unit tests only; **call site stays in anchor hook** |
@@ -83,21 +81,21 @@ Reference (port selectively): `packages/sheet-map-old/src/camera/use-map-anchor.
 
 ---
 
-## 5C-2 — `useMapFollowUser` (library only)
+## 5C-2 — `useMapUserTracking` (library only)
 
 **Goal:** Compose `useMapAnchor` + `reduceMapFollow` (5A) + boot config (5C-1). **Still no demo.**
 
 | Module | Action |
 | ------ | ------ |
-| `use-map-follow-user.ts` | `startFollowUser` when `userLocation` arrives |
-| `use-map-follow-user.ts` | Pass `boot: { enabled, getTarget, onIssued, durationMs }` into `useMapAnchor` |
-| `use-map-follow-user.ts` | `onMapInstanceReleased` → `resetBoot` reducer event (WeakMap cleared in 5B `releaseMapInstanceCameraState`) |
-| `use-map-follow-user.ts` | **Does not** pass `followUser` / `followTarget` to `applyMapPadding` (5D) |
-| `use-map-follow-user.ts` | **Does not** add padding sync refs or duplicate geometry hooks |
+| `use-map-user-tracking.ts` | `startTracking` when `userLocation` arrives |
+| `use-map-user-tracking.ts` | Pass `boot: { enabled, getTarget, onIssued, durationMs }` into `useMapAnchor` |
+| `use-map-user-tracking.ts` | `onMapInstanceReleased` → `resetBoot` reducer event (WeakMap cleared in 5B `releaseMapInstanceCameraState`) |
+| `use-map-user-tracking.ts` | **Does not** pass `followUser` / `followTarget` to `applyMapPadding` (5D) |
+| `use-map-user-tracking.ts` | **Does not** add padding sync refs or duplicate geometry hooks |
 
 **Automated verify:**
 
-- [x] `use-map-follow-user.test.ts` — boot once; boot when location arrives async; no boot when `userLocation` null
+- [x] `use-map-user-tracking.test.ts` — boot once; boot when location arrives async; no boot when `userLocation` null
 - [x] `use-map-anchor.test.ts` still pass
 - [x] Full package test suite green
 
@@ -118,7 +116,7 @@ camera/
   instance/        # camera-state (per-map latches)
   shared/          # map-position, reposition-camera, when-map-style-ready
   hooks/
-    use-map-follow-user.ts
+    use-map-user-tracking.ts
     use-map-anchor/
       boot-coordinator.ts    # returns attemptBoot; only boot caller
       padding-sync.ts        # onPaddingReady callback (not ref slot)
@@ -132,7 +130,7 @@ camera/
 
 | Module | Responsibility |
 | ------ | -------------- |
-| `types.ts` | Public option types (+ `followReleaseThresholdPx` stub for 5D) |
+| `types.ts` | Public option types (+ `trackingReleaseThresholdPx` stub for 5D) |
 | `session-refs.ts` | Shared ref bundle for sub-hooks |
 | `padding-sync.ts` | Padding state + four sync effects; `onPaddingReady` once |
 | `navigate.ts` | `navigateTo` |
@@ -172,13 +170,13 @@ Also: shared test harness `camera/testing/`, `canvas/dot/index.ts` barrel.
 
 ---
 
-## 5C-4 — Wire demo to `useMapFollowUser`
+## 5C-4 — Wire demo to `useMapUserTracking`
 
-**Goal:** Boot fly on load when location granted. **Single swap:** `useMapAnchor` → `useMapFollowUser` with same `liveSheetObscuredBottomPx` / `sheetPhase` props.
+**Goal:** Boot fly on load when location granted. **Single swap:** `useMapAnchor` → `useMapUserTracking` with same `liveSheetObscuredBottomPx` / `sheetPhase` props.
 
 | Module | Action |
 | ------ | ------ |
-| Demo `/sheet` | `useMapFollowUser({ mapRef, userLocation, liveSheetObscuredBottomPx, sheetPhase, mapPaddingDebug })` |
+| Demo `/sheet` | `useMapUserTracking({ mapRef, userLocation, liveSheetObscuredBottomPx, sheetPhase, mapPaddingDebug })` |
 | Demo `/sheet` | Keep manual “Fly to demo point” button |
 | `src/index.ts` | `SHEET_MAP_PHASE_5_PART = 4` when manual verify passes |
 
@@ -195,7 +193,7 @@ Also: shared test harness `camera/testing/`, `canvas/dot/index.ts` barrel.
 - [x] **Deny:** location denied → map works; no boot fly; no crash
 - [x] **Strict Mode:** navigate away and back → boot can run again on fresh map instance
 - [x] **No regressions:** fly-to-demo still works; pan + sheet drag behave as phase 4
-- [x] **Not in 5C:** GPS dot tracking map (`repositionCamera`) — that's 5E; dot may stay fixed while you pan until 5E
+- [x] **Not in 5C:** GPS dot tracking map (`instant `navigateTo``) — that's 5E; dot may stay fixed while you pan until 5E
 
 ---
 
@@ -205,9 +203,9 @@ Also: shared test harness `camera/testing/`, `canvas/dot/index.ts` barrel.
 | ---- | ---- |
 | `applyMapPadding` follow realign during sheet drag | 5D |
 | Gesture settle, 40px threshold, snap-back | 5D |
-| `repositionCamera` GPS loop | 5E |
+| `instant `navigateTo`` GPS loop | 5E |
 | `MapMyLocationButton` | 5E |
-| `stopFollowUser` on manual `navigateTo` away from user | 5D or 5E (decide when wiring follow padding) |
+| `stopTracking` on manual `navigateTo` away from user | 5D or 5E |
 
 ---
 

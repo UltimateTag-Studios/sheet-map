@@ -20,7 +20,7 @@
 
 | State | Owner | Notes |
 | ----- | ----- | ----- |
-| `followUser`, `hasBootFlown` | Follow reducer | Whether we track GPS and whether boot fly was issued |
+| `tracking`, boot latch | Follow reducer + `camera-state` | Whether camera tracks GPS; boot issued per map instance |
 | `sheetObscuredBottomPx`, `sheetMotionActive` | `@siegetag/sheet` + DOM | Camera **reacts** only |
 | `selectedMapItemId` (future) | App shell | Uses same `flying` session via animated `navigateTo` |
 
@@ -64,15 +64,15 @@ Boot runs **only when all** of:
 
 - Map style loaded (`map.isStyleLoaded()`)
 - `mapPaddingReady === true`
-- `userLocation` available and `followUser === true`
-- Per-map boot latch not set (`!hasBootFlownForMapInstance(map)`)
+- `userLocation` available and `tracking === true`
+- Per-map boot latch not set (`!hasBootIssuedForMapInstance(map)`)
 - Anchor session `idle` (not mid-gesture or mid-nav)
 
 Then:
 
 1. **`navigateTo(user, { duration: smoothFlyMs, zoom: followZoom })`** — programmatic path only.
-2. Mark boot on **issue** of `navigateTo` (not after fly settles): `hasBootFlownForMapInstance(map)` + follow reducer `bootFlown`.
-3. **`isFollowFocused`** (blue location button) = `followUser && hasBootFlown`.
+2. Mark boot on **issue** of `navigateTo` (not after fly settles): `hasBootIssuedForMapInstance(map)` + reducer `bootIssued`.
+3. **My-location active** (blue button) = `tracking` after boot issued.
 
 **Boot order (strict, acyclic):**
 
@@ -122,7 +122,7 @@ One public API. **`anchor`** (lat/lng/zoom) is whatever should stay centered in 
 
 **Inside `navigateTo`:**
 
-1. Optional `stopFollowingUser` when `keepFollowing` is false.
+1. Optional `stopTracking` when `keepTracking` is false.
 2. Dispatch `setAnchor` + `flyStarted` only when `duration > 0`.
 3. `map.stop()` — preempts user momentum (intentional).
 4. `applyMapPadding({ realign: false })` — padding only, no camera realign.
@@ -142,7 +142,7 @@ After `setPadding`, **jump** to **`anchor`** when sheet is moving and session is
 
 | Event | Action |
 | ----- | ------ |
-| `move` while following | 40px threshold vs `centerOffset`; may `stopFollowingUser` |
+| `move` while following | 40px threshold vs `centerOffset`; may `stopTracking` |
 | Sheet / padding change | **`setPadding` only** — no `jumpTo` / `flyTo` / `map.stop()` from our code |
 | User pan during `flying` | `userGestureStarted` → `userGesture` |
 
@@ -155,7 +155,7 @@ moveend
   → session === userGesture?
        → evaluateFollowAtGestureSettle
        → snapBack (≤40px, following)? navigateTo fly → flying
-       → releaseFollow (>40px)? stopFollowingUser + userGestureSettled → idle
+       → releaseFollow (>40px)? stopTracking + userGestureSettled → idle
        → else userGestureSettled → idle (commit anchor)
   → session === flying? trySettleFlyingSession
 ```
@@ -215,7 +215,7 @@ These are **separate from** the anchor session FSM but **feed** follow threshold
 MapCanvas onLoad → mapRef
 useLiveSheetObscuredBottomPx(mapRef) → sheetObscuredBottomPx, sheetPhase
 useMapVisibleViewportSync(mapRef, snapHeights, …) → clientRect, centerOffset
-useMapFollowUser(mapRef, sheetObscuredBottomPx, centerOffset, …) → camera
+useMapUserTracking(mapRef, sheetObscuredBottomPx, centerOffset, …) → camera
 MapVisibleAreaDebug(clientRect) → dashed “visible map” overlay
 MapVisibleAreaOverlay(clientRect) → positions my-location button
 ```
@@ -291,15 +291,15 @@ There is **no single “layout settled forever”** signal for padding. Padding 
 
 ---
 
-## 6. Follow-user (`useMapFollowUser`)
+## 6. User tracking (`useMapUserTracking`)
 
 | Concern | Rule |
 | ------- | ---- |
-| Auto-follow | When GPS available → `startFollowUser` |
-| `isFollowFocused` | `followUser && hasBootFlown` (blue after boot **issued**) |
-| GPS updates | `navigateTo({ duration: 0, keepFollowing: true })` when `session === idle` only |
-| My-location button | `navigateTo` fly with `keepFollowing: true` |
-| Snap-back | `navigateTo` at gesture settle (≤40px) with `keepFollowing: true` |
+| Auto-tracking | When GPS available → `startTracking` |
+| `tracking` | Blue button + brighter user dot halo when camera follows user |
+| GPS updates | `navigateTo({ duration: 0, keepTracking: true })` when `session === idle` only |
+| My-location button | `navigateTo` fly with `keepTracking: true` |
+| Snap-back | `navigateTo` at gesture settle (≤40px) with `keepTracking: true` |
 
 **Geolocation (app layer):** See [`phase-5-parts.md`](phase-5-parts.md) — request on map mount; boot only when `userLocation` is non-null; **no boot on deny**; no fake fallback coords in product code. Capacitor uses `@capacitor/geolocation` + OS settings when permanently denied.
 
@@ -369,7 +369,7 @@ camera/
   movement/                    # moveCameraProgrammatic
   hooks/
     use-map-anchor/            # listeners, navigate, padding-sync, boot-coordinator
-    use-map-follow-user.ts
+    use-map-user-tracking.ts
   testing/
 
 viewport/
@@ -387,7 +387,7 @@ viewport/
 | `navigateTo` (`duration === 0`) | No | Yes via `applyPaddingBeforeNavigation` only |
 | `tryBootFly` | Via `navigateTo` once | No direct call |
 
-Apps import **`useMapFollowUser` only**; `useMapAnchor` is internal.
+Apps import **`useMapUserTracking` only**; `useMapAnchor` is internal.
 
 ---
 

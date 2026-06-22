@@ -16,7 +16,7 @@ Authoritative behavior for `@siegetag/sheet-map` map camera, padding, and follow
 
 Orthogonal state (not sessions):
 
-- **Tracking:** `tracking`, internal `hasBootFlown` in reducer — [`reduce-map-follow.ts`](../src/camera/follow/reduce-map-follow.ts)
+- **Tracking:** `tracking` in reducer — [`reduce-map-follow.ts`](../src/camera/follow/reduce-map-follow.ts); per-map boot latch `hasBootIssuedForMapInstance` in [`camera-state.ts`](../src/camera/instance/camera-state.ts)
 - **Selection (future):** `selectedMapItemId` — app shell, not anchor session
 - **Sheet geometry:** `sheetObscuredBottomPx`, `sheetMotionActive` — owned by `@siegetag/sheet`
 
@@ -51,9 +51,9 @@ Recenter while following during a gesture happens at **gesture settle** (mandato
 
 1. As soon as `mapRef` + `sheetObscuredBottomPx` exist → `syncMapPadding` (no snap-height gate for padding).
 2. Latch `mapPaddingReady` on first successful `setPadding`.
-3. Boot fly **once** when: `mapPaddingReady && styleLoaded && userLocation && !hasBootFlown`.
+3. Boot fly **once** when: `mapPaddingReady && styleLoaded && userLocation && !hasBootIssuedForMapInstance(map)`.
 4. Boot uses `navigateTo` with smooth fly + explicit zoom.
-5. Set `hasBootFlown` when boot `navigateTo` is **issued** (not only after settle).
+5. Mark boot on **issue** of boot `navigateTo` (`markBootIssuedForMapInstance` + reducer `bootIssued`).
 
 **Critical:** `syncMapPaddingFromCanvas` and boot are **separate steps**. Boot runs only from `tryBootFly` (never from inside padding sync or `applyPaddingBeforeNavigation`) — otherwise `navigateTo → padding → boot → navigateTo` overflows the stack.
 
@@ -103,7 +103,7 @@ Single dispatcher ([`listeners.ts`](../src/camera/hooks/use-map-anchor/listeners
 4. If following and ≤ threshold → **`navigateTo` snap-back fly** → `flying` (**5D**)
 5. Else → `userGestureSettled` → `idle` (commit anchor)
 
-Threshold: **`followReleaseThresholdPx`** on `useMapFollowUser` / `useMapAnchor` (app default often 40 — not hardcoded in `anchor/`).
+Threshold: **`trackingReleaseThresholdPx`** on `useMapUserTracking` / `useMapAnchor` (app default often 40 — not hardcoded in `anchor/`).
 
 **No snap from deferred padding on momentum end.** The only camera move when the finger lifts (while following, ≤40px) is the mandatory programmatic snap-back fly.
 
@@ -150,22 +150,22 @@ Module-level **WeakMap latches** track padding sync and boot completion **per Ma
 sequenceDiagram
   participant App
   participant Anchor as useMapAnchor
-  participant Follow as useMapFollowUser
+  participant Tracking as useMapUserTracking
   participant Map as MapboxMap
 
   App->>Anchor: mapRef attached
   Anchor->>Map: whenMapStyleReady
   Anchor->>Map: applyMapPadding → mapPaddingReady
-  Follow->>Map: whenMapStyleReady + navigateTo boot
-  Follow->>Map: markBootFlownForMapInstance
+  Tracking->>Map: whenMapStyleReady + navigateTo boot
+  Tracking->>Map: markBootIssuedForMapInstance
 
   Note over App,Map: unmount / Strict Mode cleanup / map swap
   Anchor->>Map: releaseMapInstanceCameraState
-  Follow->>Follow: resetBoot react state
+  Tracking->>Tracking: reducer reset on release callback
 
   App->>Anchor: mapRef attached again
   Anchor->>Map: padding + mapPaddingReady
-  Follow->>Map: boot fly again
+  Tracking->>Map: boot fly again
 ```
 
 | Step | Module | Rule |
@@ -173,9 +173,9 @@ sequenceDiagram
 | Style ready | `shared/when-map-style-ready.ts` | `load` + `idle` until `isStyleLoaded()`; MapCanvas publishes `mapRef` on **load only** |
 | Padding | `padding/apply.ts` | After style ready; latch `mapPaddingReady` |
 | Boot | `boot-coordinator.ts` + `boot/try-boot-fly.ts` | After `mapPaddingReady` via `onPaddingReady` → `attemptBoot`; uses `navigateTo` (no session gate) |
-| Release | `instance/camera-state.ts` + `onMapInstanceReleased` | On map unmount: clear padding + boot WeakMaps; reset follow `hasBootFlown` |
+| Release | `instance/camera-state.ts` + `onMapInstanceReleased` | On map unmount: clear padding + boot WeakMaps |
 
-**Do not** gate boot on React `hasBootFlown` alone — Strict Mode preserves that state across effect re-runs while the visible map instance is reset.
+**Do not** gate boot on React reducer state alone — Strict Mode preserves that across effect re-runs while the visible map instance is reset. Use **`hasBootIssuedForMapInstance(map)`**.
 
 ---
 
@@ -195,7 +195,7 @@ Optional: `NavigationIntent.reason` (`boot` | `myLocation` | `snapBack` | `mapIt
 | `follow/reduce-map-follow.ts` | Follow latch |
 | `padding/apply.ts` | Padding sync + realign matrix |
 | `anchor/resolve-move-end.ts` | Pure moveend branching (5D: gesture settle) |
-| `shared/reposition-camera.ts` | GPS instant jump without session |
+| `shared/reposition-camera.ts` | *(removed — GPS uses instant `navigateTo`)* |
 | `padding/sync.ts` | Mapbox `setPadding` + padding moveend flag |
 | `hooks/use-map-anchor/` | Listeners, `navigateTo`, padding, **boot coordinator**, single `moveend` dispatcher |
 | `hooks/use-map-user-tracking.ts` | Boot target, GPS, threshold option, composes anchor |
@@ -204,7 +204,7 @@ Optional: `NavigationIntent.reason` (`boot` | `myLocation` | `snapBack` | `mapIt
 
 ## Manual test checklist (sheet-map-demo)
 
-- [ ] Load: padding before fly, location button focused
+- [ ] Load: padding before fly, location button active (`tracking`)
 - [ ] My-location: smooth fly, no crash
 - [ ] Pan + sheet **during momentum** (following): padding tracks; **coast may stop when sheet moves** (accepted); snap-back fly at pan settle if ≤40px
 - [ ] Pan + sheet **during momentum** (not following): padding tracks; coast may stop when sheet moves; no extra camera API on pan settle
