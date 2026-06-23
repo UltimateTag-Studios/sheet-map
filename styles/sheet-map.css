@@ -211,6 +211,7 @@
   background: transparent;
   padding: var(--sheet-map-action-padding, 0.25rem);
   color: var(--sheet-map-color-action);
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   appearance: none;
 }
@@ -231,6 +232,7 @@
   height: var(--sheet-map-location-button-size, 2.5rem);
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
   border-radius: var(--sheet-map-location-button-border-radius, 9999px);
   border: 1px solid var(--sheet-map-color-location-button-border);
   background: var(--sheet-map-color-location-button-background);

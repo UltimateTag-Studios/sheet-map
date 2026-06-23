@@ -1,4 +1,3 @@
-import { useTouchClickActivation } from "../../gesture/use-touch-click-activation";
 import { MyLocationIcon } from "./my-location-icon";
 
 export type MapLocationButtonProps = {
@@ -16,14 +15,12 @@ export function MapLocationButton({
   tracking = false,
   className = "",
 }: MapLocationButtonProps) {
-  const touchActivation = useTouchClickActivation(onPress);
-
   return (
     <button
       type="button"
       aria-label={ariaLabel}
       aria-pressed={tracking}
-      {...touchActivation}
+      onClick={onPress}
       className={`sheet-map-location-button${className ? ` ${className}` : ""}`}
     >
       <MyLocationIcon size={22} />

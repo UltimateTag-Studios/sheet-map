@@ -46,12 +46,7 @@ vi.mock("react-map-gl/mapbox", () => {
         zoom: number;
       };
       onLoad?: () => void;
-      onClick?: (event: {
-        features?: Array<{
-          layer?: { id?: string };
-          properties?: Record<string, unknown>;
-        }>;
-      }) => void;
+      onClick?: (event: unknown) => void;
       interactiveLayerIds?: string[];
     }
   >(

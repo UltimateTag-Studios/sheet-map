@@ -131,7 +131,6 @@ Use when not using the full shell:
 | Camera | `useMapUserTracking`, `useMapAnchor` |
 | Viewport | `useLiveSheetObscuredBottomPx`, `MapVisibleAreaOverlay` |
 | Items | `MapItemMarker`, `MapSheetHeader`, `MapSheetList` |
-| Gesture | `useTouchClickActivation` |
 
 GeoJSON sprite markers use `markerImageId` / `createMarkerImageCanvas`. Shell hit layer for inventory-style markers: `MAP_MARKERS_HIT_LAYER_ID`.
 

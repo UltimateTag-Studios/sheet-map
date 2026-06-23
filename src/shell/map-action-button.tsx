@@ -1,7 +1,5 @@
 import { CloseIcon } from "@siegetag/ui";
 
-import { useTouchClickActivation } from "../gesture/use-touch-click-activation";
-
 export type MapActionButtonProps = {
   ariaLabel: string;
   onPress: () => void;
@@ -14,13 +12,11 @@ export function MapActionButton({
   onPress,
   className = "",
 }: MapActionButtonProps) {
-  const touchActivation = useTouchClickActivation(onPress);
-
   return (
     <button
       type="button"
       aria-label={ariaLabel}
-      {...touchActivation}
+      onClick={onPress}
       className={`sheet-map-action-button${className ? ` ${className}` : ""}`}
     >
       <CloseIcon size={28} />
