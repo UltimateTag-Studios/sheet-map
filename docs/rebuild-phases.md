@@ -258,7 +258,7 @@ style ready → syncMapPaddingFromCanvas → mapPaddingReady → tryBootFly → 
 | Pan ≤40px + lift | Snap-back fly |
 | GPS while following | Instant jump, not fly |
 
-Active demo: `apps/sheet-map-demo/src/screens/sheet-on-map-screen.tsx`
+Active demo: `apps/sheet-map-demo` routes `/sheet` and `/shell` (both use `MapLayout`).
 
 ### Done when
 
@@ -284,7 +284,7 @@ Active demo: `apps/sheet-map-demo/src/screens/sheet-on-map-screen.tsx`
 | **6B¾** | **Theming** — light default (`light-v11` + light chrome); `config.theme: "dark"` opt-in | ✅ |
 | **6C** | `MapItem`, `MapItemsLayer`, `MapSheetList`, slots | ✅ |
 | **6D** | Map press / hit layers + GeoJSON marker exports | ✅ |
-| **6E** | Demo rewrite + phase bump | pending |
+| **6E** | Demo rewrite + phase bump | ✅ |
 | **6F** | Capacitor migration | pending |
 
 **6B¾ theming (before 6C):** `MapShellConfig.theme` (`"light"` \| `"dark"`). Sheet surfaces use `data-sheet-theme` on `SheetHost`; map chrome uses `data-sheet-map-theme` on `.sheet-map-layout`. Geometry: `sheetLayout` + `layout` (action button slot, my location).
@@ -313,9 +313,10 @@ Port relevant tests from `sheet-map-old-old` or write new integration tests.
 
 ### Done when
 
+- [x] Demo uses `MapLayout` (`/sheet`, `/shell`)
 - [ ] Capacitor map screens work on `@siegetag/sheet-map`
 - [ ] Feature parity checklist agreed with product
-- [ ] `SHEET_MAP_REBUILD_PHASE = 6`
+- [x] `SHEET_MAP_REBUILD_PHASE = 6`
 
 ---
 

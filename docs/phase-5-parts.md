@@ -2,7 +2,7 @@
 
 Full spec: [`camera-fsm-plan.md`](camera-fsm-plan.md) §2 Rule 1 (boot), Rule 3 (gesture settle), §6. **`SHEET_MAP_REBUILD_PHASE = 5`** — phase 5 complete.
 
-Reference implementation (port selectively, do not copy defer/flush): `packages/sheet-map-old/src/camera/`, demo `apps/sheet-map-demo/src/screens/sheet-on-map-screen.tsx`.
+Reference implementation: `apps/sheet-map-demo` routes `/sheet` and `/shell` (`MapLayout` + `useRegisterMapRoute`).
 
 ---
 
@@ -129,7 +129,7 @@ Do **not** wire `applyMapPadding` follow realign in 5C (that's 5D).
 | `hooks/use-map-user-tracking.ts` | GPS instant `navigateTo` when `tracking && session === idle`; dedupe by position key |
 | `MapUserLocation` + `MapMyLocationControl` | Default button + injectable `renderButton`; `tracking` = blue when following |
 | `hooks/use-map-user-tracking.test.ts` | GPS jump, my-location uses `navigateTo`, no double boot |
-| Demo `/sheet` | Full camera parity in `sheet-on-map-screen.tsx` |
+| Demo `/sheet` | `MapLayout` shell in `apps/sheet-map-demo` |
 
 **My-location button (web + Capacitor):**
 
