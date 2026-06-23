@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import type { MapItem } from "../items/types";
 import type { MapRouteContent } from "./map-route-context";
 import {
+  resolveRouteActionChrome,
   resolveRouteBody,
   resolveRouteHeader,
   resolveRouteMapLayers,
   resolveRouteOverlay,
-  resolveRouteTopRightChrome,
 } from "./resolve-route-chrome";
 
 describe("resolveRouteChrome", () => {
@@ -53,8 +53,8 @@ describe("resolveRouteChrome", () => {
     expect(overlay).toBe("route-overlay");
   });
 
-  it("shows default close button when the sheet is open", () => {
-    const node = resolveRouteTopRightChrome(
+  it("shows default action button when the sheet is open", () => {
+    const node = resolveRouteActionChrome(
       null,
       {},
       {
@@ -67,9 +67,9 @@ describe("resolveRouteChrome", () => {
     expect(node).toBeTruthy();
   });
 
-  it("shows collapsedTopRight when the sheet is collapsed", () => {
-    const node = resolveRouteTopRightChrome(
-      { collapsedTopRight: "back" },
+  it("shows collapsedAction when the sheet is collapsed", () => {
+    const node = resolveRouteActionChrome(
+      { collapsedAction: "back" },
       {},
       {
         sheetSnap: "collapsed",
@@ -81,11 +81,11 @@ describe("resolveRouteChrome", () => {
     expect(node).toBe("back");
   });
 
-  it("prefers route renderCloseButton over default close", () => {
-    const node = resolveRouteTopRightChrome(
+  it("prefers route renderActionButton over default close", () => {
+    const node = resolveRouteActionChrome(
       {
         slots: {
-          renderCloseButton: () => "custom-close",
+          renderActionButton: () => "custom-action",
         },
       },
       {},
@@ -96,7 +96,7 @@ describe("resolveRouteChrome", () => {
       },
     );
 
-    expect(node).toBe("custom-close");
+    expect(node).toBe("custom-action");
   });
 
   it("auto-renders MapSheetList when body is omitted and items exist", () => {

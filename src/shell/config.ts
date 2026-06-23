@@ -1,43 +1,28 @@
-import { DEFAULT_HALF_SNAP_FRACTION } from "@siegetag/sheet";
-import type { CSSProperties, ReactNode } from "react";
+import {
+  DEFAULT_HALF_SNAP_FRACTION,
+  DEFAULT_THEME,
+  type SheetLayout,
+  type Theme,
+} from "@siegetag/sheet";
+import type { ReactNode } from "react";
 
 import type { MapUserLocationCoords } from "../camera/hooks/use-map-user-tracking";
 import type { MapUserLocationStyleOverrides } from "../canvas/user-location/style-overrides";
 import type { MapItem } from "../items/types";
 import type { MapObscuredInsets } from "../viewport";
-import type { MapShellTheme } from "./map-theme";
-import { DEFAULT_MAP_SHELL_THEME } from "./map-theme";
+import type { MapShellLayout } from "./map-shell-layout-vars";
 
-export type { MapShellTheme, MapUserLocationCoords };
+export type { MapUserLocationCoords, SheetLayout, Theme };
 
 export type MapChromeInsets = Partial<MapObscuredInsets>;
 
-/** Tab-bar clearance and scroll-end gap for sheet bottom chrome reserve. */
-export type MapBottomChromeReserve = {
-  /** Always-on reserve spacer height (tab bar clearance). CSS length. */
-  reserve: string;
-  /** Body inner padding-bottom for scroll-end breathing room above tab bar. */
-  floatGap: string;
-};
-
-/** Sheet geometry — spacing and clearance. Visuals: theme CSS on `.sheet` classes. */
-export type MapSheetGeometry = {
-  sheetHandleMarginTop?: number | string;
-  sheetHandleBarHeight?: number | string;
-  sheetHandleMarginBottom?: number | string;
-  bottomChromeReserve?: MapBottomChromeReserve;
-};
-
-export type MapSheetStyles = {
-  sheet?: CSSProperties;
-  sheetHandle?: CSSProperties;
-};
-
 export type MapShellConfig = {
   /** Map style + shell chrome pairing. Default `light`. */
-  theme?: MapShellTheme;
-  layout?: MapSheetGeometry;
-  styles?: MapSheetStyles;
+  theme?: Theme;
+  /** Sheet geometry — handle, panel, header/body, divider, list, tab-bar reserve. */
+  sheetLayout?: SheetLayout;
+  /** Map overlay geometry — action button slot, my location control. */
+  layout?: MapShellLayout;
   fixedChromeInsets?: MapChromeInsets;
   halfSnapFraction?: number;
   initialZoom?: number;
@@ -65,7 +50,7 @@ export type MapShellSlots = {
     tracking: boolean,
     ariaLabel: string,
   ) => ReactNode;
-  renderCloseButton?: (onPress: () => void, ariaLabel: string) => ReactNode;
+  renderActionButton?: (onPress: () => void, ariaLabel: string) => ReactNode;
   renderUserLocation?: (
     tracking: boolean,
     accuracyMeters?: number,
@@ -90,7 +75,7 @@ export const defaultMapShellConfig: Required<
     | "halfSnapFraction"
   >
 > = {
-  theme: DEFAULT_MAP_SHELL_THEME,
+  theme: DEFAULT_THEME,
   initialZoom: 15,
   smoothFlyDurationMs: 600,
   trackingReleaseThresholdPx: 40,

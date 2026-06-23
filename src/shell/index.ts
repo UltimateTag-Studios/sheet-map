@@ -1,18 +1,18 @@
 export type {
   MapChromeInsets,
   MapOverlayContext,
-  MapSheetGeometry,
   MapSheetHeaderProps,
-  MapSheetStyles,
   MapShellConfig,
   MapShellSlots,
   MapUserLocationCoords,
+  SheetLayout,
+  Theme,
 } from "./config";
 export { defaultMapShellConfig } from "./config";
 export {
-  MapCloseSheetButton,
-  type MapCloseSheetButtonProps,
-} from "./map-close-sheet-button";
+  MapActionButton,
+  type MapActionButtonProps,
+} from "./map-action-button";
 export {
   MAP_SHELL_CLASS,
   MAP_VIEWPORT_CLASS,
@@ -40,29 +40,51 @@ export {
   useMapShellContext,
 } from "./map-route-context";
 export { MapScreenErrorBoundary } from "./map-screen-error-boundary";
-export { MapSheetLayout, type MapSheetLayoutProps } from "./map-sheet-layout";
 export type { MapShellProps } from "./map-shell";
 export { MapShell } from "./map-shell";
 export type { MapShellContentProps } from "./map-shell-content";
 export { MapShellContent } from "./map-shell-content";
+export type {
+  MapActionButtonLayout,
+  MapInsetLayout,
+  MapMyLocationLayout,
+  MapShellLayout,
+} from "./map-shell-layout-vars";
+export {
+  buildMapShellLayoutVars,
+  DEFAULT_MAP_ACTION_PADDING,
+  DEFAULT_MAP_ACTION_RIGHT,
+  DEFAULT_MAP_ACTION_TOP,
+  DEFAULT_MAP_MY_LOCATION_BOTTOM,
+  DEFAULT_MAP_MY_LOCATION_LEFT,
+  DEFAULT_MAP_MY_LOCATION_SIZE,
+  mergeMapShellLayout,
+} from "./map-shell-layout-vars";
 export {
   MapShellSlotsProvider,
   mergeMapShellSlots,
   useMapShellSlots,
 } from "./map-shell-slots-context";
-export type { MapShellTheme } from "./map-theme";
 export {
-  DEFAULT_MAP_SHELL_THEME,
-  MAP_SHELL_THEME_ATTR,
+  DEFAULT_THEME,
   MAPBOX_STYLE_URL_BY_THEME,
   resolveMapboxStyleUrl,
+  SHEET_MAP_THEME_ATTR,
 } from "./map-theme";
 export {
+  defaultMapSheetLayout,
+  resolveMapSheetLayout,
+} from "./resolve-map-sheet-layout";
+export {
+  defaultMapShellLayout,
+  resolveMapShellLayout,
+} from "./resolve-map-shell-layout";
+export {
+  resolveRouteActionChrome,
   resolveRouteBody,
   resolveRouteHeader,
   resolveRouteMapLayers,
   resolveRouteOverlay,
-  resolveRouteTopRightChrome,
 } from "./resolve-route-chrome";
 export type { UseMapShellOptions } from "./use-map-shell";
 export { useMapShell } from "./use-map-shell";

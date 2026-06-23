@@ -1,4 +1,4 @@
-import { SheetHost } from "@siegetag/sheet";
+import { SheetHost, type Theme } from "@siegetag/sheet";
 import type { CSSProperties, ReactNode } from "react";
 
 import { SHEET_HOST_CLASS } from "../viewport/dom/host-classes";
@@ -10,10 +10,11 @@ export type MapFrameProps = {
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
+  theme?: Theme;
 };
 
 /** Sized region for map + sheet — snap heights measure from this element. */
-export function MapFrame({ children, className, style }: MapFrameProps) {
+export function MapFrame({ children, className, style, theme }: MapFrameProps) {
   const frameClassName = [
     SHEET_HOST_CLASS,
     MAP_SHELL_CLASS,
@@ -24,7 +25,7 @@ export function MapFrame({ children, className, style }: MapFrameProps) {
     .join(" ");
 
   return (
-    <SheetHost className={frameClassName} style={style}>
+    <SheetHost className={frameClassName} style={style} theme={theme}>
       {children}
     </SheetHost>
   );

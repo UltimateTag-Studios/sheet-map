@@ -134,7 +134,7 @@ Port from `@siegetag/sheet-map-previous` — rewrite, do not re-export.
 | Deliverable | Notes |
 | ----------- | ----- |
 | `MapFrame` | Shell + viewport chrome |
-| `MapSheetLayout` | Header/body slots for `@siegetag/sheet` |
+| `SheetLayout` | Header/body slots inside `Sheet` |
 | `useLiveSheetObscuredBottomPx` | Live `sheetObscuredBottomPx` + `sheetPhase` / `sheetMotionActive` |
 | `useMapVisibleViewportSync` | Same as phase 1 but driven by real `mapRef` |
 | `MapVisibleAreaOverlay` | Positions overlay children in visible rect |
@@ -287,7 +287,7 @@ Active demo: `apps/sheet-map-demo/src/screens/sheet-on-map-screen.tsx`
 | **6E** | Demo rewrite + phase bump | pending |
 | **6F** | Capacitor migration | pending |
 
-**6B¾ theming (before 6C):** `MapShellConfig.theme` (`"light"` \| `"dark"`, default `"light"`). Sets Mapbox style URL, `data-sheet-map-theme` on layout root, letterbox background (white/black), and map chrome CSS. Dark also overrides `.sheet-slide` to match the map.
+**6B¾ theming (before 6C):** `MapShellConfig.theme` (`"light"` \| `"dark"`). Sheet surfaces use `data-sheet-theme` on `SheetHost`; map chrome uses `data-sheet-map-theme` on `.sheet-map-layout`. Geometry: `sheetLayout` + `layout` (action button slot, my location).
 
 ### Package
 

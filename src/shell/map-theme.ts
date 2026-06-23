@@ -1,17 +1,16 @@
-/** Shell chrome + default Mapbox style pairing. */
-export type MapShellTheme = "light" | "dark";
+import { DEFAULT_THEME, type Theme } from "@siegetag/sheet";
 
-export const MAP_SHELL_THEME_ATTR = "data-sheet-map-theme";
+export type { Theme };
 
-export const DEFAULT_MAP_SHELL_THEME: MapShellTheme = "light";
+export { DEFAULT_THEME };
 
-export const MAPBOX_STYLE_URL_BY_THEME: Record<MapShellTheme, string> = {
+export const SHEET_MAP_THEME_ATTR = "data-sheet-map-theme";
+
+export const MAPBOX_STYLE_URL_BY_THEME: Record<Theme, string> = {
   light: "mapbox://styles/mapbox/light-v11",
   dark: "mapbox://styles/mapbox/dark-v11",
 };
 
-export function resolveMapboxStyleUrl(
-  theme: MapShellTheme = DEFAULT_MAP_SHELL_THEME,
-): string {
+export function resolveMapboxStyleUrl(theme: Theme = DEFAULT_THEME): string {
   return MAPBOX_STYLE_URL_BY_THEME[theme];
 }

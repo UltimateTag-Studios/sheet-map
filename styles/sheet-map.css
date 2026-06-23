@@ -112,33 +112,39 @@
 .sheet-map-overlay-slot--bottom-left {
   pointer-events: auto;
   position: absolute;
-  bottom: 0.75rem;
-  left: 0.75rem;
+  top: var(--sheet-map-my-location-top);
+  right: var(--sheet-map-my-location-right);
+  bottom: var(--sheet-map-my-location-bottom, 0.75rem);
+  left: var(--sheet-map-my-location-left, 0.75rem);
 }
 
-.sheet-map-overlay-slot--top-right {
+.sheet-map-overlay-slot--action {
   pointer-events: auto;
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: var(--sheet-map-action-top, 0.75rem);
+  right: var(--sheet-map-action-right, 0.75rem);
+  bottom: var(--sheet-map-action-bottom);
+  left: var(--sheet-map-action-left);
 }
 
-.sheet-map-close-sheet-button {
+.sheet-map-action-button {
   pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 0;
   background: transparent;
-  padding: 0.25rem;
+  padding: var(--sheet-map-action-padding, 0.25rem);
   color: #171717;
+  -webkit-tap-highlight-color: transparent;
+  appearance: none;
 }
 
-.sheet-map-close-sheet-button:hover {
+.sheet-map-action-button:hover {
   color: rgba(23, 23, 23, 0.72);
 }
 
-.sheet-map-close-sheet-button:focus-visible {
+.sheet-map-action-button:focus-visible {
   outline: 2px solid rgba(23, 23, 23, 0.72);
   outline-offset: 2px;
 }
@@ -146,8 +152,8 @@
 .sheet-map-my-location-button {
   pointer-events: auto;
   display: flex;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--sheet-map-my-location-size, 2.5rem);
+  height: var(--sheet-map-my-location-size, 2.5rem);
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
@@ -209,8 +215,6 @@
 .sheet-map-sheet-body {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
   color: #171717;
 }
 
@@ -219,7 +223,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.5rem;
+  gap: var(--sheet-list-item-gap, 0.5rem);
 }
 
 .sheet-map-sheet-list__row {
@@ -280,7 +284,6 @@
 }
 
 .sheet-map-sheet-header {
-  padding-inline: 1rem;
   color: #171717;
 }
 
@@ -359,18 +362,17 @@
   font-weight: 600;
 }
 
-/* Dark theme — map chrome, sheet slide, and default list/header copy */
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-close-sheet-button {
+/* Dark theme — map chrome and default list/header copy */
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-action-button {
   color: #fff;
 }
 
-.sheet-map-layout[data-sheet-map-theme="dark"]
-  .sheet-map-close-sheet-button:hover {
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-action-button:hover {
   color: rgba(255, 255, 255, 0.8);
 }
 
 .sheet-map-layout[data-sheet-map-theme="dark"]
-  .sheet-map-close-sheet-button:focus-visible {
+  .sheet-map-action-button:focus-visible {
   outline-color: rgba(255, 255, 255, 0.8);
 }
 
@@ -384,21 +386,6 @@
 .sheet-map-layout[data-sheet-map-theme="dark"]
   .sheet-map-my-location-button:hover {
   background: rgba(38, 38, 38, 0.9);
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-slide {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(23, 23, 23, 0.92);
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
-  color: #fafafa;
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-handle {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-divider {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 .sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-sheet-header,

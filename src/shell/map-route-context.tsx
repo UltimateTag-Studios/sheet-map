@@ -15,8 +15,8 @@ export type MapRouteContent = {
   body?: ReactNode;
   mapLayers?: ReactNode;
   overlay?: ReactNode | null;
-  /** Top-right chrome when the sheet is collapsed (e.g. trail back). Same slot as close. */
-  collapsedTopRight?: ReactNode;
+  /** Action button slot when the sheet is collapsed (e.g. trail back). Same slot as close. */
+  collapsedAction?: ReactNode;
   slots?: Partial<MapShellSlots>;
   resolveFeatureId?: (
     layerId: string,

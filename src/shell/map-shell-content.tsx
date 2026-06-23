@@ -1,5 +1,10 @@
 import type { SheetLayoutFrameChange } from "@siegetag/sheet";
-import { buildSheetStyle, Sheet, type SheetSnap } from "@siegetag/sheet";
+import {
+  DEFAULT_THEME,
+  Sheet,
+  SheetLayout,
+  type SheetSnap,
+} from "@siegetag/sheet";
 import type { GeoJsonProperties } from "geojson";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
@@ -17,8 +22,8 @@ import type {
 } from "./config";
 import { MapFrame } from "./map-frame";
 import { buildMapLogoHostStyle } from "./map-logo-host-style";
-import { MapSheetLayout } from "./map-sheet-layout";
 import { resolveMapboxStyleUrl } from "./map-theme";
+import { resolveMapSheetLayout } from "./resolve-map-sheet-layout";
 
 type UserTrackingValue = ReturnType<typeof useMapUserTracking>;
 
@@ -42,7 +47,7 @@ export type MapShellContentProps = {
   header: ReactNode;
   body: ReactNode;
   overlay?: ReactNode;
-  topRightChrome?: ReactNode;
+  actionChrome?: ReactNode;
   myLocationButton?: boolean;
   viewport: MapViewportSyncState;
   config?: MapShellConfig;
@@ -63,18 +68,15 @@ export function MapShellContent({
   header,
   body,
   overlay,
-  topRightChrome,
+  actionChrome,
   myLocationButton = true,
   viewport,
   config = {},
   slots = {},
 }: MapShellContentProps) {
   const myLocationAriaLabel = config.myLocationAriaLabel ?? "Focus my location";
-  const layout = config.layout ?? {};
-  const { sheet: sheetStyle, sheetHandle: sheetHandleStyle } = buildSheetStyle(
-    layout,
-    config.styles,
-  );
+  const sheetLayout = resolveMapSheetLayout(config.sheetLayout);
+  const resolvedTheme = config.theme ?? DEFAULT_THEME;
   const { tracking, mapPaddingReady } = userTracking;
 
   const [collapsedSheetHeightPx, setCollapsedSheetHeightPx] = useState(0);
@@ -87,7 +89,7 @@ export function MapShellContent({
   );
 
   const hostStyle = buildMapLogoHostStyle(collapsedSheetHeightPx);
-  const mapStyleUrl = resolveMapboxStyleUrl(config.theme);
+  const mapStyleUrl = resolveMapboxStyleUrl(resolvedTheme);
 
   const userLocationStyleOverrides =
     userLocation && slots.renderUserLocation
@@ -98,7 +100,7 @@ export function MapShellContent({
       : null;
 
   return (
-    <MapFrame style={hostStyle}>
+    <MapFrame style={hostStyle} theme={resolvedTheme}>
       <MapUserTrackingProvider value={userTracking}>
         <MapCanvas
           accessToken={mapToken}
@@ -116,10 +118,8 @@ export function MapShellContent({
 
       <MapVisibleAreaOverlay clientRect={viewport.clientRect}>
         {overlay}
-        {topRightChrome ? (
-          <div className="sheet-map-overlay-slot--top-right">
-            {topRightChrome}
-          </div>
+        {actionChrome ? (
+          <div className="sheet-map-overlay-slot--action">{actionChrome}</div>
         ) : null}
         {myLocationButton && userLocation && mapPaddingReady
           ? (slots.renderMyLocationButton?.(
@@ -150,14 +150,9 @@ export function MapShellContent({
         onLayoutFrameChange={onSheetLayoutFrameChange}
         onSnapHeightsChange={handleSnapHeightsChange}
         halfSnapFraction={config.halfSnapFraction}
-        sheetStyle={sheetStyle}
-        sheetHandleStyle={sheetHandleStyle}
+        layout={sheetLayout}
       >
-        <MapSheetLayout
-          header={header}
-          body={body}
-          bottomChromeReserve={layout.bottomChromeReserve}
-        />
+        <SheetLayout header={header} body={body} />
       </Sheet>
     </MapFrame>
   );

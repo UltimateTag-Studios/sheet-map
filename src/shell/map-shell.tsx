@@ -13,11 +13,11 @@ import {
   mergeMapShellSlots,
 } from "./map-shell-slots-context";
 import {
+  resolveRouteActionChrome,
   resolveRouteBody,
   resolveRouteHeader,
   resolveRouteMapLayers,
   resolveRouteOverlay,
-  resolveRouteTopRightChrome,
 } from "./resolve-route-chrome";
 
 export type MapShellProps = {
@@ -98,7 +98,7 @@ export function MapShell({
   const defaultBody = <div className="sheet-map-sheet-body-placeholder" />;
   const body = resolveRouteBody(routeContent, mergedSlots, defaultBody);
   const mapChildren = resolveRouteMapLayers(routeContent);
-  const topRightChrome = resolveRouteTopRightChrome(routeContent, mergedSlots, {
+  const actionChrome = resolveRouteActionChrome(routeContent, mergedSlots, {
     sheetSnap,
     closeSheet,
     closeAriaLabel: config.closeSheetAriaLabel,
@@ -121,7 +121,7 @@ export function MapShell({
           header={header}
           body={body}
           overlay={overlay ?? undefined}
-          topRightChrome={topRightChrome}
+          actionChrome={actionChrome}
           onMarkerPress={handleMarkerPress}
           extraInteractiveLayerIds={routeContent?.extraInteractiveLayerIds}
           onLayerFeaturePress={

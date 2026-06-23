@@ -1,12 +1,12 @@
 import type { CSSProperties, ReactNode } from "react";
 
-import { MAP_SHELL_THEME_ATTR, type MapShellTheme } from "./map-theme";
+import { SHEET_MAP_THEME_ATTR, type Theme } from "./map-theme";
 
 export type MapLayoutRootProps = {
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
-  theme?: MapShellTheme;
+  theme?: Theme;
 };
 
 /** Sized wrapper for map layout chrome + routed children. */
@@ -20,7 +20,7 @@ export function MapLayoutRoot({
     <div
       className={className}
       style={style}
-      {...(theme ? { [MAP_SHELL_THEME_ATTR]: theme } : {})}
+      {...(theme ? { [SHEET_MAP_THEME_ATTR]: theme } : {})}
     >
       {children}
     </div>

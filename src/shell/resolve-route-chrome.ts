@@ -6,7 +6,7 @@ import { MapSheetBody } from "../items/map-sheet-body";
 import { MapSheetHeader } from "../items/map-sheet-header";
 import { MapSheetList } from "../items/map-sheet-list";
 import type { MapSheetHeaderProps, MapShellSlots } from "./config";
-import { MapCloseSheetButton } from "./map-close-sheet-button";
+import { MapActionButton } from "./map-action-button";
 import type { MapRouteContent } from "./map-route-context";
 
 function isSheetOpen(snap: SheetSnap): boolean {
@@ -95,7 +95,7 @@ export function resolveRouteOverlay(
   return layoutSlots.renderOverlay?.(overlayContext) ?? null;
 }
 
-export function resolveRouteTopRightChrome(
+export function resolveRouteActionChrome(
   routeContent: MapRouteContent | null,
   layoutSlots: MapShellSlots,
   args: {
@@ -105,19 +105,19 @@ export function resolveRouteTopRightChrome(
   },
 ): ReactNode | null {
   if (isSheetOpen(args.sheetSnap)) {
-    const renderClose =
-      routeContent?.slots?.renderCloseButton ?? layoutSlots.renderCloseButton;
+    const renderAction =
+      routeContent?.slots?.renderActionButton ?? layoutSlots.renderActionButton;
 
     return (
-      renderClose?.(args.closeSheet, args.closeAriaLabel) ??
-      createElement(MapCloseSheetButton, {
+      renderAction?.(args.closeSheet, args.closeAriaLabel) ??
+      createElement(MapActionButton, {
         ariaLabel: args.closeAriaLabel,
         onPress: args.closeSheet,
       })
     );
   }
 
-  return routeContent?.collapsedTopRight ?? null;
+  return routeContent?.collapsedAction ?? null;
 }
 
 export type { MapSheetHeaderProps };

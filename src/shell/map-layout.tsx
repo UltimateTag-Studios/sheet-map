@@ -12,6 +12,8 @@ import { MapLayoutRoot } from "./map-layout-root";
 import { createMapRouteContentStore } from "./map-route-content-store";
 import { MapRouteProvider } from "./map-route-context";
 import { MapShell } from "./map-shell";
+import { buildMapShellLayoutVars } from "./map-shell-layout-vars";
+import { resolveMapShellLayout } from "./resolve-map-shell-layout";
 import { useMapShell } from "./use-map-shell";
 
 export type MapLayoutProps = {
@@ -41,9 +43,16 @@ export function MapLayout({
   });
 
   const resolvedTheme = config?.theme ?? defaultMapShellConfig.theme;
+  const rootStyle = buildMapShellLayoutVars(
+    resolveMapShellLayout(config?.layout),
+  );
 
   return (
-    <MapLayoutRoot className="sheet-map-layout" theme={resolvedTheme}>
+    <MapLayoutRoot
+      className="sheet-map-layout"
+      theme={resolvedTheme}
+      style={rootStyle}
+    >
       <MapRouteProvider shell={shell} routeContentStore={routeContentStore}>
         <MapShell
           shell={shell}
