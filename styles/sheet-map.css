@@ -20,6 +20,15 @@
   position: relative;
   height: 100%;
   width: 100%;
+  /*
+   * Globe + map padding letterbox gutters: Mapbox clears unpainted areas white
+   * by default. Keep space around the planet black when the sheet adds padding.
+   */
+  background: #000;
+}
+
+.sheet-map-canvas-root .mapboxgl-map {
+  background: #000;
 }
 
 .sheet-map-canvas-layer {
@@ -30,6 +39,17 @@
 
 .sheet-map-canvas-layer .mapboxgl-control-container {
   z-index: 0;
+}
+
+/*
+ * Mapbox logo: bottom-right above the collapsed sheet lip (visible map band).
+ * Offset is the measured collapsed snap height — fixed so the logo does not
+ * track the live viewport overlay when the sheet opens.
+ */
+.sheet-host .sheet-map-canvas-layer .mapboxgl-ctrl-bottom-left {
+  right: 1em;
+  left: auto;
+  bottom: var(--sheet-map-logo-bottom-offset, 0px);
 }
 
 .sheet-map-visible-area-debug {

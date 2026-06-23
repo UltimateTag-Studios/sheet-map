@@ -1,8 +1,11 @@
 import { DEFAULT_HALF_SNAP_FRACTION } from "@siegetag/sheet";
 import type { CSSProperties, ReactNode } from "react";
 
+import type { MapUserLocationCoords } from "../camera/hooks/use-map-user-tracking";
 import type { MapUserLocationStyleOverrides } from "../canvas/user-location/style-overrides";
 import type { MapObscuredInsets } from "../viewport";
+
+export type { MapUserLocationCoords };
 
 export type MapChromeInsets = Partial<MapObscuredInsets>;
 
@@ -38,12 +41,6 @@ export type MapShellConfig = {
   debug?: boolean;
   myLocationAriaLabel?: string;
   closeSheetAriaLabel?: string;
-};
-
-export type MapUserLocationCoords = {
-  lng: number;
-  lat: number;
-  accuracyMeters?: number | null;
 };
 
 export type MapSheetHeaderProps = {

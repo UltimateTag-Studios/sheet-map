@@ -26,6 +26,16 @@ Fresh rebuild of the map + sheet shell. **Phase 0 — scaffold only.**
 | **5** | Follow user | Boot fly, 40px snap-back, my-location |
 | **6** | Routes + markers | Port from `@siegetag/sheet-map-old` when 1–5 are green |
 
+## Mapbox attribution
+
+`MapCanvas` sets `attributionControl={false}` on the underlying Mapbox map. That removes the **text attribution control** (the compact “© Mapbox © OpenStreetMap …” chip). It does **not** remove the **Mapbox wordmark logo** — Mapbox GL JS always adds `LogoControl` separately, and standard Mapbox terms require that logo to stay visible on the map.
+
+Do **not** hide the logo with CSS unless your Mapbox account explicitly allows white‑label maps.
+
+Because the automatic text control is off, **apps using this package must still meet Mapbox and data-provider attribution requirements** — for example in Settings, About, or other app chrome — per [Mapbox attribution guidance](https://docs.mapbox.com/help/dive-deeper/attribution/). The on-map logo alone is not a substitute for every required credit when the text control is disabled.
+
+In the shell (`MapShellContent`), the logo is repositioned on the **map canvas** (not the live viewport overlay): bottom-right, with `bottom` set to the **collapsed sheet height** so it sits in the visible map band when the sheet is collapsed and stays fixed when the sheet opens (it may be covered temporarily).
+
 ## Scripts
 
 ```bash

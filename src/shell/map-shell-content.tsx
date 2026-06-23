@@ -2,6 +2,7 @@ import type { SheetLayoutFrameChange } from "@siegetag/sheet";
 import { buildSheetStyle, Sheet, type SheetSnap } from "@siegetag/sheet";
 import type { GeoJsonProperties } from "geojson";
 import type { ReactNode } from "react";
+import { useCallback, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import { MapUserTrackingProvider } from "../camera";
@@ -14,7 +15,8 @@ import type {
   MapShellSlots,
   MapUserLocationCoords,
 } from "./config";
-import { MAP_VIEWPORT_CLASS, MapFrame } from "./map-frame";
+import { MapFrame } from "./map-frame";
+import { buildMapLogoHostStyle } from "./map-logo-host-style";
 import { MapSheetLayout } from "./map-sheet-layout";
 
 type UserTrackingValue = ReturnType<typeof useMapUserTracking>;
@@ -56,9 +58,6 @@ export function MapShellContent({
   userLocation,
   userTracking,
   recenterOnUser,
-  onMarkerPress,
-  extraInteractiveLayerIds,
-  onLayerFeaturePress,
   mapChildren,
   header,
   body,
@@ -77,6 +76,17 @@ export function MapShellContent({
   );
   const { tracking, mapPaddingReady } = userTracking;
 
+  const [collapsedSheetHeightPx, setCollapsedSheetHeightPx] = useState(0);
+
+  const handleSnapHeightsChange = useCallback(
+    (heights: { collapsedHeightPx: number }) => {
+      setCollapsedSheetHeightPx(heights.collapsedHeightPx);
+    },
+    [],
+  );
+
+  const hostStyle = buildMapLogoHostStyle(collapsedSheetHeightPx);
+
   const userLocationStyleOverrides =
     userLocation && slots.renderUserLocation
       ? slots.renderUserLocation(
@@ -86,15 +96,12 @@ export function MapShellContent({
       : null;
 
   return (
-    <MapFrame className={`sheet-map-shell sheet-host ${MAP_VIEWPORT_CLASS}`}>
+    <MapFrame style={hostStyle}>
       <MapUserTrackingProvider value={userTracking}>
         <MapCanvas
           accessToken={mapToken}
           reuseMaps={false}
           publishMapInstance={publishMapInstance}
-          onMarkerPress={onMarkerPress}
-          extraInteractiveLayerIds={extraInteractiveLayerIds}
-          onLayerFeaturePress={onLayerFeaturePress}
           className="sheet-map-canvas-layer"
         >
           {mapChildren}
@@ -138,6 +145,7 @@ export function MapShellContent({
         onSnapChange={onSheetSnapChange}
         onSnapSettled={onSheetSnapSettled}
         onLayoutFrameChange={onSheetLayoutFrameChange}
+        onSnapHeightsChange={handleSnapHeightsChange}
         halfSnapFraction={config.halfSnapFraction}
         sheetStyle={sheetStyle}
         sheetHandleStyle={sheetHandleStyle}
