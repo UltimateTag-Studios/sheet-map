@@ -1,6 +1,7 @@
 export {
   MAP_MARKER_HIT_SIZE_PX,
   mapMarkerHitLayerPaint,
+  mapMarkerHitLayerPaintForDiameter,
 } from "./hit";
 export {
   MAP_DOT_FOCUS_STROKE_COLOR,

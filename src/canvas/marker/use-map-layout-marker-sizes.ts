@@ -59,7 +59,7 @@ function readDefaultMarkerSizes(): MapLayoutMarkerSizes {
     ),
     itemMarkerHitSizePx: parseCssLengthPx(
       DEFAULT_MAP_ITEM_MARKER_HIT_SIZE,
-      MAP_ITEM_MARKER_SIZE_PX,
+      MAP_MARKER_HIT_SIZE_PX,
     ),
     itemMarkerBorderWidthPx: parseCssLengthPx(
       DEFAULT_MAP_ITEM_MARKER_BORDER_WIDTH,

@@ -265,8 +265,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--sheet-map-item-marker-hit-size, 14px);
-  height: var(--sheet-map-item-marker-hit-size, 14px);
+  width: var(--sheet-map-item-marker-hit-size, 32px);
+  height: var(--sheet-map-item-marker-hit-size, 32px);
   padding: 0;
   border: none;
   background: transparent;

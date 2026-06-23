@@ -4,7 +4,7 @@ import type { MapRef } from "react-map-gl/mapbox";
 import { Layer, Source, useMap } from "react-map-gl/mapbox";
 
 import { resolveMapRef } from "../instance/resolve-map-ref";
-import { mapMarkerHitLayerPaint } from "../marker/hit";
+import { mapMarkerHitLayerPaintForDiameter } from "../marker/hit";
 import {
   MAP_USER_LOCATION_HALO_OPACITY,
   MAP_USER_LOCATION_HALO_OPACITY_IDLE,
@@ -59,7 +59,6 @@ export function MapUserLocation({
   const haloRadiusPx =
     styleOverrides?.haloRadiusPx ??
     accuracyMetersToHaloRadiusPx(accuracyMeters, latitude, zoom);
-  const hitRadiusPx = locationMarkerHitSizePx / 2;
   const markerRadiusPx = locationMarkerSizePx / 2;
   const haloOpacity =
     styleOverrides?.haloOpacity ??
@@ -117,10 +116,7 @@ export function MapUserLocation({
       <Layer
         id={MAP_USER_LOCATION_HIT_LAYER_ID}
         type="circle"
-        paint={{
-          ...mapMarkerHitLayerPaint,
-          "circle-radius": hitRadiusPx,
-        }}
+        paint={mapMarkerHitLayerPaintForDiameter(locationMarkerHitSizePx)}
       />
     </Source>
   );

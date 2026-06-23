@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { forwardRef, useEffect } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { MAP_MARKERS_HIT_LAYER_ID } from "./geojson-markers";
 import { MAP_CANVAS_ROOT_CLASS, MapCanvas } from "./map-canvas";
 
 vi.mock("mapbox-gl/dist/mapbox-gl.css", () => ({}));
@@ -18,6 +19,10 @@ const mockMapRef = {
 const mockGlMapHandlers: { onLoad: (() => void) | undefined } = {
   onLoad: undefined,
 };
+
+const mockClickHandler: {
+  current: ((event: unknown) => void) | undefined;
+} = { current: undefined };
 
 function fireMockOnLoad(): void {
   const handler = mockGlMapHandlers.onLoad;
@@ -41,6 +46,13 @@ vi.mock("react-map-gl/mapbox", () => {
         zoom: number;
       };
       onLoad?: () => void;
+      onClick?: (event: {
+        features?: Array<{
+          layer?: { id?: string };
+          properties?: Record<string, unknown>;
+        }>;
+      }) => void;
+      interactiveLayerIds?: string[];
     }
   >(
     (
@@ -51,17 +63,20 @@ vi.mock("react-map-gl/mapbox", () => {
         mapStyle,
         initialViewState,
         onLoad,
+        onClick,
+        interactiveLayerIds,
       },
       ref,
     ) => {
       useEffect(() => {
         mockGlMapHandlers.onLoad = onLoad;
+        mockClickHandler.current = onClick;
         if (typeof ref === "function") {
           ref(mockMapRef);
         } else if (ref) {
           ref.current = mockMapRef;
         }
-      }, [onLoad, ref]);
+      }, [onLoad, onClick, ref]);
 
       return (
         <div
@@ -71,6 +86,7 @@ vi.mock("react-map-gl/mapbox", () => {
           data-longitude={initialViewState?.longitude}
           data-latitude={initialViewState?.latitude}
           data-zoom={initialViewState?.zoom}
+          data-interactive-layers={interactiveLayerIds?.join(",")}
           style={style}
         >
           {children}
@@ -85,6 +101,12 @@ vi.mock("react-map-gl/mapbox", () => {
 });
 
 describe("MapCanvas", () => {
+  afterEach(() => {
+    cleanup();
+    mockGlMapHandlers.onLoad = undefined;
+    mockClickHandler.current = undefined;
+  });
+
   it("renders a full-size root and passes map props through", () => {
     render(
       <MapCanvas
@@ -145,5 +167,29 @@ describe("MapCanvas", () => {
 
     unmount();
     expect(publishMapInstance).toHaveBeenCalledWith(null);
+  });
+
+  it("registers marker hit layers and forwards marker presses", () => {
+    const onMarkerPress = vi.fn();
+
+    render(
+      <MapCanvas accessToken="test-token" onMarkerPress={onMarkerPress} />,
+    );
+
+    const map = screen.getByTestId("gl-map");
+    expect(map.getAttribute("data-interactive-layers")).toBe(
+      MAP_MARKERS_HIT_LAYER_ID,
+    );
+
+    mockClickHandler.current?.({
+      features: [
+        {
+          layer: { id: MAP_MARKERS_HIT_LAYER_ID },
+          properties: { markerId: "pin-1" },
+        },
+      ],
+    });
+
+    expect(onMarkerPress).toHaveBeenCalledWith("pin-1");
   });
 });

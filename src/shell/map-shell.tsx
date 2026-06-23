@@ -12,6 +12,7 @@ import {
   MapShellSlotsProvider,
   mergeMapShellSlots,
 } from "./map-shell-slots-context";
+import { pressSelectableMapFeature } from "./press-selectable-map-feature";
 import {
   resolveRouteActionChrome,
   resolveRouteBody,
@@ -55,12 +56,13 @@ export function MapShell({
     tracking,
   } = shell;
 
+  const items = routeContent?.items ?? [];
+
   const handleMarkerPress = useCallback(
     (markerId: string) => {
-      // 6D wires pressSelectableMapFeature + item locations.
-      selectItem(markerId, null);
+      pressSelectableMapFeature(markerId, items, selectItem);
     },
-    [selectItem],
+    [items, selectItem],
   );
 
   const resolveFeatureId = routeContent?.resolveFeatureId;
@@ -71,10 +73,14 @@ export function MapShell({
       if (!featureId) {
         return;
       }
-      selectItem(featureId, null);
+      pressSelectableMapFeature(featureId, items, selectItem);
     },
-    [resolveFeatureId, selectItem],
+    [resolveFeatureId, items, selectItem],
   );
+
+  const handleUserLocationPress = useCallback(() => {
+    recenterOnUser();
+  }, [recenterOnUser]);
 
   if (!mapToken) {
     return (
@@ -126,6 +132,9 @@ export function MapShell({
           extraInteractiveLayerIds={routeContent?.extraInteractiveLayerIds}
           onLayerFeaturePress={
             resolveFeatureId ? handleLayerFeaturePress : undefined
+          }
+          onUserLocationPress={
+            userLocation ? handleUserLocationPress : undefined
           }
           viewport={viewport}
           config={config}

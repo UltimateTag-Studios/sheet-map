@@ -11,7 +11,7 @@ export const defaultMapShellLayout: MapShellLayout = {
     marker: { size: "12px", hitSize: "32px" },
   },
   mapItem: {
-    marker: { size: "14px", hitSize: "14px", borderWidth: "2px" },
+    marker: { size: "14px", hitSize: "32px", borderWidth: "2px" },
   },
 };
 

@@ -41,6 +41,8 @@ CSS vars are flat on `.sheet-map-layout` (e.g. `--sheet-map-location-button-size
 
 **Mapbox markers:** DOM markers use CSS `var()` directly. Mapbox circle layers read layout vars from `.sheet-map-layout` at runtime (`useMapLayoutMarkerSizes`).
 
+**GeoJSON markers (advanced):** `MapMarkers`, `mapPointsToGeoJson`, and `markerImageId` / `createMarkerImageCanvas` for sprite pins in app `mapLayers` or `slots.renderMapItem`. Shell hit layer id: `MAP_MARKERS_HIT_LAYER_ID`.
+
 ## Theming
 
 `theme` sets `data-sheet-map-theme` on `.sheet-map-layout`. Override tokens in app CSS:

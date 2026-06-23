@@ -47,6 +47,7 @@ export type MapShellContentProps = {
     layerId: string,
     properties: GeoJsonProperties,
   ) => void;
+  onUserLocationPress?: () => void;
   mapChildren: ReactNode;
   header: ReactNode;
   body: ReactNode;
@@ -68,6 +69,10 @@ export function MapShellContent({
   userLocation,
   userTracking,
   recenterOnUser,
+  onMarkerPress,
+  extraInteractiveLayerIds,
+  onLayerFeaturePress,
+  onUserLocationPress,
   mapChildren,
   header,
   body,
@@ -112,6 +117,10 @@ export function MapShellContent({
           reuseMaps={false}
           publishMapInstance={publishMapInstance}
           className="sheet-map-canvas-layer"
+          onMarkerPress={onMarkerPress}
+          extraInteractiveLayerIds={extraInteractiveLayerIds}
+          onLayerFeaturePress={onLayerFeaturePress}
+          onUserLocationPress={onUserLocationPress}
         >
           {mapChildren}
           <MapUserLocationMarker
