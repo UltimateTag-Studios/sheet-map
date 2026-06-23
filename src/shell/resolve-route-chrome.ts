@@ -1,8 +1,11 @@
 import type { SheetSnap } from "@siegetag/sheet";
 import { createElement, type ReactNode } from "react";
 
+import { MapItemsLayer } from "../items/map-items-layer";
+import { MapSheetBody } from "../items/map-sheet-body";
+import { MapSheetHeader } from "../items/map-sheet-header";
+import { MapSheetList } from "../items/map-sheet-list";
 import type { MapSheetHeaderProps, MapShellSlots } from "./config";
-import { DefaultMapSheetHeader } from "./default-map-sheet-header";
 import { MapCloseSheetButton } from "./map-close-sheet-button";
 import type { MapRouteContent } from "./map-route-context";
 
@@ -25,7 +28,7 @@ export function resolveRouteHeader(
   const renderHeader =
     routeContent.slots?.renderSheetHeader ??
     layoutSlots.renderSheetHeader ??
-    DefaultMapSheetHeader;
+    MapSheetHeader;
 
   return renderHeader(routeContent.header);
 }
@@ -35,12 +38,45 @@ export function resolveRouteBody(
   layoutSlots: MapShellSlots,
   defaultBody: ReactNode,
 ): ReactNode {
-  const body = routeContent?.body ?? defaultBody;
+  let body: ReactNode;
+
+  if (routeContent?.body !== undefined) {
+    body = routeContent.body;
+  } else if (routeContent?.items && routeContent.items.length > 0) {
+    body = createElement(
+      MapSheetBody,
+      null,
+      createElement(MapSheetList, { items: routeContent.items }),
+    );
+  } else {
+    body = defaultBody;
+  }
+
   const renderBody = layoutSlots.renderSheetBody;
   if (renderBody) {
     return renderBody(body);
   }
   return body;
+}
+
+export function resolveRouteMapLayers(
+  routeContent: MapRouteContent | null,
+): ReactNode | null {
+  if (routeContent?.mapLayers !== undefined) {
+    return routeContent.mapLayers;
+  }
+
+  const items = routeContent?.items;
+  if (!items || items.length === 0) {
+    return null;
+  }
+
+  const hasLocatedItem = items.some((item) => item.location !== null);
+  if (!hasLocatedItem) {
+    return null;
+  }
+
+  return createElement(MapItemsLayer, { items });
 }
 
 export function resolveRouteOverlay(

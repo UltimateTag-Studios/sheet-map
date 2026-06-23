@@ -2,11 +2,13 @@ import type { GeoJsonProperties } from "geojson";
 import type { ReactNode } from "react";
 import { createContext, useContext } from "react";
 
+import type { MapItem } from "../items/types";
 import type { MapSheetHeaderProps, MapShellSlots } from "./config";
 import type { MapRouteContentStore } from "./map-route-content-store";
 import type { useMapShell } from "./use-map-shell";
 
 export type MapRouteContent = {
+  items?: MapItem[];
   header?: MapSheetHeaderProps;
   /** Bypass header data + slot chain entirely. */
   headerContent?: ReactNode;

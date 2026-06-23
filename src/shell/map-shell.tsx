@@ -9,8 +9,13 @@ import type { MapShellState } from "./map-route-context";
 import { MapScreenErrorBoundary } from "./map-screen-error-boundary";
 import { MapShellContent } from "./map-shell-content";
 import {
+  MapShellSlotsProvider,
+  mergeMapShellSlots,
+} from "./map-shell-slots-context";
+import {
   resolveRouteBody,
   resolveRouteHeader,
+  resolveRouteMapLayers,
   resolveRouteOverlay,
   resolveRouteTopRightChrome,
 } from "./resolve-route-chrome";
@@ -82,15 +87,18 @@ export function MapShell({
     );
   }
 
-  const overlay = resolveRouteOverlay(routeContent, slots, {
+  const mergedSlots = mergeMapShellSlots(slots, routeContent?.slots);
+
+  const overlay = resolveRouteOverlay(routeContent, mergedSlots, {
     clientRect: viewport.clientRect,
     tracking,
   });
 
-  const header = resolveRouteHeader(routeContent, slots);
+  const header = resolveRouteHeader(routeContent, mergedSlots);
   const defaultBody = <div className="sheet-map-sheet-body-placeholder" />;
-  const body = resolveRouteBody(routeContent, slots, defaultBody);
-  const topRightChrome = resolveRouteTopRightChrome(routeContent, slots, {
+  const body = resolveRouteBody(routeContent, mergedSlots, defaultBody);
+  const mapChildren = resolveRouteMapLayers(routeContent);
+  const topRightChrome = resolveRouteTopRightChrome(routeContent, mergedSlots, {
     sheetSnap,
     closeSheet,
     closeAriaLabel: config.closeSheetAriaLabel,
@@ -98,30 +106,32 @@ export function MapShell({
 
   return (
     <MapScreenErrorBoundary>
-      <MapShellContent
-        mapToken={mapToken}
-        publishMapInstance={publishMapInstance}
-        sheetSnap={sheetSnap}
-        onSheetSnapChange={handleSheetSnapChange}
-        onSheetSnapSettled={handleSheetSnapSettled}
-        onSheetLayoutFrameChange={onSheetLayoutFrameChange}
-        userLocation={userLocation}
-        userTracking={userTracking}
-        recenterOnUser={recenterOnUser}
-        mapChildren={routeContent?.mapLayers ?? null}
-        header={header}
-        body={body}
-        overlay={overlay ?? undefined}
-        topRightChrome={topRightChrome}
-        onMarkerPress={handleMarkerPress}
-        extraInteractiveLayerIds={routeContent?.extraInteractiveLayerIds}
-        onLayerFeaturePress={
-          resolveFeatureId ? handleLayerFeaturePress : undefined
-        }
-        viewport={viewport}
-        config={config}
-        slots={slots}
-      />
+      <MapShellSlotsProvider slots={mergedSlots}>
+        <MapShellContent
+          mapToken={mapToken}
+          publishMapInstance={publishMapInstance}
+          sheetSnap={sheetSnap}
+          onSheetSnapChange={handleSheetSnapChange}
+          onSheetSnapSettled={handleSheetSnapSettled}
+          onSheetLayoutFrameChange={onSheetLayoutFrameChange}
+          userLocation={userLocation}
+          userTracking={userTracking}
+          recenterOnUser={recenterOnUser}
+          mapChildren={mapChildren}
+          header={header}
+          body={body}
+          overlay={overlay ?? undefined}
+          topRightChrome={topRightChrome}
+          onMarkerPress={handleMarkerPress}
+          extraInteractiveLayerIds={routeContent?.extraInteractiveLayerIds}
+          onLayerFeaturePress={
+            resolveFeatureId ? handleLayerFeaturePress : undefined
+          }
+          viewport={viewport}
+          config={config}
+          slots={mergedSlots}
+        />
+      </MapShellSlotsProvider>
     </MapScreenErrorBoundary>
   );
 }

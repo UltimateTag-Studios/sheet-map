@@ -4,5 +4,6 @@ export const SHEET_MAP_REBUILD_PHASE = 5 as const;
 export * from "./camera";
 export * from "./canvas";
 export * from "./gesture";
+export * from "./items";
 export * from "./shell";
 export * from "./viewport";

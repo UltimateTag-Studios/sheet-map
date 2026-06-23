@@ -1,6 +1,6 @@
-import type { MapSheetHeaderProps } from "./config";
+import type { MapSheetHeaderProps } from "../shell/config";
 
-export function DefaultMapSheetHeader({
+export function MapSheetHeader({
   eyebrow,
   title,
   countLabel,

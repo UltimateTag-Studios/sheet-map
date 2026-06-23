@@ -9,7 +9,6 @@ export type {
   MapUserLocationCoords,
 } from "./config";
 export { defaultMapShellConfig } from "./config";
-export { DefaultMapSheetHeader } from "./default-map-sheet-header";
 export {
   MapCloseSheetButton,
   type MapCloseSheetButtonProps,
@@ -46,6 +45,11 @@ export type { MapShellProps } from "./map-shell";
 export { MapShell } from "./map-shell";
 export type { MapShellContentProps } from "./map-shell-content";
 export { MapShellContent } from "./map-shell-content";
+export {
+  MapShellSlotsProvider,
+  mergeMapShellSlots,
+  useMapShellSlots,
+} from "./map-shell-slots-context";
 export type { MapShellTheme } from "./map-theme";
 export {
   DEFAULT_MAP_SHELL_THEME,
@@ -56,9 +60,10 @@ export {
 export {
   resolveRouteBody,
   resolveRouteHeader,
+  resolveRouteMapLayers,
   resolveRouteOverlay,
   resolveRouteTopRightChrome,
 } from "./resolve-route-chrome";
-export type { MapItemLocation, UseMapShellOptions } from "./use-map-shell";
+export type { UseMapShellOptions } from "./use-map-shell";
 export { useMapShell } from "./use-map-shell";
 export { useRegisterMapRoute } from "./use-register-map-route";

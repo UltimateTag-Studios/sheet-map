@@ -14,13 +14,18 @@ export const MAP_ITEM_DOT_COLOR = "#f97316";
 
 export const MAP_ITEM_DOT_CLASS = "sheet-map-item-dot";
 
+export const MAP_ITEM_DOT_SELECTED_CLASS = "sheet-map-item-dot--selected";
+
 export const mapItemDotStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   width: MAP_ITEM_DOT_SIZE_PX,
   height: MAP_ITEM_DOT_SIZE_PX,
-  border: `${MAP_DOT_STROKE_WIDTH_PX}px solid ${MAP_DOT_STROKE_COLOR}`,
-  borderRadius: 9999,
-  background: MAP_ITEM_DOT_COLOR,
-  boxShadow: "0 0 0 2px rgba(249, 115, 22, 0.45)",
+  padding: 0,
+  border: "none",
+  background: "transparent",
+  cursor: "pointer",
 } as const;
 
 /** Google Maps–style user location palette. */

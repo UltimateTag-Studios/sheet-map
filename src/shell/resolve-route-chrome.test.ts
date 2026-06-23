@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type { MapItem } from "../items/types";
 import type { MapRouteContent } from "./map-route-context";
 import {
+  resolveRouteBody,
   resolveRouteHeader,
+  resolveRouteMapLayers,
   resolveRouteOverlay,
   resolveRouteTopRightChrome,
 } from "./resolve-route-chrome";
@@ -94,5 +97,45 @@ describe("resolveRouteChrome", () => {
     );
 
     expect(node).toBe("custom-close");
+  });
+
+  it("auto-renders MapSheetList when body is omitted and items exist", () => {
+    const items: MapItem[] = [
+      {
+        id: "a",
+        location: { lat: 1, lng: 2 },
+        title: "Alpha",
+      },
+    ];
+
+    const body = resolveRouteBody(
+      { items, header: { title: "Test" } },
+      {},
+      null,
+    );
+
+    expect(body).toBeTruthy();
+  });
+
+  it("auto-renders MapItemsLayer when mapLayers omitted and items have locations", () => {
+    const items: MapItem[] = [
+      {
+        id: "a",
+        location: { lat: 1, lng: 2 },
+        title: "Alpha",
+      },
+    ];
+
+    const layers = resolveRouteMapLayers({ items });
+
+    expect(layers).toBeTruthy();
+  });
+
+  it("returns null map layers when items have no locations", () => {
+    const layers = resolveRouteMapLayers({
+      items: [{ id: "a", location: null, title: "Alpha" }],
+    });
+
+    expect(layers).toBeNull();
   });
 });

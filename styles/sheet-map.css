@@ -131,15 +131,15 @@
   border: 0;
   background: transparent;
   padding: 0.25rem;
-  color: #fff;
+  color: #171717;
 }
 
 .sheet-map-close-sheet-button:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(23, 23, 23, 0.72);
 }
 
 .sheet-map-close-sheet-button:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline: 2px solid rgba(23, 23, 23, 0.72);
   outline-offset: 2px;
 }
 
@@ -151,10 +151,10 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(23, 23, 23, 0.9);
-  color: rgb(212, 212, 212);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  color: rgb(38, 38, 38);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -162,7 +162,7 @@
 }
 
 .sheet-map-my-location-button:hover {
-  background: rgba(38, 38, 38, 0.9);
+  background: rgba(245, 245, 245, 0.98);
 }
 
 .sheet-map-my-location-button:focus-visible {
@@ -181,18 +181,107 @@
 }
 
 .sheet-map-item-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sheet-map-item-dot__core {
+  display: block;
   width: 14px;
   height: 14px;
   border: 2px solid #fff;
   border-radius: 9999px;
   background: #f97316;
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.45);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.sheet-map-item-dot--selected .sheet-map-item-dot__core {
+  transform: scale(1.12);
+  box-shadow:
+    0 0 0 3px rgba(249, 115, 22, 0.75),
+    0 0 0 6px rgba(249, 115, 22, 0.3);
+}
+
+.sheet-map-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  color: #171717;
+}
+
+.sheet-map-sheet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sheet-map-sheet-list__row {
+  margin: 0;
+}
+
+.sheet-map-sheet-list-item {
+  display: grid;
+  gap: 0.125rem;
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.72);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.sheet-map-sheet-list-item:hover {
+  border-color: rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.sheet-map-sheet-list-item:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.sheet-map-sheet-list-item--selected {
+  border-color: #f97316;
+  box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.35);
+}
+
+.sheet-map-sheet-list-item__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.sheet-map-sheet-list-item__subtitle {
+  font-size: 0.8125rem;
+  opacity: 0.78;
+}
+
+.sheet-map-sheet-list-item__meta {
+  font-size: 0.75rem;
+  opacity: 0.62;
 }
 
 .sheet-map-layout {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+}
+
+.sheet-map-sheet-header {
+  padding-inline: 1rem;
+  color: #171717;
 }
 
 .sheet-map-sheet-header__eyebrow {
@@ -268,4 +357,75 @@
 .sheet-map-error-title {
   margin: 0;
   font-weight: 600;
+}
+
+/* Dark theme — map chrome, sheet slide, and default list/header copy */
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-close-sheet-button {
+  color: #fff;
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"]
+  .sheet-map-close-sheet-button:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"]
+  .sheet-map-close-sheet-button:focus-visible {
+  outline-color: rgba(255, 255, 255, 0.8);
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-my-location-button {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(23, 23, 23, 0.9);
+  color: rgb(212, 212, 212);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"]
+  .sheet-map-my-location-button:hover {
+  background: rgba(38, 38, 38, 0.9);
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-slide {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(23, 23, 23, 0.92);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
+  color: #fafafa;
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-handle {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-divider {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-sheet-header,
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-sheet-body {
+  color: #fafafa;
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-sheet-list-item {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(38, 38, 38, 0.55);
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"]
+  .sheet-map-sheet-list-item:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(48, 48, 48, 0.72);
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"]
+  .sheet-map-sheet-list-item--selected {
+  border-color: #f97316;
+  box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.45);
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-loading-card,
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-error-card {
+  background: rgba(23, 23, 23, 0.92);
+  color: #fafafa;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }

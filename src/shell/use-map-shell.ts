@@ -3,6 +3,7 @@ import { useCallback, useReducer, useSyncExternalStore } from "react";
 
 import { type NavigateToMapAnchorOptions, useMapUserTracking } from "../camera";
 import type { MapPosition } from "../camera/shared/map-position";
+import type { MapItemLocation } from "../items/types";
 import {
   useLiveSheetObscuredBottomPx,
   useMapVisibleViewportSync,
@@ -17,11 +18,6 @@ import {
   createInitialMapShellSelectionState,
   reduceMapShellSelection,
 } from "./map-shell-machine";
-
-export type MapItemLocation = {
-  lat: number;
-  lng: number;
-};
 
 export type UseMapShellOptions = {
   mapInstanceStore: MapInstanceStore;

@@ -282,7 +282,7 @@ Active demo: `apps/sheet-map-demo/src/screens/sheet-on-map-screen.tsx`
 | **6B** | Selection reducer (`sheetSnap`, `selectedItemId`) | ✅ |
 | **6B½** | Top-right close / collapsed back chrome | ✅ |
 | **6B¾** | **Theming** — light default (`light-v11` + light chrome); `config.theme: "dark"` opt-in | ✅ |
-| **6C** | `MapItem`, `MapItemsLayer`, `MapSheetList`, slots | pending |
+| **6C** | `MapItem`, `MapItemsLayer`, `MapSheetList`, slots | ✅ |
 | **6D** | Map press / hit layers | pending |
 | **6E** | Demo rewrite + phase bump | pending |
 | **6F** | Capacitor migration | pending |

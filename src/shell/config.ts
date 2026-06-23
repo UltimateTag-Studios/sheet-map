@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 
 import type { MapUserLocationCoords } from "../camera/hooks/use-map-user-tracking";
 import type { MapUserLocationStyleOverrides } from "../canvas/user-location/style-overrides";
+import type { MapItem } from "../items/types";
 import type { MapObscuredInsets } from "../viewport";
 import type { MapShellTheme } from "./map-theme";
 import { DEFAULT_MAP_SHELL_THEME } from "./map-theme";
@@ -69,6 +70,8 @@ export type MapShellSlots = {
     tracking: boolean,
     accuracyMeters?: number,
   ) => MapUserLocationStyleOverrides | null;
+  renderMapItem?: (item: MapItem, selected: boolean) => ReactNode;
+  renderSheetListItem?: (item: MapItem, selected: boolean) => ReactNode;
   renderTokenMissing?: (message: string) => ReactNode;
   renderOverlay?: (ctx: MapOverlayContext) => ReactNode;
   renderSheetHeader?: (props: MapSheetHeaderProps) => ReactNode;
