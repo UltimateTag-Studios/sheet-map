@@ -270,7 +270,24 @@ Active demo: `apps/sheet-map-demo/src/screens/sheet-on-map-screen.tsx`
 
 ## Phase 6 — Routes, markers, Capacitor parity
 
+**Incremental guide:** Cursor plan `phase_6_sheet_map_shell` — sub-phases **6A → 6B → 6B½ → 6B¾ → 6C → 6D → 6E → 6F**.
+
 **Goal:** Port shell features from `@siegetag/sheet-map-old` so Capacitor can switch packages.
+
+### Sub-phases (in order)
+
+| Step | Scope | Status |
+| ---- | ----- | ------ |
+| **6A** | `MapLayout`, route store, `useMapShell`, compose shell | ✅ |
+| **6B** | Selection reducer (`sheetSnap`, `selectedItemId`) | ✅ |
+| **6B½** | Top-right close / collapsed back chrome | ✅ |
+| **6B¾** | **Theming** — light default (`light-v11` + light chrome); `config.theme: "dark"` opt-in | ✅ |
+| **6C** | `MapItem`, `MapItemsLayer`, `MapSheetList`, slots | pending |
+| **6D** | Map press / hit layers | pending |
+| **6E** | Demo rewrite + phase bump | pending |
+| **6F** | Capacitor migration | pending |
+
+**6B¾ theming (before 6C):** `MapShellConfig.theme` (`"light"` \| `"dark"`, default `"light"`). Sets Mapbox style URL, `data-sheet-map-theme` on layout root, letterbox background (white/black), and map chrome CSS. Dark also overrides `.sheet-slide` to match the map.
 
 ### Package
 

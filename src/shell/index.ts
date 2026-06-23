@@ -46,13 +46,19 @@ export type { MapShellProps } from "./map-shell";
 export { MapShell } from "./map-shell";
 export type { MapShellContentProps } from "./map-shell-content";
 export { MapShellContent } from "./map-shell-content";
+export type { MapShellTheme } from "./map-theme";
+export {
+  DEFAULT_MAP_SHELL_THEME,
+  MAP_SHELL_THEME_ATTR,
+  MAPBOX_STYLE_URL_BY_THEME,
+  resolveMapboxStyleUrl,
+} from "./map-theme";
 export {
   resolveRouteBody,
   resolveRouteHeader,
   resolveRouteOverlay,
   resolveRouteTopRightChrome,
 } from "./resolve-route-chrome";
-export type { MapBottomChromeReserve } from "./types";
 export type { MapItemLocation, UseMapShellOptions } from "./use-map-shell";
 export { useMapShell } from "./use-map-shell";
 export { useRegisterMapRoute } from "./use-register-map-route";

@@ -4,8 +4,10 @@ import type { CSSProperties, ReactNode } from "react";
 import type { MapUserLocationCoords } from "../camera/hooks/use-map-user-tracking";
 import type { MapUserLocationStyleOverrides } from "../canvas/user-location/style-overrides";
 import type { MapObscuredInsets } from "../viewport";
+import type { MapShellTheme } from "./map-theme";
+import { DEFAULT_MAP_SHELL_THEME } from "./map-theme";
 
-export type { MapUserLocationCoords };
+export type { MapShellTheme, MapUserLocationCoords };
 
 export type MapChromeInsets = Partial<MapObscuredInsets>;
 
@@ -31,6 +33,8 @@ export type MapSheetStyles = {
 };
 
 export type MapShellConfig = {
+  /** Map style + shell chrome pairing. Default `light`. */
+  theme?: MapShellTheme;
   layout?: MapSheetGeometry;
   styles?: MapSheetStyles;
   fixedChromeInsets?: MapChromeInsets;
@@ -74,6 +78,7 @@ export type MapShellSlots = {
 export const defaultMapShellConfig: Required<
   Pick<
     MapShellConfig,
+    | "theme"
     | "initialZoom"
     | "smoothFlyDurationMs"
     | "trackingReleaseThresholdPx"
@@ -82,6 +87,7 @@ export const defaultMapShellConfig: Required<
     | "halfSnapFraction"
   >
 > = {
+  theme: DEFAULT_MAP_SHELL_THEME,
   initialZoom: 15,
   smoothFlyDurationMs: 600,
   trackingReleaseThresholdPx: 40,

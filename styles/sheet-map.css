@@ -22,12 +22,19 @@
   width: 100%;
   /*
    * Globe + map padding letterbox gutters: Mapbox clears unpainted areas white
-   * by default. Keep space around the planet black when the sheet adds padding.
+   * by default. Match the active shell theme so corners stay neutral.
    */
-  background: #000;
+  background: #fff;
 }
 
 .sheet-map-canvas-root .mapboxgl-map {
+  background: #fff;
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-canvas-root,
+.sheet-map-layout[data-sheet-map-theme="dark"]
+  .sheet-map-canvas-root
+  .mapboxgl-map {
   background: #000;
 }
 

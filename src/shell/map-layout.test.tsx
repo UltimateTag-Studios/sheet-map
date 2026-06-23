@@ -118,4 +118,48 @@ describe("MapLayout", () => {
 
     expect(screen.getByText("Map token is missing.")).toBeDefined();
   });
+
+  it("applies light theme on the layout root by default", () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={["/map"]}>
+        <Routes>
+          <Route
+            path="/map"
+            element={
+              <div style={{ height: 480 }}>
+                <MapLayout accessToken="test-token">
+                  <TestRoute />
+                </MapLayout>
+              </div>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const layoutRoot = container.querySelector(".sheet-map-layout");
+    expect(layoutRoot?.getAttribute("data-sheet-map-theme")).toBe("light");
+  });
+
+  it("applies dark theme when config.theme is dark", () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={["/map"]}>
+        <Routes>
+          <Route
+            path="/map"
+            element={
+              <div style={{ height: 480 }}>
+                <MapLayout accessToken="test-token" config={{ theme: "dark" }}>
+                  <TestRoute />
+                </MapLayout>
+              </div>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const layoutRoot = container.querySelector(".sheet-map-layout");
+    expect(layoutRoot?.getAttribute("data-sheet-map-theme")).toBe("dark");
+  });
 });

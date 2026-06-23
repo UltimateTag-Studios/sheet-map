@@ -6,6 +6,7 @@ import type {
   MapShellSlots,
   MapUserLocationCoords,
 } from "./config";
+import { defaultMapShellConfig } from "./config";
 import { createMapInstanceStore } from "./map-instance-store";
 import { MapLayoutRoot } from "./map-layout-root";
 import { createMapRouteContentStore } from "./map-route-content-store";
@@ -39,8 +40,10 @@ export function MapLayout({
     config,
   });
 
+  const resolvedTheme = config?.theme ?? defaultMapShellConfig.theme;
+
   return (
-    <MapLayoutRoot className="sheet-map-layout">
+    <MapLayoutRoot className="sheet-map-layout" theme={resolvedTheme}>
       <MapRouteProvider shell={shell} routeContentStore={routeContentStore}>
         <MapShell
           shell={shell}

@@ -27,7 +27,7 @@ export type MapCanvasProps = {
 
 export function MapCanvas({
   accessToken,
-  styleUrl = "mapbox://styles/mapbox/dark-v11",
+  styleUrl = "mapbox://styles/mapbox/light-v11",
   children,
   initialLongitude = -113.57,
   initialLatitude = 37.1,

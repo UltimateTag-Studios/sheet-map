@@ -18,6 +18,7 @@ import type {
 import { MapFrame } from "./map-frame";
 import { buildMapLogoHostStyle } from "./map-logo-host-style";
 import { MapSheetLayout } from "./map-sheet-layout";
+import { resolveMapboxStyleUrl } from "./map-theme";
 
 type UserTrackingValue = ReturnType<typeof useMapUserTracking>;
 
@@ -86,6 +87,7 @@ export function MapShellContent({
   );
 
   const hostStyle = buildMapLogoHostStyle(collapsedSheetHeightPx);
+  const mapStyleUrl = resolveMapboxStyleUrl(config.theme);
 
   const userLocationStyleOverrides =
     userLocation && slots.renderUserLocation
@@ -100,6 +102,7 @@ export function MapShellContent({
       <MapUserTrackingProvider value={userTracking}>
         <MapCanvas
           accessToken={mapToken}
+          styleUrl={mapStyleUrl}
           reuseMaps={false}
           publishMapInstance={publishMapInstance}
           className="sheet-map-canvas-layer"
