@@ -1,7 +1,10 @@
 export {
   type MapGeoJsonMarkerProperties,
+  type MapGeoJsonMarkerProperties as MapDotMarkerProperties,
   MapGeoJsonMarkers,
+  MapGeoJsonMarkers as MapDotMarkers,
   type MapGeoJsonMarkersProps,
+  type MapGeoJsonMarkersProps as MapDotMarkersProps,
 } from "./geojson-markers";
 export {
   MAP_MARKERS_HIT_LAYER_ID,

@@ -4,4 +4,5 @@ export { MapItemsLayer, type MapItemsLayerProps } from "./map-items-layer";
 export { MapSheetBody, type MapSheetBodyProps } from "./map-sheet-body";
 export { MapSheetHeader } from "./map-sheet-header";
 export { MapSheetList, type MapSheetListProps } from "./map-sheet-list";
+export { moveSelectedFirst } from "./move-selected-first";
 export type { MapItem, MapItemLocation } from "./types";

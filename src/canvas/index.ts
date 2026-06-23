@@ -7,8 +7,11 @@ export {
   MAP_MARKERS_HIT_LAYER_ID,
   MAP_MARKERS_LAYER_ID,
   type MapGeoJsonMarkerProperties,
+  type MapGeoJsonMarkerProperties as MapDotMarkerProperties,
   MapGeoJsonMarkers,
+  MapGeoJsonMarkers as MapDotMarkers,
   type MapGeoJsonMarkersProps,
+  type MapGeoJsonMarkersProps as MapDotMarkersProps,
   type MapMarkerProperties,
   MapMarkers,
   type MapMarkersProps,
@@ -33,6 +36,7 @@ export {
 } from "./location-button";
 export type { MapCanvasProps } from "./map-canvas";
 export { MAP_CANVAS_ROOT_CLASS, MapCanvas } from "./map-canvas";
+export { MapLineLayer, type MapLineLayerProps } from "./map-line-layer";
 export {
   type MapPointLike,
   mapPointsToGeoJson,
