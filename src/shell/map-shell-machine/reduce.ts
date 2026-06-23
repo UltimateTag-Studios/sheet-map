@@ -9,8 +9,14 @@ export type MapShellSelectionEvent =
   | { type: "clearSelection" }
   | { type: "closeSheet" };
 
-function isSheetOpen(snap: SheetSnap): boolean {
-  return snap !== "collapsed";
+function sheetClosedState(
+  state: MapShellSelectionState,
+): MapShellSelectionState {
+  return {
+    ...state,
+    sheetSnap: "collapsed",
+    selectedItemId: null,
+  };
 }
 
 /** Pure sheet snap + item selection transitions (camera lives in useMapUserTracking). */
@@ -31,13 +37,13 @@ export function reduceMapShellSelection(
     }
 
     case "sheetSnapSettled": {
-      const wasOpen = isSheetOpen(state.sheetSnap);
-      const isOpen = isSheetOpen(event.snap);
+      if (event.snap === state.sheetSnap) {
+        return state;
+      }
 
       return {
         ...state,
         sheetSnap: event.snap,
-        selectedItemId: wasOpen && !isOpen ? null : state.selectedItemId,
       };
     }
 
@@ -61,15 +67,11 @@ export function reduceMapShellSelection(
     }
 
     case "closeSheet": {
-      if (!isSheetOpen(state.sheetSnap)) {
+      if (state.sheetSnap === "collapsed" && state.selectedItemId === null) {
         return state;
       }
 
-      return {
-        ...state,
-        sheetSnap: "collapsed",
-        selectedItemId: null,
-      };
+      return sheetClosedState(state);
     }
 
     default: {

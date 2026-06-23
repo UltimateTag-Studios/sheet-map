@@ -124,6 +124,10 @@ export function useMapShell({
   }, []);
 
   const handleSheetSnapSettled = useCallback((snap: SheetSnap) => {
+    if (snap === "collapsed") {
+      dispatch({ type: "closeSheet" });
+      return;
+    }
     dispatch({ type: "sheetSnapSettled", snap });
   }, []);
 

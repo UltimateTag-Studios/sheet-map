@@ -44,10 +44,19 @@ describe("reduceMapShellSelection", () => {
       selectedItemId: "a",
     });
 
-    const next = reduceMapShellSelection(state, {
-      type: "sheetSnapSettled",
-      snap: "collapsed",
+    const next = reduceMapShellSelection(state, { type: "closeSheet" });
+
+    expect(next.sheetSnap).toBe("collapsed");
+    expect(next.selectedItemId).toBeNull();
+  });
+
+  it("clears selection after drag when snap already changed to collapsed", () => {
+    const state = baseState({
+      sheetSnap: "collapsed",
+      selectedItemId: "a",
     });
+
+    const next = reduceMapShellSelection(state, { type: "closeSheet" });
 
     expect(next.sheetSnap).toBe("collapsed");
     expect(next.selectedItemId).toBeNull();
@@ -84,7 +93,7 @@ describe("reduceMapShellSelection", () => {
     expect(next.selectedItemId).toBeNull();
   });
 
-  it("closeSheet is a no-op when already collapsed", () => {
+  it("closeSheet is a no-op when already collapsed without selection", () => {
     const state = baseState();
 
     const next = reduceMapShellSelection(state, { type: "closeSheet" });

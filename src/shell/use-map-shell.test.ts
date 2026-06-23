@@ -154,6 +154,34 @@ describe("useMapShell", () => {
     });
   });
 
+  it("clears selection when dragging the sheet closed", () => {
+    const mapInstanceStore = createMapInstanceStore();
+    const { result } = renderHook(() =>
+      useMapShell({
+        mapInstanceStore,
+        accessToken: "token",
+      }),
+    );
+
+    act(() => {
+      result.current.selectItem("a", { lat: 1, lng: 2 });
+    });
+
+    act(() => {
+      result.current.handleSheetSnapChange("collapsed");
+    });
+
+    expect(result.current.sheetSnap).toBe("collapsed");
+    expect(result.current.selectedItemId).toBe("a");
+
+    act(() => {
+      result.current.handleSheetSnapSettled("collapsed");
+    });
+
+    expect(result.current.sheetSnap).toBe("collapsed");
+    expect(result.current.selectedItemId).toBeNull();
+  });
+
   it("closeSheet collapses and clears selection", () => {
     const mapInstanceStore = createMapInstanceStore();
     const { result } = renderHook(() =>
