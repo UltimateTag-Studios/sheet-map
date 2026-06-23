@@ -127,8 +127,8 @@ export function mountAnchorWithLiveSheetPadding(
   let setLivePx: ((next: number) => void) | null = null;
   let setSheetPhase: ((next: SheetMotionPhase) => void) | null = null;
 
-  const updateSheetSlideRect = (obscuredBottomPx: number) => {
-    fixture.sheetSlide.getBoundingClientRect = () =>
+  const updateSheetRect = (obscuredBottomPx: number) => {
+    fixture.sheet.getBoundingClientRect = () =>
       ({
         top: 800 - obscuredBottomPx,
         bottom: 800,
@@ -176,7 +176,7 @@ export function mountAnchorWithLiveSheetPadding(
       return latestRef.current;
     },
     setObscuredBottomPx(nextPx: number) {
-      updateSheetSlideRect(nextPx);
+      updateSheetRect(nextPx);
       act(() => {
         setLivePx?.(nextPx);
       });

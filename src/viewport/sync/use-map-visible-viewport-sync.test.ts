@@ -13,10 +13,10 @@ function createMapRef(
   const host = document.createElement("div");
   host.className = "sheet-host";
 
-  const sheetSlide = document.createElement("div");
-  sheetSlide.className = "sheet-slide";
+  const sheet = document.createElement("div");
+  sheet.className = "sheet";
   const sheetTop = height - sheetObscuredBottomPx;
-  sheetSlide.getBoundingClientRect = () =>
+  sheet.getBoundingClientRect = () =>
     ({
       top: sheetTop,
       bottom: height,
@@ -28,7 +28,7 @@ function createMapRef(
       y: sheetTop,
       toJSON: () => ({}),
     }) as DOMRect;
-  host.appendChild(sheetSlide);
+  host.appendChild(sheet);
 
   const canvas = document.createElement("canvas");
   Object.defineProperty(canvas, "clientWidth", {

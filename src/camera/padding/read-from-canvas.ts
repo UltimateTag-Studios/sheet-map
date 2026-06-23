@@ -8,7 +8,7 @@ export type ReadMapPaddingFromCanvasInput = {
 };
 
 /**
- * Padding from live `.sheet-slide` DOM at apply time.
+ * Padding from live `.sheet` DOM at apply time.
  * Returns null when the sheet slide is not measurable — caller must not setPadding.
  */
 export function readMapPaddingFromCanvas({

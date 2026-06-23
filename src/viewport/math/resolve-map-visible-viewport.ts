@@ -9,7 +9,7 @@ import { readMapCanvasScreenGeometry } from "./read-map-canvas-screen-geometry";
 import { visibleClientRectFromLiveSheetObscured } from "./visible-client-rect-from-live-sheet-obscured";
 
 /**
- * Resolve visible map bounds from live `.sheet-slide` DOM geometry.
+ * Resolve visible map bounds from live `.sheet` DOM geometry.
  * Returns `null` when the canvas has no size or the sheet slide is not measurable.
  */
 export function resolveMapVisibleViewport(

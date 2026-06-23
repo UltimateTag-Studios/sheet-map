@@ -1,6 +1,6 @@
 export type SheetHostFixture = {
   host: HTMLDivElement;
-  sheetSlide: HTMLDivElement;
+  sheet: HTMLDivElement;
   canvas: HTMLCanvasElement;
   remove: () => void;
 };
@@ -10,13 +10,13 @@ export function mountSheetHostFixture(
     overrides?: Partial<HTMLCanvasElement> & { rect?: Partial<DOMRect> },
   ) => HTMLCanvasElement,
   canvasOverrides: Parameters<typeof mockCanvas>[0] = {},
-  sheetSlideRect: Partial<DOMRect> = {},
+  sheetRect: Partial<DOMRect> = {},
 ): SheetHostFixture {
   const host = document.createElement("div");
   host.className = "sheet-host";
-  const sheetSlide = document.createElement("div");
-  sheetSlide.className = "sheet-slide";
-  host.appendChild(sheetSlide);
+  const sheet = document.createElement("div");
+  sheet.className = "sheet";
+  host.appendChild(sheet);
   document.body.appendChild(host);
 
   const canvas = mockCanvas({
@@ -24,7 +24,7 @@ export function mountSheetHostFixture(
     closest: (selector: string) => (selector === ".sheet-host" ? host : null),
   });
 
-  sheetSlide.getBoundingClientRect = () =>
+  sheet.getBoundingClientRect = () =>
     ({
       top: 0,
       bottom: 0,
@@ -35,12 +35,12 @@ export function mountSheetHostFixture(
       x: 0,
       y: 0,
       toJSON: () => ({}),
-      ...sheetSlideRect,
+      ...sheetRect,
     }) as DOMRect;
 
   return {
     host,
-    sheetSlide,
+    sheet,
     canvas,
     remove: () => {
       host.remove();

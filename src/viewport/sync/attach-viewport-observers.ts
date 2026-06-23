@@ -1,4 +1,4 @@
-import { SHEET_SLIDE_CLASS } from "../dom/host-classes";
+import { SHEET_CLASS } from "../dom/host-classes";
 
 export type ViewportObserverCleanup = () => void;
 
@@ -10,26 +10,26 @@ export function attachViewportObservers(
   const canvasObserver = new ResizeObserver(onSync);
   canvasObserver.observe(canvas);
 
-  let sheetSlideObserver: ResizeObserver | undefined;
+  let sheetObserver: ResizeObserver | undefined;
   let hostMutationObserver: MutationObserver | undefined;
 
-  const observeSheetSlide = () => {
-    const sheetSlide = host?.querySelector(`.${SHEET_SLIDE_CLASS}`);
-    if (!sheetSlide || sheetSlideObserver) {
+  const observeSheet = () => {
+    const sheet = host?.querySelector(`.${SHEET_CLASS}`);
+    if (!sheet || sheetObserver) {
       return;
     }
 
-    sheetSlideObserver = new ResizeObserver(onSync);
-    sheetSlideObserver.observe(sheetSlide);
+    sheetObserver = new ResizeObserver(onSync);
+    sheetObserver.observe(sheet);
     onSync();
   };
 
   if (host) {
-    observeSheetSlide();
+    observeSheet();
 
-    if (!host.querySelector(`.${SHEET_SLIDE_CLASS}`)) {
+    if (!host.querySelector(`.${SHEET_CLASS}`)) {
       hostMutationObserver = new MutationObserver(() => {
-        observeSheetSlide();
+        observeSheet();
         onSync();
       });
       hostMutationObserver.observe(host, {
@@ -46,7 +46,7 @@ export function attachViewportObservers(
 
   return () => {
     canvasObserver.disconnect();
-    sheetSlideObserver?.disconnect();
+    sheetObserver?.disconnect();
     hostMutationObserver?.disconnect();
     window.removeEventListener("resize", onSync);
     visualViewport?.removeEventListener("resize", onSync);
