@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { SHEET_MAP_REBUILD_PHASE } from "./index";
+import { MapLayout, useRegisterMapRoute } from "./index";
 
 describe("@siegetag/sheet-map", () => {
-  it("reports rebuild phase 6 (theming + layout API)", () => {
-    expect(SHEET_MAP_REBUILD_PHASE).toBe(6);
+  it("exports the public shell entry points", () => {
+    expect(MapLayout).toBeTypeOf("function");
+    expect(useRegisterMapRoute).toBeTypeOf("function");
   });
 });
