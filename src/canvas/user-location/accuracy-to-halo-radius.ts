@@ -1,4 +1,4 @@
-import { MAP_USER_LOCATION_RADIUS_PX } from "../dot/style";
+import { MAP_USER_LOCATION_RADIUS_PX } from "../marker/style";
 
 export const MAP_USER_LOCATION_MIN_HALO_RADIUS_PX =
   MAP_USER_LOCATION_RADIUS_PX * 2;

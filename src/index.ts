@@ -1,5 +1,5 @@
 /** Rebuild phase marker for demo + CI. Bump when a phase lands. */
-export const SHEET_MAP_REBUILD_PHASE = 5 as const;
+export const SHEET_MAP_REBUILD_PHASE = 6 as const;
 
 export * from "./camera";
 export * from "./canvas";

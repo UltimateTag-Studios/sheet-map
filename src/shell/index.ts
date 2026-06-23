@@ -5,7 +5,7 @@ export type {
   MapShellConfig,
   MapShellSlots,
   MapUserLocationCoords,
-  SheetLayout,
+  SheetLayoutConfig,
   Theme,
 } from "./config";
 export { defaultMapShellConfig } from "./config";
@@ -27,6 +27,7 @@ export {
   MapLoadingState,
   type MapLoadingStateProps,
 } from "./map-loading-state";
+export { buildMapLogoHostStyle } from "./map-logo-host-style";
 export type { MapRouteContentStore } from "./map-route-content-store";
 export { createMapRouteContentStore } from "./map-route-content-store";
 export type {
@@ -47,7 +48,12 @@ export { MapShellContent } from "./map-shell-content";
 export type {
   MapActionButtonLayout,
   MapInsetLayout,
-  MapMyLocationLayout,
+  MapItemMarkerLayout,
+  MapItemShellLayout,
+  MapLocationButtonLayout,
+  MapLocationMarkerLayout,
+  MapLocationShellLayout,
+  MapLogoLayout,
   MapShellLayout,
 } from "./map-shell-layout-vars";
 export {
@@ -55,10 +61,19 @@ export {
   DEFAULT_MAP_ACTION_PADDING,
   DEFAULT_MAP_ACTION_RIGHT,
   DEFAULT_MAP_ACTION_TOP,
-  DEFAULT_MAP_MY_LOCATION_BOTTOM,
-  DEFAULT_MAP_MY_LOCATION_LEFT,
-  DEFAULT_MAP_MY_LOCATION_SIZE,
+  DEFAULT_MAP_ITEM_MARKER_BORDER_WIDTH,
+  DEFAULT_MAP_ITEM_MARKER_HIT_SIZE,
+  DEFAULT_MAP_ITEM_MARKER_SIZE,
+  DEFAULT_MAP_LOCATION_BUTTON_BORDER_RADIUS,
+  DEFAULT_MAP_LOCATION_BUTTON_BOTTOM,
+  DEFAULT_MAP_LOCATION_BUTTON_LEFT,
+  DEFAULT_MAP_LOCATION_BUTTON_SIZE,
+  DEFAULT_MAP_LOCATION_MARKER_HIT_SIZE,
+  DEFAULT_MAP_LOCATION_MARKER_SIZE,
+  DEFAULT_MAP_LOGO_BOTTOM,
+  DEFAULT_MAP_LOGO_RIGHT,
   mergeMapShellLayout,
+  SHEET_MAP_LAYOUT_VARS,
 } from "./map-shell-layout-vars";
 export {
   MapShellSlotsProvider,
@@ -86,6 +101,11 @@ export {
   resolveRouteMapLayers,
   resolveRouteOverlay,
 } from "./resolve-route-chrome";
+export {
+  SHEET_MAP_LOGO_INSET_VARS,
+  SHEET_MAP_LOGO_REGION_BOTTOM_INSET_VAR,
+  SHEET_MAP_THEME_VARS,
+} from "./sheet-map-theme-vars";
 export type { UseMapShellOptions } from "./use-map-shell";
 export { useMapShell } from "./use-map-shell";
 export { useRegisterMapRoute } from "./use-register-map-route";

@@ -14,7 +14,7 @@ describe("resolveMapShellLayout", () => {
     expect(
       resolveMapShellLayout({
         actionButton: { top: "1rem" },
-        myLocation: { left: "1rem", size: "3rem" },
+        location: { button: { left: "1rem", size: "3rem" } },
       }),
     ).toEqual({
       actionButton: {
@@ -22,7 +22,13 @@ describe("resolveMapShellLayout", () => {
         right: "0.75rem",
         padding: "0.25rem",
       },
-      myLocation: { bottom: "0.75rem", left: "1rem", size: "3rem" },
+      location: {
+        button: { bottom: "0.75rem", left: "1rem", size: "3rem" },
+        marker: { size: "12px", hitSize: "32px" },
+      },
+      mapItem: {
+        marker: { size: "14px", hitSize: "14px", borderWidth: "2px" },
+      },
     });
   });
 });

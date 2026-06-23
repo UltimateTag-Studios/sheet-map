@@ -3,14 +3,15 @@ import { useLayoutEffect } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 import { Layer, Source, useMap } from "react-map-gl/mapbox";
 
-import { MAP_DOT_HIT_RADIUS_PX, mapDotHitLayerPaint } from "../dot/hit";
+import { resolveMapRef } from "../instance/resolve-map-ref";
+import { mapMarkerHitLayerPaint } from "../marker/hit";
 import {
   MAP_USER_LOCATION_HALO_OPACITY,
   MAP_USER_LOCATION_HALO_OPACITY_IDLE,
-  mapUserLocationDotPaint,
   mapUserLocationHaloPaint,
-} from "../dot/style";
-import { resolveMapRef } from "../instance/resolve-map-ref";
+  mapUserLocationMarkerPaint,
+} from "../marker/style";
+import { useMapLayoutMarkerSizes } from "../marker/use-map-layout-marker-sizes";
 import { accuracyMetersToHaloRadiusPx } from "./accuracy-to-halo-radius";
 import type { MapUserLocationStyleOverrides } from "./style-overrides";
 import { useMapCanvasZoom } from "./use-zoom";
@@ -43,7 +44,7 @@ function raiseUserLocationLayers(
   }
 }
 
-/** Google Maps–style current-location dot; halo radius follows GPS accuracy. */
+/** Google Maps–style current-location marker; halo radius follows GPS accuracy. */
 export function MapUserLocation({
   longitude,
   latitude,
@@ -53,10 +54,13 @@ export function MapUserLocation({
 }: MapUserLocationProps) {
   const maps = useMap();
   const zoom = useMapCanvasZoom();
+  const { locationMarkerSizePx, locationMarkerHitSizePx } =
+    useMapLayoutMarkerSizes();
   const haloRadiusPx =
     styleOverrides?.haloRadiusPx ??
     accuracyMetersToHaloRadiusPx(accuracyMeters, latitude, zoom);
-  const hitRadiusPx = MAP_DOT_HIT_RADIUS_PX;
+  const hitRadiusPx = locationMarkerHitSizePx / 2;
+  const markerRadiusPx = locationMarkerSizePx / 2;
   const haloOpacity =
     styleOverrides?.haloOpacity ??
     (focused
@@ -105,13 +109,16 @@ export function MapUserLocation({
       <Layer
         id={MAP_USER_LOCATION_LAYER_ID}
         type="circle"
-        paint={mapUserLocationDotPaint}
+        paint={{
+          ...mapUserLocationMarkerPaint,
+          "circle-radius": markerRadiusPx,
+        }}
       />
       <Layer
         id={MAP_USER_LOCATION_HIT_LAYER_ID}
         type="circle"
         paint={{
-          ...mapDotHitLayerPaint,
+          ...mapMarkerHitLayerPaint,
           "circle-radius": hitRadiusPx,
         }}
       />

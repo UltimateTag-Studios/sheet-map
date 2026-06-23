@@ -4,26 +4,26 @@ import { useMapUserTrackingContext } from "../../camera/hooks/map-user-tracking-
 import type { MapUserLocationStyleOverrides } from "./style-overrides";
 import { MapUserLocation } from "./user-location";
 
-export type MapUserLocationDotRenderProps = {
+export type MapUserLocationMarkerRenderProps = {
   latitude: number;
   longitude: number;
   accuracyMeters?: number | null;
   focused: boolean;
 };
 
-export type MapUserLocationDotProps = {
-  renderDot?: (props: MapUserLocationDotRenderProps) => ReactNode;
+export type MapUserLocationMarkerProps = {
+  renderMarker?: (props: MapUserLocationMarkerRenderProps) => ReactNode;
   styleOverrides?: MapUserLocationStyleOverrides;
 };
 
 /**
- * Default user-location dot + accuracy halo.
+ * Default user-location marker + accuracy halo.
  * Reads `tracking`, padding readiness, and coords from `MapUserTrackingProvider`.
  */
-export function MapUserLocationDot({
-  renderDot,
+export function MapUserLocationMarker({
+  renderMarker,
   styleOverrides,
-}: MapUserLocationDotProps) {
+}: MapUserLocationMarkerProps) {
   const { tracking, mapPaddingReady, userLocation } =
     useMapUserTrackingContext();
 
@@ -31,23 +31,23 @@ export function MapUserLocationDot({
     return null;
   }
 
-  const dotProps: MapUserLocationDotRenderProps = {
+  const markerProps: MapUserLocationMarkerRenderProps = {
     latitude: userLocation.lat,
     longitude: userLocation.lng,
     accuracyMeters: userLocation.accuracyMeters,
     focused: tracking,
   };
 
-  if (renderDot) {
-    return renderDot(dotProps);
+  if (renderMarker) {
+    return renderMarker(markerProps);
   }
 
   return (
     <MapUserLocation
-      latitude={dotProps.latitude}
-      longitude={dotProps.longitude}
-      accuracyMeters={dotProps.accuracyMeters}
-      focused={dotProps.focused}
+      latitude={markerProps.latitude}
+      longitude={markerProps.longitude}
+      accuracyMeters={markerProps.accuracyMeters}
+      focused={markerProps.focused}
       styleOverrides={styleOverrides}
     />
   );

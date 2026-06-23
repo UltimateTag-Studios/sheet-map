@@ -1,40 +1,59 @@
 # @siegetag/sheet-map
 
-Fresh rebuild of the map + sheet shell. **Phase 0 — scaffold only.**
+Map + sheet shell for React web — rebuild in progress. See [`docs/rebuild-phases.md`](docs/rebuild-phases.md).
 
-| Package folder | npm name | Role |
-| -------------- | -------- | ---- |
-| `packages/sheet-map` | `@siegetag/sheet-map` | **Active rebuild** (this package) |
-| `packages/sheet-map-old` | `@siegetag/sheet-map-previous` | Abandoned rebuild attempt — reference only |
-| `packages/sheet-map-old-old` | `@siegetag/sheet-map-old` | Original package — Capacitor still uses this |
+**Demo:** `apps/sheet-map-demo` · **Phase:** `SHEET_MAP_REBUILD_PHASE` in package entry.
 
-**Demo:** `apps/sheet-map-demo` tracks `@siegetag/sheet-map` one phase at a time.
+## Install
 
-**Spec:** [`docs/camera-fsm-plan.md`](docs/camera-fsm-plan.md) — camera FSM behavior contract.
+```tsx
+import "@siegetag/sheet/styles.css";
+import "@siegetag/sheet-map/styles.css";
+```
 
-**Phases (what to do each step):** [`docs/rebuild-phases.md`](docs/rebuild-phases.md)
+## Config (`MapShellConfig`)
 
-## Rebuild phases (summary)
+| Field | Role |
+|-------|------|
+| `theme` | `"light" \| "dark"` → `data-sheet-map-theme` + Mapbox style URL |
+| `sheetLayout` | `SheetLayoutConfig` geometry (handle, body, list items, tab-bar reserve) |
+| `layout` | `MapShellLayout` — overlay chrome geometry (see below) |
 
-| Phase | Scope | Done when |
-| ----- | ----- | --------- |
-| **0** | Package scaffold | This README, `SHEET_MAP_REBUILD_PHASE = 0`, demo home |
-| **1** | Visible viewport math | Live DOM + golden tests; debug crosshair |
-| **2** | Map canvas | Mapbox fills host |
-| **3** | Sheet on map | `MapFrame` + `@siegetag/sheet` |
-| **4** | Padding + anchor | `setPadding`, session FSM, `navigateTo` |
-| **5** | Follow user | Boot fly, 40px snap-back, my-location |
-| **6** | Routes + markers | Port from `@siegetag/sheet-map-old` when 1–5 are green |
+## Layout (`config.layout`)
 
-## Mapbox attribution
+```ts
+layout: {
+  actionButton?: { top?, right?, bottom?, left?, padding? },
+  location?: {
+    button?: { top?, right?, bottom?, left?, size?, borderRadius? },  // recenter FAB
+    marker?: { size?, hitSize? },  // on-map user marker (default graphic)
+  },
+  mapItem?: {
+    marker?: { size?, hitSize?, borderWidth? },  // default item markers
+  },
+  logo?: { top?, right?, bottom?, left? },  // within visible map band
+}
+```
 
-`MapCanvas` sets `attributionControl={false}` on the underlying Mapbox map. That removes the **text attribution control** (the compact “© Mapbox © OpenStreetMap …” chip). It does **not** remove the **Mapbox wordmark logo** — Mapbox GL JS always adds `LogoControl` separately, and standard Mapbox terms require that logo to stay visible on the map.
+CSS vars are flat on `.sheet-map-layout` (e.g. `--sheet-map-location-button-size`, `--sheet-map-item-marker-size`). Export `SHEET_MAP_LAYOUT_VARS` for names.
 
-Do **not** hide the logo with CSS unless your Mapbox account explicitly allows white‑label maps.
+**Logo region:** shell sets `--sheet-map-logo-region-bottom-inset` on `.sheet-host` (= collapsed sheet height). Apps must not override it. Logo position vars are relative to that band.
 
-Because the automatic text control is off, **apps using this package must still meet Mapbox and data-provider attribution requirements** — for example in Settings, About, or other app chrome — per [Mapbox attribution guidance](https://docs.mapbox.com/help/dive-deeper/attribution/). The on-map logo alone is not a substitute for every required credit when the text control is disabled.
+**Mapbox markers:** DOM markers use CSS `var()` directly. Mapbox circle layers read layout vars from `.sheet-map-layout` at runtime (`useMapLayoutMarkerSizes`).
 
-In the shell (`MapShellContent`), the logo is repositioned on the **map canvas** (not the live viewport overlay): bottom-right, with `bottom` set to the **collapsed sheet height** so it sits in the visible map band when the sheet is collapsed and stays fixed when the sheet opens (it may be covered temporarily).
+## Theming
+
+`theme` sets `data-sheet-map-theme` on `.sheet-map-layout`. Override tokens in app CSS:
+
+```css
+.sheet-map-layout[data-sheet-map-theme="light"] {
+  --sheet-map-color-list-item-border-selected: #2563eb;
+}
+```
+
+Export `SHEET_MAP_THEME_VARS` for the full token catalog (colors, typography).
+
+Custom map markers via slots (`renderMapItem`, `renderMarker`) own their sizing — tokens style the bundled defaults only.
 
 ## Scripts
 
@@ -42,3 +61,7 @@ In the shell (`MapShellContent`), the logo is repositioned on the **map canvas**
 pnpm --filter @siegetag/sheet-map test
 pnpm --filter @siegetag/sheet-map build:styles
 ```
+
+## Mapbox attribution
+
+`attributionControl={false}` on the map — apps must meet Mapbox/data-provider attribution requirements elsewhere. Do not hide the Mapbox logo without account permission.

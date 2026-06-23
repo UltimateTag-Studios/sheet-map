@@ -12,7 +12,11 @@ import type { MapRef } from "react-map-gl/mapbox";
 
 import { MapUserTrackingProvider } from "../camera";
 import type { useMapUserTracking } from "../camera/hooks/use-map-user-tracking";
-import { MapCanvas, MapMyLocationControl, MapUserLocationDot } from "../canvas";
+import {
+  MapCanvas,
+  MapLocationButtonControl,
+  MapUserLocationMarker,
+} from "../canvas";
 import type { MapViewportSyncState } from "../viewport";
 import { MapVisibleAreaDebug, MapVisibleAreaOverlay } from "../viewport";
 import type {
@@ -110,7 +114,7 @@ export function MapShellContent({
           className="sheet-map-canvas-layer"
         >
           {mapChildren}
-          <MapUserLocationDot
+          <MapUserLocationMarker
             styleOverrides={userLocationStyleOverrides ?? undefined}
           />
         </MapCanvas>
@@ -128,7 +132,7 @@ export function MapShellContent({
               myLocationAriaLabel,
             ) ?? (
               <div className="sheet-map-overlay-slot--bottom-left">
-                <MapMyLocationControl
+                <MapLocationButtonControl
                   ariaLabel={myLocationAriaLabel}
                   onPress={recenterOnUser}
                   tracking={tracking}

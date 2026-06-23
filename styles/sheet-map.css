@@ -1,7 +1,90 @@
 /*
- * @siegetag/sheet-map — styles grow with each rebuild phase.
+ * @siegetag/sheet-map — layout + semantic surfaces.
  * Import once: import "@siegetag/sheet-map/styles.css"
+ * Override theme tokens in app CSS (see SHEET_MAP_THEME_VARS).
  */
+
+.sheet-map-layout[data-sheet-map-theme="light"] {
+  --sheet-map-color-canvas-gutter: #fff;
+  --sheet-map-color-action: #171717;
+  --sheet-map-color-action-hover: rgba(23, 23, 23, 0.72);
+  --sheet-map-color-action-focus-ring: rgba(23, 23, 23, 0.72);
+  --sheet-map-color-location-button-border: rgba(0, 0, 0, 0.12);
+  --sheet-map-color-location-button-background: rgba(255, 255, 255, 0.96);
+  --sheet-map-color-location-button-background-hover: rgba(245, 245, 245, 0.98);
+  --sheet-map-color-location-button-text: rgb(38, 38, 38);
+  --sheet-map-color-location-button-active-border: #1a73e8;
+  --sheet-map-color-location-button-active-background: #1a73e8;
+  --sheet-map-color-location-button-active-background-hover: #1558b0;
+  --sheet-map-color-location-button-active-text: #fff;
+  --sheet-map-color-location-marker: #1a73e8;
+  --sheet-map-color-location-marker-halo: #1a73e8;
+  --sheet-map-color-item-marker-default: #f97316;
+  --sheet-map-color-item-marker-stroke: #fff;
+  --sheet-map-color-item-marker-glow: rgba(249, 115, 22, 0.45);
+  --sheet-map-color-item-marker-glow-selected: rgba(249, 115, 22, 0.75);
+  --sheet-map-color-header-text: #171717;
+  --sheet-map-color-body-text: #171717;
+  --sheet-map-color-list-item-border: rgba(0, 0, 0, 0.08);
+  --sheet-map-color-list-item-background: rgba(255, 255, 255, 0.72);
+  --sheet-map-color-list-item-border-hover: rgba(0, 0, 0, 0.14);
+  --sheet-map-color-list-item-background-hover: rgba(255, 255, 255, 0.92);
+  --sheet-map-color-list-item-border-selected: #f97316;
+  --sheet-map-color-list-item-shadow-selected: rgba(249, 115, 22, 0.35);
+  --sheet-map-color-focus-ring: #3b82f6;
+  --sheet-map-color-overlay-card-background: rgba(255, 255, 255, 0.92);
+  --sheet-map-color-overlay-card-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --sheet-map-color-overlay-card-text: #171717;
+  --sheet-map-color-spinner-track: rgba(15, 23, 42, 0.15);
+  --sheet-map-color-spinner-accent: #2563eb;
+  --sheet-map-font-header-eyebrow-size: 0.75rem;
+  --sheet-map-font-header-title-size: 1.125rem;
+  --sheet-map-font-header-title-weight: 600;
+  --sheet-map-font-header-count-size: 0.875rem;
+  --sheet-map-font-header-eyebrow-opacity: 0.72;
+  --sheet-map-font-header-count-opacity: 0.72;
+  --sheet-map-font-list-title-size: 0.9375rem;
+  --sheet-map-font-list-title-weight: 600;
+  --sheet-map-font-list-subtitle-size: 0.8125rem;
+  --sheet-map-font-list-subtitle-opacity: 0.78;
+  --sheet-map-font-list-meta-size: 0.75rem;
+  --sheet-map-font-list-meta-opacity: 0.62;
+}
+
+.sheet-map-layout[data-sheet-map-theme="dark"] {
+  --sheet-map-color-canvas-gutter: #000;
+  --sheet-map-color-action: #fff;
+  --sheet-map-color-action-hover: rgba(255, 255, 255, 0.8);
+  --sheet-map-color-action-focus-ring: rgba(255, 255, 255, 0.8);
+  --sheet-map-color-location-button-border: rgba(255, 255, 255, 0.2);
+  --sheet-map-color-location-button-background: rgba(23, 23, 23, 0.9);
+  --sheet-map-color-location-button-background-hover: rgba(38, 38, 38, 0.9);
+  --sheet-map-color-location-button-text: rgb(212, 212, 212);
+  --sheet-map-color-location-button-active-border: #1a73e8;
+  --sheet-map-color-location-button-active-background: #1a73e8;
+  --sheet-map-color-location-button-active-background-hover: #1558b0;
+  --sheet-map-color-location-button-active-text: #fff;
+  --sheet-map-color-location-marker: #1a73e8;
+  --sheet-map-color-location-marker-halo: #1a73e8;
+  --sheet-map-color-item-marker-default: #f97316;
+  --sheet-map-color-item-marker-stroke: #fff;
+  --sheet-map-color-item-marker-glow: rgba(249, 115, 22, 0.45);
+  --sheet-map-color-item-marker-glow-selected: rgba(249, 115, 22, 0.75);
+  --sheet-map-color-header-text: #fafafa;
+  --sheet-map-color-body-text: #fafafa;
+  --sheet-map-color-list-item-border: rgba(255, 255, 255, 0.1);
+  --sheet-map-color-list-item-background: rgba(38, 38, 38, 0.55);
+  --sheet-map-color-list-item-border-hover: rgba(255, 255, 255, 0.18);
+  --sheet-map-color-list-item-background-hover: rgba(48, 48, 48, 0.72);
+  --sheet-map-color-list-item-border-selected: #f97316;
+  --sheet-map-color-list-item-shadow-selected: rgba(249, 115, 22, 0.45);
+  --sheet-map-color-focus-ring: #3b82f6;
+  --sheet-map-color-overlay-card-background: rgba(23, 23, 23, 0.92);
+  --sheet-map-color-overlay-card-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --sheet-map-color-overlay-card-text: #fafafa;
+  --sheet-map-color-spinner-track: rgba(255, 255, 255, 0.15);
+  --sheet-map-color-spinner-accent: #2563eb;
+}
 
 .sheet-map-shell {
   position: relative;
@@ -20,22 +103,11 @@
   position: relative;
   height: 100%;
   width: 100%;
-  /*
-   * Globe + map padding letterbox gutters: Mapbox clears unpainted areas white
-   * by default. Match the active shell theme so corners stay neutral.
-   */
-  background: #fff;
+  background: var(--sheet-map-color-canvas-gutter);
 }
 
 .sheet-map-canvas-root .mapboxgl-map {
-  background: #fff;
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-canvas-root,
-.sheet-map-layout[data-sheet-map-theme="dark"]
-  .sheet-map-canvas-root
-  .mapboxgl-map {
-  background: #000;
+  background: var(--sheet-map-color-canvas-gutter);
 }
 
 .sheet-map-canvas-layer {
@@ -45,18 +117,21 @@
 }
 
 .sheet-map-canvas-layer .mapboxgl-control-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: var(--sheet-map-logo-region-bottom-inset, 0px);
   z-index: 0;
+  pointer-events: none;
 }
 
-/*
- * Mapbox logo: bottom-right above the collapsed sheet lip (visible map band).
- * Offset is the measured collapsed snap height — fixed so the logo does not
- * track the live viewport overlay when the sheet opens.
- */
 .sheet-host .sheet-map-canvas-layer .mapboxgl-ctrl-bottom-left {
-  right: 1em;
   left: auto;
-  bottom: var(--sheet-map-logo-bottom-offset, 0px);
+  top: var(--sheet-map-logo-top, auto);
+  right: var(--sheet-map-logo-right, 0.75rem);
+  bottom: var(--sheet-map-logo-bottom, 0);
+  pointer-events: auto;
 }
 
 .sheet-map-visible-area-debug {
@@ -112,10 +187,10 @@
 .sheet-map-overlay-slot--bottom-left {
   pointer-events: auto;
   position: absolute;
-  top: var(--sheet-map-my-location-top);
-  right: var(--sheet-map-my-location-right);
-  bottom: var(--sheet-map-my-location-bottom, 0.75rem);
-  left: var(--sheet-map-my-location-left, 0.75rem);
+  top: var(--sheet-map-location-button-top);
+  right: var(--sheet-map-location-button-right);
+  bottom: var(--sheet-map-location-button-bottom, 0.75rem);
+  left: var(--sheet-map-location-button-left, 0.75rem);
 }
 
 .sheet-map-overlay-slot--action {
@@ -135,31 +210,31 @@
   border: 0;
   background: transparent;
   padding: var(--sheet-map-action-padding, 0.25rem);
-  color: #171717;
+  color: var(--sheet-map-color-action);
   -webkit-tap-highlight-color: transparent;
   appearance: none;
 }
 
 .sheet-map-action-button:hover {
-  color: rgba(23, 23, 23, 0.72);
+  color: var(--sheet-map-color-action-hover);
 }
 
 .sheet-map-action-button:focus-visible {
-  outline: 2px solid rgba(23, 23, 23, 0.72);
+  outline: 2px solid var(--sheet-map-color-action-focus-ring);
   outline-offset: 2px;
 }
 
-.sheet-map-my-location-button {
+.sheet-map-location-button {
   pointer-events: auto;
   display: flex;
-  width: var(--sheet-map-my-location-size, 2.5rem);
-  height: var(--sheet-map-my-location-size, 2.5rem);
+  width: var(--sheet-map-location-button-size, 2.5rem);
+  height: var(--sheet-map-location-button-size, 2.5rem);
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: rgba(255, 255, 255, 0.96);
-  color: rgb(38, 38, 38);
+  border-radius: var(--sheet-map-location-button-border-radius, 9999px);
+  border: 1px solid var(--sheet-map-color-location-button-border);
+  background: var(--sheet-map-color-location-button-background);
+  color: var(--sheet-map-color-location-button-text);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
   transition:
     background-color 150ms ease,
@@ -167,55 +242,62 @@
     color 150ms ease;
 }
 
-.sheet-map-my-location-button:hover {
-  background: rgba(245, 245, 245, 0.98);
+.sheet-map-location-button:hover {
+  background: var(--sheet-map-color-location-button-background-hover);
 }
 
-.sheet-map-my-location-button:focus-visible {
-  outline: 2px solid #3b82f6;
+.sheet-map-location-button:focus-visible {
+  outline: 2px solid var(--sheet-map-color-focus-ring);
   outline-offset: 2px;
 }
 
-.sheet-map-my-location-button[aria-pressed="true"] {
-  border-color: #1a73e8;
-  background: #1a73e8;
-  color: #fff;
+.sheet-map-location-button[aria-pressed="true"] {
+  border-color: var(--sheet-map-color-location-button-active-border);
+  background: var(--sheet-map-color-location-button-active-background);
+  color: var(--sheet-map-color-location-button-active-text);
 }
 
-.sheet-map-my-location-button[aria-pressed="true"]:hover {
-  background: #1558b0;
+.sheet-map-location-button[aria-pressed="true"]:hover {
+  background: var(--sheet-map-color-location-button-active-background-hover);
 }
 
-.sheet-map-item-dot {
+.sheet-map-item-marker {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: var(--sheet-map-item-marker-hit-size, 14px);
+  height: var(--sheet-map-item-marker-hit-size, 14px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 }
 
-.sheet-map-item-dot__core {
+.sheet-map-item-marker__default {
   display: block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid #fff;
+  width: var(--sheet-map-item-marker-size, 14px);
+  height: var(--sheet-map-item-marker-size, 14px);
+  border: var(--sheet-map-item-marker-border-width, 2px) solid
+    var(--sheet-map-color-item-marker-stroke);
   border-radius: 9999px;
-  background: #f97316;
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.45);
+  background: var(--sheet-map-color-item-marker-default);
+  box-shadow: 0 0 0 2px var(--sheet-map-color-item-marker-glow);
   transition:
     transform 150ms ease,
     box-shadow 150ms ease;
 }
 
-.sheet-map-item-dot--selected .sheet-map-item-dot__core {
+.sheet-map-item-marker--selected .sheet-map-item-marker__default {
   transform: scale(1.12);
   box-shadow:
-    0 0 0 3px rgba(249, 115, 22, 0.75),
+    0 0 0 3px var(--sheet-map-color-item-marker-glow-selected),
     0 0 0 6px rgba(249, 115, 22, 0.3);
 }
 
 .sheet-map-sheet-body {
   display: flex;
   flex-direction: column;
-  color: #171717;
+  color: var(--sheet-map-color-body-text);
 }
 
 .sheet-map-sheet-list {
@@ -232,12 +314,13 @@
 
 .sheet-map-sheet-list-item {
   display: grid;
-  gap: 0.125rem;
+  gap: var(--sheet-list-item-content-gap, 0.125rem);
   width: 100%;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--sheet-map-color-list-item-border);
+  border-radius: var(--sheet-list-item-border-radius, 0.5rem);
+  padding-inline: var(--sheet-list-item-padding-inline, 0.75rem);
+  padding-block: var(--sheet-list-item-padding-block, 0.75rem);
+  background: var(--sheet-map-color-list-item-background);
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -248,33 +331,33 @@
 }
 
 .sheet-map-sheet-list-item:hover {
-  border-color: rgba(0, 0, 0, 0.14);
-  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--sheet-map-color-list-item-border-hover);
+  background: var(--sheet-map-color-list-item-background-hover);
 }
 
 .sheet-map-sheet-list-item:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--sheet-map-color-focus-ring);
   outline-offset: 2px;
 }
 
 .sheet-map-sheet-list-item--selected {
-  border-color: #f97316;
-  box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.35);
+  border-color: var(--sheet-map-color-list-item-border-selected);
+  box-shadow: 0 0 0 1px var(--sheet-map-color-list-item-shadow-selected);
 }
 
 .sheet-map-sheet-list-item__title {
-  font-size: 0.9375rem;
-  font-weight: 600;
+  font-size: var(--sheet-map-font-list-title-size);
+  font-weight: var(--sheet-map-font-list-title-weight);
 }
 
 .sheet-map-sheet-list-item__subtitle {
-  font-size: 0.8125rem;
-  opacity: 0.78;
+  font-size: var(--sheet-map-font-list-subtitle-size);
+  opacity: var(--sheet-map-font-list-subtitle-opacity);
 }
 
 .sheet-map-sheet-list-item__meta {
-  font-size: 0.75rem;
-  opacity: 0.62;
+  font-size: var(--sheet-map-font-list-meta-size);
+  opacity: var(--sheet-map-font-list-meta-opacity);
 }
 
 .sheet-map-layout {
@@ -284,15 +367,15 @@
 }
 
 .sheet-map-sheet-header {
-  color: #171717;
+  color: var(--sheet-map-color-header-text);
 }
 
 .sheet-map-sheet-header__eyebrow {
   margin: 0 0 0.25rem;
-  font-size: 0.75rem;
+  font-size: var(--sheet-map-font-header-eyebrow-size);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  opacity: 0.72;
+  opacity: var(--sheet-map-font-header-eyebrow-opacity);
 }
 
 .sheet-map-sheet-header__title-row {
@@ -304,13 +387,13 @@
 
 .sheet-map-sheet-header__title {
   margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: var(--sheet-map-font-header-title-size);
+  font-weight: var(--sheet-map-font-header-title-weight);
 }
 
 .sheet-map-sheet-header__count {
-  font-size: 0.875rem;
-  opacity: 0.72;
+  font-size: var(--sheet-map-font-header-count-size);
+  opacity: var(--sheet-map-font-header-count-opacity);
 }
 
 .sheet-map-sheet-body-placeholder {
@@ -332,15 +415,16 @@
   justify-items: center;
   padding: 1rem 1.25rem;
   border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  background: var(--sheet-map-color-overlay-card-background);
+  color: var(--sheet-map-color-overlay-card-text);
+  box-shadow: var(--sheet-map-color-overlay-card-shadow);
 }
 
 .sheet-map-loading-spinner {
   width: 1.5rem;
   height: 1.5rem;
-  border: 2px solid rgba(15, 23, 42, 0.15);
-  border-top-color: #2563eb;
+  border: 2px solid var(--sheet-map-color-spinner-track);
+  border-top-color: var(--sheet-map-color-spinner-accent);
   border-radius: 9999px;
   animation: sheet-map-spin 0.8s linear infinite;
 }
@@ -360,59 +444,4 @@
 .sheet-map-error-title {
   margin: 0;
   font-weight: 600;
-}
-
-/* Dark theme — map chrome and default list/header copy */
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-action-button {
-  color: #fff;
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-action-button:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"]
-  .sheet-map-action-button:focus-visible {
-  outline-color: rgba(255, 255, 255, 0.8);
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-my-location-button {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(23, 23, 23, 0.9);
-  color: rgb(212, 212, 212);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"]
-  .sheet-map-my-location-button:hover {
-  background: rgba(38, 38, 38, 0.9);
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-sheet-header,
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-sheet-body {
-  color: #fafafa;
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-sheet-list-item {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(38, 38, 38, 0.55);
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"]
-  .sheet-map-sheet-list-item:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(48, 48, 48, 0.72);
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"]
-  .sheet-map-sheet-list-item--selected {
-  border-color: #f97316;
-  box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.45);
-}
-
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-loading-card,
-.sheet-map-layout[data-sheet-map-theme="dark"] .sheet-map-error-card {
-  background: rgba(23, 23, 23, 0.92);
-  color: #fafafa;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }

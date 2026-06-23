@@ -1,4 +1,4 @@
-import { MapItemDot } from "../canvas/item-dot";
+import { MapItemMarker } from "../canvas/item-marker";
 import type { MapItem } from "./types";
 
 export type DefaultMapItemMarkerProps = {
@@ -18,7 +18,7 @@ export function DefaultMapItemMarker({
   }
 
   return (
-    <MapItemDot
+    <MapItemMarker
       latitude={item.location.lat}
       longitude={item.location.lng}
       selected={selected}

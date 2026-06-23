@@ -5,10 +5,10 @@ export {
   mapMetersPerPixel,
 } from "./accuracy-to-halo-radius";
 export {
-  MapUserLocationDot,
-  type MapUserLocationDotProps,
-  type MapUserLocationDotRenderProps,
-} from "./map-user-location-dot";
+  MapUserLocationMarker,
+  type MapUserLocationMarkerProps,
+  type MapUserLocationMarkerRenderProps,
+} from "./map-user-location-marker";
 export { useMapCanvasZoom } from "./use-zoom";
 export {
   MAP_USER_LOCATION_HALO_LAYER_ID,

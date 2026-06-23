@@ -26,7 +26,13 @@ describe("resolveMapSheetLayout", () => {
         paddingVertical: "1rem",
         gap: "0.75rem",
       },
-      listItem: { gap: "0.5rem" },
+      listItem: {
+        gap: "0.5rem",
+        paddingHorizontal: "0.75rem",
+        paddingVertical: "0.75rem",
+        borderRadius: "0.5rem",
+        contentGap: "0.125rem",
+      },
       bottomChromeReserve: { reserve: "82px", gap: "1rem" },
     });
   });

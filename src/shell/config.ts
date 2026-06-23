@@ -1,7 +1,7 @@
 import {
   DEFAULT_HALF_SNAP_FRACTION,
   DEFAULT_THEME,
-  type SheetLayout,
+  type SheetLayoutConfig,
   type Theme,
 } from "@siegetag/sheet";
 import type { ReactNode } from "react";
@@ -12,7 +12,7 @@ import type { MapItem } from "../items/types";
 import type { MapObscuredInsets } from "../viewport";
 import type { MapShellLayout } from "./map-shell-layout-vars";
 
-export type { MapUserLocationCoords, SheetLayout, Theme };
+export type { MapUserLocationCoords, SheetLayoutConfig, Theme };
 
 export type MapChromeInsets = Partial<MapObscuredInsets>;
 
@@ -20,7 +20,7 @@ export type MapShellConfig = {
   /** Map style + shell chrome pairing. Default `light`. */
   theme?: Theme;
   /** Sheet geometry — handle, panel, header/body, divider, list, tab-bar reserve. */
-  sheetLayout?: SheetLayout;
+  sheetLayout?: SheetLayoutConfig;
   /** Map overlay geometry — action button slot, my location control. */
   layout?: MapShellLayout;
   fixedChromeInsets?: MapChromeInsets;

@@ -1,30 +1,30 @@
 import type { ReactNode } from "react";
 
-import { MapMyLocationButton } from "./map-my-location-button";
+import { MapLocationButton } from "./map-location-button";
 
-export type MapMyLocationButtonRenderProps = {
+export type MapLocationButtonRenderProps = {
   tracking: boolean;
   onPress: () => void;
   ariaLabel: string;
 };
 
-export type MapMyLocationControlProps = {
+export type MapLocationButtonControlProps = {
   tracking: boolean;
   onPress: () => void;
   ariaLabel?: string;
   className?: string;
-  renderButton?: (props: MapMyLocationButtonRenderProps) => ReactNode;
+  renderButton?: (props: MapLocationButtonRenderProps) => ReactNode;
 };
 
-/** My-location overlay control with optional custom button rendering. */
-export function MapMyLocationControl({
+/** Location overlay control with optional custom button rendering. */
+export function MapLocationButtonControl({
   tracking,
   onPress,
   ariaLabel = "Focus my location",
   className,
   renderButton,
-}: MapMyLocationControlProps) {
-  const buttonProps: MapMyLocationButtonRenderProps = {
+}: MapLocationButtonControlProps) {
+  const buttonProps: MapLocationButtonRenderProps = {
     tracking,
     onPress,
     ariaLabel,
@@ -35,7 +35,7 @@ export function MapMyLocationControl({
   }
 
   return (
-    <MapMyLocationButton
+    <MapLocationButton
       ariaLabel={ariaLabel}
       onPress={onPress}
       tracking={tracking}

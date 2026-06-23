@@ -1,7 +1,7 @@
 import { useTouchClickActivation } from "../../gesture/use-touch-click-activation";
 import { MyLocationIcon } from "./my-location-icon";
 
-export type MapMyLocationButtonProps = {
+export type MapLocationButtonProps = {
   ariaLabel: string;
   onPress: () => void;
   /** Blue when actively tracking the user location. */
@@ -10,12 +10,12 @@ export type MapMyLocationButtonProps = {
 };
 
 /** Google Maps–style floating control to recenter on the user location. */
-export function MapMyLocationButton({
+export function MapLocationButton({
   ariaLabel,
   onPress,
   tracking = false,
   className = "",
-}: MapMyLocationButtonProps) {
+}: MapLocationButtonProps) {
   const touchActivation = useTouchClickActivation(onPress);
 
   return (
@@ -24,7 +24,7 @@ export function MapMyLocationButton({
       aria-label={ariaLabel}
       aria-pressed={tracking}
       {...touchActivation}
-      className={`sheet-map-my-location-button${className ? ` ${className}` : ""}`}
+      className={`sheet-map-location-button${className ? ` ${className}` : ""}`}
     >
       <MyLocationIcon size={22} />
     </button>
