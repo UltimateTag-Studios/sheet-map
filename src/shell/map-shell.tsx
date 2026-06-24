@@ -42,7 +42,6 @@ export function MapShell({
   const {
     mapToken,
     publishMapInstance,
-    mapRef,
     sheetSnap,
     handleSheetSnapChange,
     handleSheetSnapSettled,
@@ -116,7 +115,6 @@ export function MapShell({
       <MapShellSlotsProvider slots={mergedSlots}>
         <MapShellContent
           mapToken={mapToken}
-          mapRef={mapRef}
           publishMapInstance={publishMapInstance}
           sheetSnap={sheetSnap}
           onSheetSnapChange={handleSheetSnapChange}

@@ -17,7 +17,6 @@ import {
   MapLocationButtonControl,
   MapUserLocationMarker,
 } from "../canvas";
-import { useMapTouchProbe } from "../debug";
 import type { MapViewportSyncState } from "../viewport";
 import { MapVisibleAreaDebug, MapVisibleAreaOverlay } from "../viewport";
 import type {
@@ -34,7 +33,6 @@ type UserTrackingValue = ReturnType<typeof useMapUserTracking>;
 
 export type MapShellContentProps = {
   mapToken: string;
-  mapRef: MapRef | null;
   publishMapInstance: (map: MapRef | null) => void;
   sheetSnap: SheetSnap;
   onSheetSnapChange: (snap: SheetSnap) => void;
@@ -63,7 +61,6 @@ export type MapShellContentProps = {
 
 export function MapShellContent({
   mapToken,
-  mapRef,
   publishMapInstance,
   sheetSnap,
   onSheetSnapChange,
@@ -90,9 +87,6 @@ export function MapShellContent({
   const sheetLayout = resolveMapSheetLayout(config.sheetLayout);
   const resolvedTheme = config.theme ?? DEFAULT_THEME;
   const { tracking, mapPaddingReady } = userTracking;
-  const touchProbe = config.debug === true;
-
-  useMapTouchProbe(touchProbe, mapRef);
 
   const [collapsedSheetHeightPx, setCollapsedSheetHeightPx] = useState(0);
 
@@ -170,7 +164,6 @@ export function MapShellContent({
         onSnapHeightsChange={handleSnapHeightsChange}
         halfSnapFraction={config.halfSnapFraction}
         layout={sheetLayout}
-        touchProbe={touchProbe}
       >
         <SheetLayout header={header} body={body} />
       </Sheet>
