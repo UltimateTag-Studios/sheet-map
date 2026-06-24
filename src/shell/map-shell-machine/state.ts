@@ -18,9 +18,11 @@ export type ItemSelectPhase =
       location: MapItemLocation;
     }
   | {
-      /** Fly queued until sheet gesture motion returns to idle. */
+      /** Fly queued until the sheet reaches half at rest. */
       status: "pendingFly";
       location: MapItemLocation;
+      enterFly?: boolean;
+      zoom?: number;
     };
 
 /** Snapshot from map camera, sheet gesture, and route enter-fly subsystems. */
@@ -52,7 +54,10 @@ export type RouteEntryVisit = {
 };
 
 export type MapShellMachineState = {
+  /** Commanded snap passed to `<Sheet snap={…} />`. */
   sheetSnap: SheetSnap;
+  /** Last settled snap reported by the sheet (physical position). */
+  reportedSheetSnap: SheetSnap;
   selectedItemId: string | null;
   environment: MapShellEnvironment;
   itemSelect: ItemSelectPhase;
@@ -62,6 +67,7 @@ export type MapShellMachineState = {
 export function createInitialMapShellMachineState(): MapShellMachineState {
   return {
     sheetSnap: "collapsed",
+    reportedSheetSnap: "collapsed",
     selectedItemId: null,
     environment: {
       cameraSession: "idle",
@@ -76,7 +82,8 @@ export function createInitialMapShellMachineState(): MapShellMachineState {
 
 export function isSheetReadyAtHalf(state: MapShellMachineState): boolean {
   return (
-    state.sheetSnap === "half" && state.environment.sheetMotionPhase === "idle"
+    state.reportedSheetSnap === "half" &&
+    state.environment.sheetMotionPhase === "idle"
   );
 }
 

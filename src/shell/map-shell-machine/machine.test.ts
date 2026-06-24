@@ -18,10 +18,15 @@ function env(
 function baseState(
   overrides: Partial<MapShellMachineState> = {},
 ): MapShellMachineState {
-  return {
-    ...createInitialMapShellMachineState(),
-    ...overrides,
-  };
+  const base = createInitialMapShellMachineState();
+  const merged: MapShellMachineState = { ...base, ...overrides };
+  if (
+    overrides.sheetSnap !== undefined &&
+    overrides.reportedSheetSnap === undefined
+  ) {
+    merged.reportedSheetSnap = overrides.sheetSnap;
+  }
+  return merged;
 }
 
 describe("reduceMapShellMachine", () => {
@@ -112,6 +117,7 @@ describe("reduceMapShellMachine", () => {
       type: "sheetReported",
       snap: "collapsed",
       phase: "idle",
+      settled: true,
     });
 
     expect(result.state.sheetSnap).toBe("collapsed");
@@ -128,9 +134,10 @@ describe("reduceMapShellMachine", () => {
       type: "sheetReported",
       snap: "collapsed",
       phase: "dragging",
+      settled: false,
     });
 
-    expect(result.state.sheetSnap).toBe("collapsed");
+    expect(result.state.sheetSnap).toBe("half");
     expect(result.state.selectedItemId).toBe("a");
   });
 
@@ -141,6 +148,108 @@ describe("reduceMapShellMachine", () => {
 
     expect(result.state.sheetSnap).toBe("collapsed");
     expect(result.state.selectedItemId).toBeNull();
+  });
+
+  it("selectItem from full snaps to half before flying", () => {
+    const state = baseState({
+      sheetSnap: "full",
+      reportedSheetSnap: "full",
+    });
+
+    const result = reduceMapShellMachine(state, {
+      type: "selectItem",
+      id: "a",
+      location: { lat: 1, lng: 2 },
+    });
+
+    expect(result.state.selectedItemId).toBe("a");
+    expect(result.state.sheetSnap).toBe("half");
+    expect(result.state.reportedSheetSnap).toBe("full");
+    expect(result.state.itemSelect).toEqual({
+      status: "pendingFly",
+      location: { lat: 1, lng: 2 },
+    });
+    expect(result.effects).toEqual([]);
+  });
+
+  it("does not fly on unsettled half snap while pending from full", () => {
+    const state = baseState({
+      sheetSnap: "half",
+      reportedSheetSnap: "full",
+      selectedItemId: "a",
+      itemSelect: {
+        status: "pendingFly",
+        location: { lat: 1, lng: 2 },
+      },
+    });
+
+    const result = reduceMapShellMachine(state, {
+      type: "sheetReported",
+      snap: "half",
+      phase: "idle",
+      settled: false,
+    });
+
+    expect(result.effects).toEqual([]);
+    expect(result.state.itemSelect.status).toBe("pendingFly");
+  });
+
+  it("flies pending selection once full sheet settles at half", () => {
+    const state = baseState({
+      sheetSnap: "half",
+      reportedSheetSnap: "full",
+      selectedItemId: "a",
+      environment: env({ sheetMotionPhase: "idle", mapPaddingReady: true }),
+      itemSelect: {
+        status: "pendingFly",
+        location: { lat: 1, lng: 2 },
+      },
+    });
+
+    const result = reduceMapShellMachine(state, {
+      type: "sheetReported",
+      snap: "half",
+      phase: "idle",
+      settled: true,
+    });
+
+    expect(result.state.reportedSheetSnap).toBe("half");
+    expect(result.state.itemSelect).toEqual({ status: "idle" });
+    expect(result.effects).toEqual([
+      { type: "flyToItem", location: { lat: 1, lng: 2 } },
+    ]);
+  });
+
+  it("defers pending fly at half until motion is idle after full settle", () => {
+    const state = baseState({
+      sheetSnap: "half",
+      reportedSheetSnap: "full",
+      selectedItemId: "a",
+      environment: env({ sheetMotionPhase: "settling", mapPaddingReady: true }),
+      itemSelect: {
+        status: "pendingFly",
+        location: { lat: 1, lng: 2 },
+      },
+    });
+
+    const afterSettle = reduceMapShellMachine(state, {
+      type: "sheetReported",
+      snap: "half",
+      phase: "idle",
+      settled: true,
+    });
+
+    expect(afterSettle.effects).toEqual([]);
+    expect(afterSettle.state.itemSelect.status).toBe("pendingFly");
+
+    const afterMotion = reduceMapShellMachine(afterSettle.state, {
+      type: "environmentSynced",
+      environment: env({ sheetMotionPhase: "idle", mapPaddingReady: true }),
+    });
+
+    expect(afterMotion.effects).toEqual([
+      { type: "flyToItem", location: { lat: 1, lng: 2 } },
+    ]);
   });
 
   it("queues pendingFly when selecting during sheet motion", () => {
@@ -166,8 +275,9 @@ describe("reduceMapShellMachine", () => {
   it("flies pending selection once sheet motion returns to idle at half", () => {
     const state = baseState({
       sheetSnap: "half",
+      reportedSheetSnap: "half",
       selectedItemId: "b",
-      environment: env({ sheetMotionPhase: "settling" }),
+      environment: env({ sheetMotionPhase: "settling", mapPaddingReady: true }),
       itemSelect: {
         status: "pendingFly",
         location: { lat: 3, lng: 4 },
@@ -176,7 +286,7 @@ describe("reduceMapShellMachine", () => {
 
     const result = reduceMapShellMachine(state, {
       type: "environmentSynced",
-      environment: env(),
+      environment: env({ mapPaddingReady: true }),
     });
 
     expect(result.state.selectedItemId).toBe("b");
@@ -185,6 +295,28 @@ describe("reduceMapShellMachine", () => {
     expect(result.effects).toEqual([
       { type: "flyToItem", location: { lat: 3, lng: 4 } },
     ]);
+  });
+
+  it("selectItem when sheet is physically full but command was half queues half then fly", () => {
+    const state = baseState({
+      sheetSnap: "half",
+      reportedSheetSnap: "full",
+      selectedItemId: "a",
+      environment: env(),
+    });
+
+    const result = reduceMapShellMachine(state, {
+      type: "selectItem",
+      id: "b",
+      location: { lat: 3, lng: 4 },
+    });
+
+    expect(result.state.sheetSnap).toBe("half");
+    expect(result.state.itemSelect).toEqual({
+      status: "pendingFly",
+      location: { lat: 3, lng: 4 },
+    });
+    expect(result.effects).toEqual([]);
   });
 
   it("selectItem B at half when A is selected flies immediately", () => {
@@ -221,6 +353,7 @@ describe("reduceMapShellMachine", () => {
       type: "sheetReported",
       snap: "collapsed",
       phase: "idle",
+      settled: true,
     });
 
     expect(result.state.selectedItemId).toBeNull();
@@ -420,6 +553,7 @@ describe("reduceMapShellMachine", () => {
       type: "sheetReported",
       snap: "collapsed",
       phase: "idle",
+      settled: true,
     });
 
     expect(result.state.selectedItemId).toBeNull();

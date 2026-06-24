@@ -2,8 +2,8 @@ import type { SheetLayoutFrameChange, SheetSnap } from "@siegetag/sheet";
 
 import type { MapItemLocation } from "../../items/types";
 import {
-  resolveLocatedSelect,
   resolveLocatedSelectOrPending,
+  resolvePendingLocatedSelect,
 } from "./resolve-located-select";
 import type { RouteEnterFly } from "./route-enter-fly";
 import {
@@ -37,7 +37,12 @@ export type MapShellMachineEvent =
   | { type: "selectItem"; id: string; location: MapItemLocation | null }
   | { type: "clearSelection"; dismissRouteEntry?: boolean }
   | { type: "dismissSheet" }
-  | { type: "sheetReported"; snap: SheetSnap; phase: SheetPhase }
+  | {
+      type: "sheetReported";
+      snap: SheetSnap;
+      phase: SheetPhase;
+      settled: boolean;
+    }
   | { type: "environmentSynced"; environment: MapShellEnvironment }
   | {
       type: "routeEnterFlyChanged";
@@ -129,10 +134,6 @@ function applyEnvironment(
   environment: MapShellEnvironment,
 ): MapShellMachineResult {
   const previousEnvironment = state.environment;
-  if (environmentsEqual(previousEnvironment, environment)) {
-    return { state, effects: [] };
-  }
-
   const withEnvironment: MapShellMachineState = { ...state, environment };
 
   if (
@@ -146,24 +147,15 @@ function applyEnvironment(
     };
   }
 
-  if (
-    isPendingFly(withEnvironment) &&
-    previousEnvironment.sheetMotionPhase !== "idle" &&
-    environment.sheetMotionPhase === "idle"
-  ) {
-    const selectedItemId = withEnvironment.selectedItemId;
-    if (selectedItemId === null) {
-      return {
-        state: { ...withEnvironment, itemSelect: idleItemSelect() },
-        effects: [],
-      };
+  if (isPendingFly(withEnvironment)) {
+    const completed = resolvePendingLocatedSelect(withEnvironment);
+    if (completed) {
+      return completed;
     }
+  }
 
-    return resolveLocatedSelect(
-      withEnvironment,
-      selectedItemId,
-      withEnvironment.itemSelect.location,
-    );
+  if (environmentsEqual(previousEnvironment, environment)) {
+    return { state, effects: [] };
   }
 
   const afterUserFly = completeRouteUserEnterFly(
@@ -233,6 +225,50 @@ function routeEntryInterruptedOnCollapse(state: MapShellMachineState): boolean {
   );
 }
 
+function reduceSheetReported(
+  state: MapShellMachineState,
+  snap: SheetSnap,
+  phase: SheetPhase,
+  settled: boolean,
+): MapShellMachineResult {
+  const withReported: MapShellMachineState = settled
+    ? { ...state, reportedSheetSnap: snap }
+    : state;
+
+  if (settled && phase === "idle" && snap === "collapsed") {
+    if (routeEntryInterruptedOnCollapse(withReported)) {
+      return {
+        state: resetRouteEntryToWaiting(
+          sheetClosedState({ ...withReported, sheetSnap: snap }),
+        ),
+        effects: [],
+      };
+    }
+
+    const closed = sheetClosedState({ ...withReported, sheetSnap: snap });
+    const next = closed.routeVisit ? dismissRouteEntry(closed) : closed;
+    return { state: next, effects: [] };
+  }
+
+  if (settled && phase === "idle") {
+    const nextState: MapShellMachineState = {
+      ...withReported,
+      sheetSnap: snap,
+    };
+
+    if (snap === "half" && isPendingFly(nextState)) {
+      const completed = resolvePendingLocatedSelect(nextState);
+      if (completed) {
+        return completed;
+      }
+    }
+
+    return { state: nextState, effects: [] };
+  }
+
+  return { state: withReported, effects: [] };
+}
+
 /** Unified map-shell selection, sheet snap, route entry, and item-select sequencing. */
 export function reduceMapShellMachine(
   state: MapShellMachineState,
@@ -250,29 +286,7 @@ export function reduceMapShellMachine(
     }
 
     case "sheetReported": {
-      if (event.phase === "idle" && event.snap === "collapsed") {
-        if (routeEntryInterruptedOnCollapse(state)) {
-          return {
-            state: resetRouteEntryToWaiting(
-              sheetClosedState({ ...state, sheetSnap: event.snap }),
-            ),
-            effects: [],
-          };
-        }
-
-        const closed = sheetClosedState({ ...state, sheetSnap: event.snap });
-        const next = closed.routeVisit ? dismissRouteEntry(closed) : closed;
-        return { state: next, effects: [] };
-      }
-
-      if (event.snap === state.sheetSnap) {
-        return { state, effects: [] };
-      }
-
-      return {
-        state: { ...state, sheetSnap: event.snap },
-        effects: [],
-      };
+      return reduceSheetReported(state, event.snap, event.phase, event.settled);
     }
 
     case "selectItem": {

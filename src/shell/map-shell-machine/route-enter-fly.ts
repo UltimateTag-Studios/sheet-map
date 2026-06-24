@@ -1,5 +1,5 @@
 import type { MapShellMachineResult } from "./machine";
-import { resolveLocatedSelect } from "./resolve-located-select";
+import { resolveLocatedSelectOrPending } from "./resolve-located-select";
 import type {
   ItemSelectPhase,
   MapShellEnvironment,
@@ -174,10 +174,15 @@ export function tryApplyRouteEntry(
     };
   }
 
-  const selectResult = resolveLocatedSelect(state, entry.id, entry.location, {
-    zoom: entry.zoom,
-    enterFly: true,
-  });
+  const selectResult = resolveLocatedSelectOrPending(
+    state,
+    entry.id,
+    entry.location,
+    {
+      zoom: entry.zoom,
+      enterFly: true,
+    },
+  );
 
   return {
     state: markRouteEntryDispatched(selectResult.state),

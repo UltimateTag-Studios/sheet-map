@@ -45,7 +45,7 @@ export function MapShell({
     sheetSnap,
     handleSheetSnapChange,
     handleSheetSnapSettled,
-    onSheetLayoutFrameChange,
+    handleSheetLayoutFrameChange,
     userLocation,
     viewport,
     selectItem,
@@ -119,7 +119,7 @@ export function MapShell({
           sheetSnap={sheetSnap}
           onSheetSnapChange={handleSheetSnapChange}
           onSheetSnapSettled={handleSheetSnapSettled}
-          onSheetLayoutFrameChange={onSheetLayoutFrameChange}
+          onSheetLayoutFrameChange={handleSheetLayoutFrameChange}
           userLocation={userLocation}
           userTracking={userTracking}
           recenterOnUser={recenterOnUser}

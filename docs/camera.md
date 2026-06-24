@@ -77,7 +77,7 @@ Set `config.debug: true` or `VITE_SHEET_MAP_DEBUG=true` for padding and GPS cons
 
 ## Selection + sheet
 
-- Tap map marker or list row → `selectItem` → fly first, open half when camera settles.
+- Tap map marker or list row → `selectItem` → from collapsed: fly first, open half when camera settles; from half: fly at half; from full: snap to half, then fly.
 - Close sheet → `dismissSheet` → deselect.
 - `recenterOnUser` and `navigateTo` without `preserveTracking` also clear selection.
 
