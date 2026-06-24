@@ -1,5 +1,5 @@
 import type { SheetSnap } from "@siegetag/sheet";
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 
 import { type NavigateToMapAnchorOptions, useMapUserTracking } from "../camera";
 import type { MapPosition } from "../camera/shared/map-position";
@@ -52,6 +52,9 @@ export function useMapShell({
   const { sheetObscuredBottomPx, sheetPhase, onSheetLayoutFrameChange } =
     useLiveSheetObscuredBottomPx(mapRef);
 
+  const sheetPhaseRef = useRef(sheetPhase);
+  sheetPhaseRef.current = sheetPhase;
+
   const viewport = useMapVisibleViewportSync({
     mapRef,
     liveSheetObscuredBottomPx: sheetObscuredBottomPx,
@@ -74,10 +77,10 @@ export function useMapShell({
 
   const readEnvironment = useCallback((): MapShellEnvironment => {
     return {
-      cameraSession: userTracking.readCameraSession(),
+      cameraSession: userTracking.session,
       sheetMotionPhase: sheetPhase,
     };
-  }, [userTracking, sheetPhase]);
+  }, [userTracking.session, sheetPhase]);
 
   const flyToItem = useCallback(
     (location: MapItemLocation) => {
@@ -92,10 +95,7 @@ export function useMapShell({
     [userTracking, resolvedConfig.smoothFlyDurationMs],
   );
 
-  const { state: machine, dispatch } = useMapShellMachine(
-    flyToItem,
-    readEnvironment,
-  );
+  const { state: machine, dispatch } = useMapShellMachine(flyToItem);
 
   useEffect(() => {
     dispatch({
@@ -136,14 +136,18 @@ export function useMapShell({
 
   const handleSheetSnapChange = useCallback(
     (snap: SheetSnap) => {
-      dispatch({ type: "sheetReported", snap, resting: false });
+      dispatch({
+        type: "sheetReported",
+        snap,
+        phase: sheetPhaseRef.current,
+      });
     },
     [dispatch],
   );
 
   const handleSheetSnapSettled = useCallback(
     (snap: SheetSnap) => {
-      dispatch({ type: "sheetReported", snap, resting: true });
+      dispatch({ type: "sheetReported", snap, phase: "idle" });
     },
     [dispatch],
   );

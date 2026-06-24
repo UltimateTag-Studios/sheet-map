@@ -30,7 +30,6 @@ describe("reduceMapShellMachine", () => {
     expect(result.state.itemSelect).toEqual({
       status: "flyingToItem",
       location: { lat: 1, lng: 2 },
-      flyIssued: true,
     });
     expect(result.effects).toEqual([
       { type: "flyToItem", location: { lat: 1, lng: 2 } },
@@ -45,7 +44,6 @@ describe("reduceMapShellMachine", () => {
       itemSelect: {
         status: "flyingToItem",
         location: { lat: 1, lng: 2 },
-        flyIssued: true,
       },
     });
 
@@ -58,14 +56,13 @@ describe("reduceMapShellMachine", () => {
     expect(result.state.itemSelect).toEqual({ status: "idle" });
   });
 
-  it("opens half when environment stays idle after instant fly", () => {
+  it("does not open half on unchanged idle environment while flyingToItem", () => {
     const state = baseState({
       selectedItemId: "a",
       sheetSnap: "collapsed",
       itemSelect: {
         status: "flyingToItem",
         location: { lat: 1, lng: 2 },
-        flyIssued: true,
       },
     });
 
@@ -74,10 +71,29 @@ describe("reduceMapShellMachine", () => {
       environment: { cameraSession: "idle", sheetMotionPhase: "idle" },
     });
 
-    expect(result.state.sheetSnap).toBe("half");
+    expect(result.state).toBe(state);
   });
 
-  it("sheetReported resting at collapsed dismisses selection", () => {
+  it("does not open half on idle to idle without a flying session", () => {
+    const state = baseState({
+      selectedItemId: "a",
+      sheetSnap: "collapsed",
+      environment: { cameraSession: "idle", sheetMotionPhase: "idle" },
+      itemSelect: {
+        status: "flyingToItem",
+        location: { lat: 1, lng: 2 },
+      },
+    });
+
+    const result = reduceMapShellMachine(state, {
+      type: "environmentSynced",
+      environment: { cameraSession: "idle", sheetMotionPhase: "idle" },
+    });
+
+    expect(result.state.sheetSnap).toBe("collapsed");
+  });
+
+  it("sheetReported idle at collapsed dismisses selection", () => {
     const state = baseState({
       sheetSnap: "half",
       selectedItemId: "a",
@@ -86,7 +102,7 @@ describe("reduceMapShellMachine", () => {
     const result = reduceMapShellMachine(state, {
       type: "sheetReported",
       snap: "collapsed",
-      resting: true,
+      phase: "idle",
     });
 
     expect(result.state.sheetSnap).toBe("collapsed");
@@ -102,7 +118,7 @@ describe("reduceMapShellMachine", () => {
     const result = reduceMapShellMachine(state, {
       type: "sheetReported",
       snap: "collapsed",
-      resting: false,
+      phase: "dragging",
     });
 
     expect(result.state.sheetSnap).toBe("collapsed");

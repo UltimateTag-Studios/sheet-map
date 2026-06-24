@@ -7,18 +7,17 @@ import type { SheetMotionPhase } from "../../viewport";
 /**
  * Item-select orchestration while the sheet stays collapsed (fly-then-open).
  *
- * `flyIssued` is set when the machine emits a `flyToItem` effect — environment
- * sync after the effect runs is what completes the sequence.
+ * Completion is driven by `environmentSynced` when the camera reports
+ * `flying → idle`.
  */
 export type ItemSelectPhase =
   | { status: "idle" }
   | {
       status: "flyingToItem";
       location: MapItemLocation;
-      flyIssued: boolean;
     };
 
-/** Snapshot from map camera + sheet gesture subsystems (synced each frame). */
+/** Snapshot from map camera + sheet gesture subsystems. */
 export type MapShellEnvironment = {
   cameraSession: MapAnchorSession;
   sheetMotionPhase: SheetMotionPhase;

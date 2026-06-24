@@ -1,4 +1,4 @@
-import type { SheetSnap } from "@siegetag/sheet";
+import type { SheetLayoutFrameChange, SheetSnap } from "@siegetag/sheet";
 
 import type { MapItemLocation } from "../../items/types";
 import {
@@ -9,21 +9,23 @@ import {
   type MapShellMachineState,
 } from "./state";
 
+type SheetPhase = SheetLayoutFrameChange["phase"];
+
 /**
  * Map shell machine events — three sources only:
  *
  * 1. **Intent** — user / app actions (`selectItem`, `clearSelection`, `dismissSheet`)
- * 2. **Sheet** — `@siegetag/sheet` reports snap while dragging or at rest
+ * 2. **Sheet** — `@siegetag/sheet` reports snap + gesture phase
  * 3. **Environment** — camera session + sheet motion phase from live subsystems
  *
- * Side effects (`flyToItem`) are outputs, not events. After a fly effect runs,
- * the hook syncs `environment` so the reducer can finish fly-then-open.
+ * Side effects (`flyToItem`) are outputs, not events. The camera and sheet
+ * subsystems report back through `environmentSynced` and `sheetReported`.
  */
 export type MapShellMachineEvent =
   | { type: "selectItem"; id: string; location: MapItemLocation | null }
   | { type: "clearSelection" }
   | { type: "dismissSheet" }
-  | { type: "sheetReported"; snap: SheetSnap; resting: boolean }
+  | { type: "sheetReported"; snap: SheetSnap; phase: SheetPhase }
   | { type: "environmentSynced"; environment: MapShellEnvironment };
 
 export type MapShellMachineEffect = {
@@ -63,7 +65,6 @@ function isFlyingToItem(
   itemSelect: {
     status: "flyingToItem";
     location: MapItemLocation;
-    flyIssued: boolean;
   };
 } {
   return state.itemSelect.status === "flyingToItem";
@@ -79,49 +80,26 @@ function environmentsEqual(
   );
 }
 
-function tryCompleteFlyingToItem(
-  state: MapShellMachineState,
-  previousEnvironment: MapShellEnvironment,
-  nextEnvironment: MapShellEnvironment,
-): MapShellMachineState {
-  if (!isFlyingToItem(state) || !state.itemSelect.flyIssued) {
-    return state;
-  }
-
-  const { cameraSession } = nextEnvironment;
-  const prevCamera = previousEnvironment.cameraSession;
-
-  if (cameraSession === "idle" && prevCamera === "flying") {
-    return completeFlyingToItem(state);
-  }
-
-  if (cameraSession === "idle" && prevCamera === "idle") {
-    return completeFlyingToItem(state);
-  }
-
-  return state;
-}
-
 function applyEnvironment(
   state: MapShellMachineState,
   environment: MapShellEnvironment,
 ): MapShellMachineState {
   const previousEnvironment = state.environment;
-  const unchanged = environmentsEqual(previousEnvironment, environment);
-  const withEnvironment = unchanged ? state : { ...state, environment };
-
-  const awaitingFlyCompletion =
-    isFlyingToItem(withEnvironment) && withEnvironment.itemSelect.flyIssued;
-
-  if (unchanged && !awaitingFlyCompletion) {
+  if (environmentsEqual(previousEnvironment, environment)) {
     return state;
   }
 
-  return tryCompleteFlyingToItem(
-    withEnvironment,
-    previousEnvironment,
-    environment,
-  );
+  const withEnvironment: MapShellMachineState = { ...state, environment };
+
+  if (
+    isFlyingToItem(withEnvironment) &&
+    previousEnvironment.cameraSession === "flying" &&
+    environment.cameraSession === "idle"
+  ) {
+    return completeFlyingToItem(withEnvironment);
+  }
+
+  return withEnvironment;
 }
 
 /** Unified map-shell selection, sheet snap, and item-select sequencing. */
@@ -138,7 +116,7 @@ export function reduceMapShellMachine(
     }
 
     case "sheetReported": {
-      if (event.resting && event.snap === "collapsed") {
+      if (event.phase === "idle" && event.snap === "collapsed") {
         return {
           state: sheetClosedState({ ...state, sheetSnap: event.snap }),
           effects: [],
@@ -200,7 +178,6 @@ export function reduceMapShellMachine(
           itemSelect: {
             status: "flyingToItem",
             location: event.location,
-            flyIssued: true,
           },
         },
         effects: [{ type: "flyToItem", location: event.location }],

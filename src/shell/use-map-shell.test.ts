@@ -83,7 +83,36 @@ describe("useMapShell", () => {
     expect(result.current.sheetSnap).toBe("half");
   });
 
-  it("opens half after instant fly", async () => {
+  it("keeps sheet collapsed until camera reports flying then idle", async () => {
+    navigateToMock.mockImplementation(() => {
+      mockCameraSession = "flying";
+      return true;
+    });
+
+    const mapInstanceStore = createMapInstanceStore();
+    const { result, rerender } = renderHook(() =>
+      useMapShell({
+        mapInstanceStore,
+        accessToken: "token",
+      }),
+    );
+
+    await act(async () => {
+      result.current.selectItem("a", { lat: 1, lng: 2 });
+      await Promise.resolve();
+    });
+
+    expect(result.current.sheetSnap).toBe("collapsed");
+
+    mockCameraSession = "idle";
+    await act(async () => {
+      rerender();
+    });
+
+    expect(result.current.sheetSnap).toBe("half");
+  });
+
+  it("does not open half while camera session stays idle", async () => {
     const mapInstanceStore = createMapInstanceStore();
     const { result } = renderHook(() =>
       useMapShell({
@@ -97,7 +126,7 @@ describe("useMapShell", () => {
       await Promise.resolve();
     });
 
-    expect(result.current.sheetSnap).toBe("half");
+    expect(result.current.sheetSnap).toBe("collapsed");
   });
 
   it("flies immediately when the sheet is already open at half", async () => {
@@ -130,7 +159,7 @@ describe("useMapShell", () => {
 
   it("clears selection when dragging the sheet closed", async () => {
     const mapInstanceStore = createMapInstanceStore();
-    const { result } = renderHook(() =>
+    const { result, rerender } = renderHook(() =>
       useMapShell({
         mapInstanceStore,
         accessToken: "token",
@@ -140,6 +169,11 @@ describe("useMapShell", () => {
     await act(async () => {
       result.current.selectItem("a", { lat: 1, lng: 2 });
       await Promise.resolve();
+    });
+
+    await act(async () => {
+      mockSheetPhase = "dragging";
+      rerender();
     });
 
     await act(async () => {
