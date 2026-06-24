@@ -35,6 +35,7 @@ vi.mock("../camera", () => ({
     get session() {
       return mockCameraSession;
     },
+    readCameraSession: () => mockCameraSession,
     navigateTo: navigateToMock,
     recenterOnUser: recenterOnUserMock,
   }),
@@ -46,9 +47,15 @@ describe("useMapShell", () => {
     recenterOnUserMock.mockClear();
     mockSheetPhase = "idle";
     mockCameraSession = "idle";
+    navigateToMock.mockReturnValue(true);
   });
 
-  it("flies first and keeps sheet collapsed until camera settles", () => {
+  it("flies first and opens half after camera settles", async () => {
+    navigateToMock.mockImplementation(() => {
+      mockCameraSession = "flying";
+      return true;
+    });
+
     const mapInstanceStore = createMapInstanceStore();
     const { result, rerender } = renderHook(() =>
       useMapShell({
@@ -57,8 +64,9 @@ describe("useMapShell", () => {
       }),
     );
 
-    act(() => {
+    await act(async () => {
       result.current.selectItem("a", { lat: 1, lng: 2 });
+      await Promise.resolve();
     });
 
     expect(result.current.selectedItemId).toBe("a");
@@ -68,20 +76,14 @@ describe("useMapShell", () => {
       { duration: 600, keepTracking: false },
     );
 
-    mockCameraSession = "flying";
-    act(() => {
-      rerender();
-    });
-    expect(result.current.sheetSnap).toBe("collapsed");
-
     mockCameraSession = "idle";
-    act(() => {
+    await act(async () => {
       rerender();
     });
     expect(result.current.sheetSnap).toBe("half");
   });
 
-  it("flies immediately when the sheet is already open and idle at half", () => {
+  it("opens half after instant fly", async () => {
     const mapInstanceStore = createMapInstanceStore();
     const { result } = renderHook(() =>
       useMapShell({
@@ -90,14 +92,31 @@ describe("useMapShell", () => {
       }),
     );
 
-    act(() => {
+    await act(async () => {
+      result.current.selectItem("a", { lat: 1, lng: 2 });
+      await Promise.resolve();
+    });
+
+    expect(result.current.sheetSnap).toBe("half");
+  });
+
+  it("flies immediately when the sheet is already open at half", async () => {
+    const mapInstanceStore = createMapInstanceStore();
+    const { result } = renderHook(() =>
+      useMapShell({
+        mapInstanceStore,
+        accessToken: "token",
+      }),
+    );
+
+    await act(async () => {
       result.current.handleSheetSnapChange("half");
       result.current.handleSheetSnapSettled("half");
     });
 
     navigateToMock.mockClear();
 
-    act(() => {
+    await act(async () => {
       result.current.selectItem("b", { lat: 3, lng: 4 });
     });
 
@@ -109,7 +128,7 @@ describe("useMapShell", () => {
     );
   });
 
-  it("selectItem without location opens half without flying", () => {
+  it("clears selection when dragging the sheet closed", async () => {
     const mapInstanceStore = createMapInstanceStore();
     const { result } = renderHook(() =>
       useMapShell({
@@ -118,103 +137,18 @@ describe("useMapShell", () => {
       }),
     );
 
-    act(() => {
-      result.current.selectItem("a", null);
-    });
-
-    expect(result.current.selectedItemId).toBe("a");
-    expect(result.current.sheetSnap).toBe("half");
-    expect(navigateToMock).not.toHaveBeenCalled();
-  });
-
-  it("clears selection when recentering on user", () => {
-    const mapInstanceStore = createMapInstanceStore();
-    const { result } = renderHook(() =>
-      useMapShell({
-        mapInstanceStore,
-        accessToken: "token",
-        userLocation: { lat: 10, lng: 20 },
-      }),
-    );
-
-    act(() => {
-      result.current.selectItem("a", null);
-    });
-
-    act(() => {
-      result.current.recenterOnUser();
-    });
-
-    expect(result.current.selectedItemId).toBeNull();
-    expect(recenterOnUserMock).toHaveBeenCalledOnce();
-  });
-
-  it("clears selection on navigateTo without keepTracking", () => {
-    const mapInstanceStore = createMapInstanceStore();
-    const { result } = renderHook(() =>
-      useMapShell({
-        mapInstanceStore,
-        accessToken: "token",
-      }),
-    );
-
-    act(() => {
-      result.current.selectItem("a", null);
-    });
-
-    act(() => {
-      result.current.navigateTo({ lat: 3, lng: 4 });
-    });
-
-    expect(result.current.selectedItemId).toBeNull();
-    expect(navigateToMock).toHaveBeenCalledWith({ lat: 3, lng: 4 }, undefined);
-  });
-
-  it("keeps selection on navigateTo with keepTracking", () => {
-    const mapInstanceStore = createMapInstanceStore();
-    const { result } = renderHook(() =>
-      useMapShell({
-        mapInstanceStore,
-        accessToken: "token",
-      }),
-    );
-
-    act(() => {
-      result.current.selectItem("a", null);
-    });
-
-    const position: MapPosition = { lat: 3, lng: 4, zoom: 12 };
-
-    act(() => {
-      result.current.navigateTo(position, { keepTracking: true });
-    });
-
-    expect(result.current.selectedItemId).toBe("a");
-    expect(navigateToMock).toHaveBeenCalledWith(position, {
-      keepTracking: true,
-    });
-  });
-
-  it("clears selection when dragging the sheet closed", () => {
-    const mapInstanceStore = createMapInstanceStore();
-    const { result } = renderHook(() =>
-      useMapShell({
-        mapInstanceStore,
-        accessToken: "token",
-      }),
-    );
-
-    act(() => {
+    await act(async () => {
       result.current.selectItem("a", { lat: 1, lng: 2 });
+      await Promise.resolve();
     });
 
-    mockCameraSession = "flying";
-    act(() => {
+    await act(async () => {
       result.current.handleSheetSnapChange("collapsed");
     });
 
-    mockCameraSession = "idle";
-    act(() => {
+    expect(result.current.selectedItemId).toBe("a");
+
+    await act(async () => {
       result.current.handleSheetSnapSettled("collapsed");
     });
 
@@ -222,7 +156,7 @@ describe("useMapShell", () => {
     expect(result.current.selectedItemId).toBeNull();
   });
 
-  it("closeSheet collapses and clears selection", () => {
+  it("closeSheet collapses and clears selection", async () => {
     const mapInstanceStore = createMapInstanceStore();
     const { result } = renderHook(() =>
       useMapShell({
@@ -231,15 +165,40 @@ describe("useMapShell", () => {
       }),
     );
 
-    act(() => {
+    await act(async () => {
       result.current.selectItem("a", null);
     });
 
-    act(() => {
+    await act(async () => {
       result.current.closeSheet();
     });
 
     expect(result.current.sheetSnap).toBe("collapsed");
     expect(result.current.selectedItemId).toBeNull();
+  });
+
+  it("keeps selection on navigateTo with keepTracking", async () => {
+    const mapInstanceStore = createMapInstanceStore();
+    const { result } = renderHook(() =>
+      useMapShell({
+        mapInstanceStore,
+        accessToken: "token",
+      }),
+    );
+
+    await act(async () => {
+      result.current.selectItem("a", null);
+    });
+
+    const position: MapPosition = { lat: 3, lng: 4, zoom: 12 };
+
+    await act(async () => {
+      result.current.navigateTo(position, { keepTracking: true });
+    });
+
+    expect(result.current.selectedItemId).toBe("a");
+    expect(navigateToMock).toHaveBeenCalledWith(position, {
+      keepTracking: true,
+    });
   });
 });

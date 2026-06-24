@@ -4,20 +4,30 @@ import type { MapAnchorSession } from "../../camera/anchor/state";
 import type { MapItemLocation } from "../../items/types";
 import type { SheetMotionPhase } from "../../viewport";
 
-/** Item-select camera + sheet open sequencing. */
+/**
+ * Item-select orchestration while the sheet stays collapsed (fly-then-open).
+ *
+ * `flyIssued` is set when the machine emits a `flyToItem` effect — environment
+ * sync after the effect runs is what completes the sequence.
+ */
 export type ItemSelectPhase =
   | { status: "idle" }
   | {
-      status: "flyThenOpen";
+      status: "flyingToItem";
       location: MapItemLocation;
-      cameraStage: "pending" | "inFlight";
+      flyIssued: boolean;
     };
+
+/** Snapshot from map camera + sheet gesture subsystems (synced each frame). */
+export type MapShellEnvironment = {
+  cameraSession: MapAnchorSession;
+  sheetMotionPhase: SheetMotionPhase;
+};
 
 export type MapShellMachineState = {
   sheetSnap: SheetSnap;
   selectedItemId: string | null;
-  sheetMotionPhase: SheetMotionPhase;
-  cameraSession: MapAnchorSession;
+  environment: MapShellEnvironment;
   itemSelect: ItemSelectPhase;
 };
 
@@ -25,16 +35,20 @@ export function createInitialMapShellMachineState(): MapShellMachineState {
   return {
     sheetSnap: "collapsed",
     selectedItemId: null,
-    sheetMotionPhase: "idle",
-    cameraSession: "idle",
+    environment: {
+      cameraSession: "idle",
+      sheetMotionPhase: "idle",
+    },
     itemSelect: { status: "idle" },
   };
 }
 
 export function isSheetReadyAtHalf(state: MapShellMachineState): boolean {
-  return state.sheetSnap === "half" && state.sheetMotionPhase === "idle";
+  return (
+    state.sheetSnap === "half" && state.environment.sheetMotionPhase === "idle"
+  );
 }
 
 export function isSheetMotionIdle(state: MapShellMachineState): boolean {
-  return state.sheetMotionPhase === "idle";
+  return state.environment.sheetMotionPhase === "idle";
 }

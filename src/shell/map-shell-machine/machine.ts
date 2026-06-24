@@ -1,23 +1,30 @@
 import type { SheetSnap } from "@siegetag/sheet";
 
-import type { MapAnchorSession } from "../../camera/anchor/state";
 import type { MapItemLocation } from "../../items/types";
-import type { SheetMotionPhase } from "../../viewport";
 import {
   type ItemSelectPhase,
   isSheetMotionIdle,
   isSheetReadyAtHalf,
+  type MapShellEnvironment,
   type MapShellMachineState,
 } from "./state";
 
+/**
+ * Map shell machine events — three sources only:
+ *
+ * 1. **Intent** — user / app actions (`selectItem`, `clearSelection`, `dismissSheet`)
+ * 2. **Sheet** — `@siegetag/sheet` reports snap while dragging or at rest
+ * 3. **Environment** — camera session + sheet motion phase from live subsystems
+ *
+ * Side effects (`flyToItem`) are outputs, not events. After a fly effect runs,
+ * the hook syncs `environment` so the reducer can finish fly-then-open.
+ */
 export type MapShellMachineEvent =
-  | { type: "sheetSnapChange"; snap: SheetSnap }
-  | { type: "sheetSnapSettled"; snap: SheetSnap }
   | { type: "selectItem"; id: string; location: MapItemLocation | null }
-  | { type: "cameraSessionChanged"; session: MapAnchorSession }
-  | { type: "sheetMotionPhaseChanged"; phase: SheetMotionPhase }
   | { type: "clearSelection" }
-  | { type: "closeSheet" };
+  | { type: "dismissSheet" }
+  | { type: "sheetReported"; snap: SheetSnap; resting: boolean }
+  | { type: "environmentSynced"; environment: MapShellEnvironment };
 
 export type MapShellMachineEffect = {
   type: "flyToItem";
@@ -40,34 +47,81 @@ function sheetClosedState(state: MapShellMachineState): MapShellMachineState {
   };
 }
 
-function advanceFlyThenOpenOnCameraSession(
+function completeFlyingToItem(
   state: MapShellMachineState,
-  session: MapAnchorSession,
 ): MapShellMachineState {
-  if (state.itemSelect.status !== "flyThenOpen") {
+  return {
+    ...state,
+    sheetSnap: "half",
+    itemSelect: idleItemSelect(),
+  };
+}
+
+function isFlyingToItem(
+  state: MapShellMachineState,
+): state is MapShellMachineState & {
+  itemSelect: {
+    status: "flyingToItem";
+    location: MapItemLocation;
+    flyIssued: boolean;
+  };
+} {
+  return state.itemSelect.status === "flyingToItem";
+}
+
+function environmentsEqual(
+  a: MapShellEnvironment,
+  b: MapShellEnvironment,
+): boolean {
+  return (
+    a.cameraSession === b.cameraSession &&
+    a.sheetMotionPhase === b.sheetMotionPhase
+  );
+}
+
+function tryCompleteFlyingToItem(
+  state: MapShellMachineState,
+  previousEnvironment: MapShellEnvironment,
+  nextEnvironment: MapShellEnvironment,
+): MapShellMachineState {
+  if (!isFlyingToItem(state) || !state.itemSelect.flyIssued) {
     return state;
   }
 
-  const itemSelect = state.itemSelect;
+  const { cameraSession } = nextEnvironment;
+  const prevCamera = previousEnvironment.cameraSession;
 
-  if (session === "flying" && itemSelect.cameraStage === "pending") {
-    return {
-      ...state,
-      cameraSession: session,
-      itemSelect: { ...itemSelect, cameraStage: "inFlight" },
-    };
+  if (cameraSession === "idle" && prevCamera === "flying") {
+    return completeFlyingToItem(state);
   }
 
-  if (session === "idle" && itemSelect.cameraStage === "inFlight") {
-    return {
-      ...state,
-      cameraSession: session,
-      sheetSnap: "half",
-      itemSelect: idleItemSelect(),
-    };
+  if (cameraSession === "idle" && prevCamera === "idle") {
+    return completeFlyingToItem(state);
   }
 
-  return { ...state, cameraSession: session };
+  return state;
+}
+
+function applyEnvironment(
+  state: MapShellMachineState,
+  environment: MapShellEnvironment,
+): MapShellMachineState {
+  const previousEnvironment = state.environment;
+  const unchanged = environmentsEqual(previousEnvironment, environment);
+  const withEnvironment = unchanged ? state : { ...state, environment };
+
+  const awaitingFlyCompletion =
+    isFlyingToItem(withEnvironment) && withEnvironment.itemSelect.flyIssued;
+
+  if (unchanged && !awaitingFlyCompletion) {
+    return state;
+  }
+
+  return tryCompleteFlyingToItem(
+    withEnvironment,
+    previousEnvironment,
+    environment,
+  );
 }
 
 /** Unified map-shell selection, sheet snap, and item-select sequencing. */
@@ -76,46 +130,27 @@ export function reduceMapShellMachine(
   event: MapShellMachineEvent,
 ): MapShellMachineResult {
   switch (event.type) {
-    case "sheetSnapChange": {
+    case "environmentSynced": {
+      return {
+        state: applyEnvironment(state, event.environment),
+        effects: [],
+      };
+    }
+
+    case "sheetReported": {
+      if (event.resting && event.snap === "collapsed") {
+        return {
+          state: sheetClosedState({ ...state, sheetSnap: event.snap }),
+          effects: [],
+        };
+      }
+
       if (event.snap === state.sheetSnap) {
         return { state, effects: [] };
       }
 
       return {
         state: { ...state, sheetSnap: event.snap },
-        effects: [],
-      };
-    }
-
-    case "sheetSnapSettled": {
-      if (event.snap === state.sheetSnap) {
-        return { state, effects: [] };
-      }
-
-      return {
-        state: { ...state, sheetSnap: event.snap },
-        effects: [],
-      };
-    }
-
-    case "cameraSessionChanged": {
-      if (event.session === state.cameraSession) {
-        return { state, effects: [] };
-      }
-
-      return {
-        state: advanceFlyThenOpenOnCameraSession(state, event.session),
-        effects: [],
-      };
-    }
-
-    case "sheetMotionPhaseChanged": {
-      if (event.phase === state.sheetMotionPhase) {
-        return { state, effects: [] };
-      }
-
-      return {
-        state: { ...state, sheetMotionPhase: event.phase },
         effects: [],
       };
     }
@@ -163,9 +198,9 @@ export function reduceMapShellMachine(
           selectedItemId: event.id,
           sheetSnap: "collapsed",
           itemSelect: {
-            status: "flyThenOpen",
+            status: "flyingToItem",
             location: event.location,
-            cameraStage: "pending",
+            flyIssued: true,
           },
         },
         effects: [{ type: "flyToItem", location: event.location }],
@@ -187,7 +222,7 @@ export function reduceMapShellMachine(
       };
     }
 
-    case "closeSheet": {
+    case "dismissSheet": {
       if (
         state.sheetSnap === "collapsed" &&
         state.selectedItemId === null &&

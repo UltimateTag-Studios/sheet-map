@@ -4,7 +4,11 @@ export type {
   MapShellMachineResult,
 } from "./machine";
 export { reduceMapShellMachine } from "./machine";
-export type { ItemSelectPhase, MapShellMachineState } from "./state";
+export type {
+  ItemSelectPhase,
+  MapShellEnvironment,
+  MapShellMachineState,
+} from "./state";
 export {
   createInitialMapShellMachineState,
   isSheetMotionIdle,

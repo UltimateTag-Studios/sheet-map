@@ -14,6 +14,7 @@ import {
   type MapUserLocationCoords,
 } from "./config";
 import type { MapInstanceStore } from "./map-instance-store";
+import type { MapShellEnvironment } from "./map-shell-machine";
 import { useMapShellMachine } from "./map-shell-machine";
 
 export type UseMapShellOptions = {
@@ -71,6 +72,13 @@ export function useMapShell({
     mapPaddingDebug: debug,
   });
 
+  const readEnvironment = useCallback((): MapShellEnvironment => {
+    return {
+      cameraSession: userTracking.readCameraSession(),
+      sheetMotionPhase: sheetPhase,
+    };
+  }, [userTracking, sheetPhase]);
+
   const flyToItem = useCallback(
     (location: MapItemLocation) => {
       userTracking.navigateTo(
@@ -84,15 +92,17 @@ export function useMapShell({
     [userTracking, resolvedConfig.smoothFlyDurationMs],
   );
 
-  const { state: machine, dispatch } = useMapShellMachine(flyToItem);
+  const { state: machine, dispatch } = useMapShellMachine(
+    flyToItem,
+    readEnvironment,
+  );
 
   useEffect(() => {
-    dispatch({ type: "cameraSessionChanged", session: userTracking.session });
-  }, [dispatch, userTracking.session]);
-
-  useEffect(() => {
-    dispatch({ type: "sheetMotionPhaseChanged", phase: sheetPhase });
-  }, [dispatch, sheetPhase]);
+    dispatch({
+      type: "environmentSynced",
+      environment: readEnvironment(),
+    });
+  }, [dispatch, readEnvironment]);
 
   const clearSelection = useCallback(() => {
     dispatch({ type: "clearSelection" });
@@ -121,23 +131,19 @@ export function useMapShell({
   );
 
   const closeSheet = useCallback(() => {
-    dispatch({ type: "closeSheet" });
+    dispatch({ type: "dismissSheet" });
   }, [dispatch]);
 
   const handleSheetSnapChange = useCallback(
     (snap: SheetSnap) => {
-      dispatch({ type: "sheetSnapChange", snap });
+      dispatch({ type: "sheetReported", snap, resting: false });
     },
     [dispatch],
   );
 
   const handleSheetSnapSettled = useCallback(
     (snap: SheetSnap) => {
-      if (snap === "collapsed") {
-        dispatch({ type: "closeSheet" });
-        return;
-      }
-      dispatch({ type: "sheetSnapSettled", snap });
+      dispatch({ type: "sheetReported", snap, resting: true });
     },
     [dispatch],
   );

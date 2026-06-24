@@ -119,9 +119,12 @@ export function useMapAnchor({
     followThresholdExceededRef,
   });
 
+  const readCameraSession = useCallback(() => stateRef.current.session, []);
+
   return {
     anchor: state.anchor,
     session: state.session,
+    readCameraSession,
     /** Last Mapbox padding applied from live sheet DOM. */
     mapPadding: padding.mapPadding,
     /** True after the first successful `setPadding` from live sheet DOM. */
