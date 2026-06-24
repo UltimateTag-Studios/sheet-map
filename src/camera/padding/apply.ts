@@ -1,6 +1,6 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
-import type { MapAnchorState } from "../anchor";
+import type { MapAnchorState } from "../lib";
 import { moveCameraProgrammatic } from "../movement";
 import type { MapPosition } from "../shared/map-position";
 

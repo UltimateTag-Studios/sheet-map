@@ -1,21 +1,21 @@
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { mockCanvas, stubViewport } from "../viewport/testing/fixtures";
-import { mountSheetHostFixture } from "../viewport/testing/mount-sheet-host-fixture";
-import { clearMapPaddingSyncState, syncMapPadding } from "./padding/sync";
+import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
+import { mountSheetHostFixture } from "../../viewport/testing/mount-sheet-host-fixture";
+import { clearMapPaddingSyncState, syncMapPadding } from "../padding/sync";
 import {
   asTestMapboxMap,
   createTestMapRef,
-} from "./testing/create-test-map-ref";
+} from "../testing/create-test-map-ref";
 import {
   mountAnchor,
   mountAnchorWithDeferredBootTarget,
   mountAnchorWithLiveSheetPadding,
   mountAnchorWithMapRef,
-} from "./testing/mount-map-anchor-harness";
+} from "../testing/mount-map-anchor-harness";
 
-describe("useMapAnchor", () => {
+describe("useMapCamera", () => {
   it("boots anchor from the map center when enabled", () => {
     const harness = mountAnchor();
 

@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { MapAnchorSession } from "../camera/anchor/state";
+import type { MapAnchorSession } from "../camera";
 import type { MapPosition } from "../camera/shared/map-position";
 import type { SheetMotionPhase } from "../viewport";
 import { createMapInstanceStore } from "./map-instance-store";

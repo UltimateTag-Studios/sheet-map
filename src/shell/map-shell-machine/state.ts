@@ -1,6 +1,6 @@
 import type { SheetSnap } from "@siegetag/sheet";
 
-import type { MapAnchorSession } from "../../camera/anchor/state";
+import type { MapAnchorSession } from "../../camera";
 import type { MapItemLocation } from "../../items/types";
 import type { SheetMotionPhase } from "../../viewport";
 

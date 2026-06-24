@@ -1,4 +1,4 @@
-import { applyMapAnchorCamera, stopMapMotion } from "../anchor";
+import { applyMapAnchorCamera, stopMapMotion } from "../lib";
 import { canNavigateMap } from "../shared/can-navigate-map";
 import { mergeMapAnchorPosition } from "../shared/map-position";
 import type { MoveCameraProgrammaticInput } from "./types";

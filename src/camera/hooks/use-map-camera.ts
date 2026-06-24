@@ -11,7 +11,7 @@ import {
   useMapInstanceLifecycle,
   usePaddingDomSync,
 } from "../adapters";
-import { isAtMapAnchorPosition } from "../anchor";
+import { isAtMapAnchorPosition } from "../lib";
 import {
   type MapCameraMachineDispatch,
   type MapCameraMachineEffect,

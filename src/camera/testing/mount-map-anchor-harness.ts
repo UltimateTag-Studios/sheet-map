@@ -1,13 +1,20 @@
 import type { ReactElement } from "react";
-import { act, createElement, StrictMode, useEffect, useState } from "react";
+import {
+  act,
+  createElement,
+  StrictMode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 import type { SheetMotionPhase } from "../../viewport";
 import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../../viewport/testing/mount-sheet-host-fixture";
-import type { MapAnchorFollowConfig } from "../anchor";
 import type { MapCameraBootRequest } from "../hooks/types";
 import { useMapCamera } from "../hooks/use-map-camera";
+import type { MapAnchorFollowConfig } from "../lib";
 import type { MapPosition } from "../shared/map-position";
 import { positionKey } from "../shared/map-position";
 import {
@@ -68,13 +75,16 @@ function useMapCameraHarness(
     onReleaseTracking: options.onReleaseTracking,
   });
 
+  const dispatchRef = useRef(camera.dispatch);
+  dispatchRef.current = camera.dispatch;
+
   useEffect(() => {
     if (!options.follow) {
       return;
     }
 
-    camera.dispatch({ type: "startTracking", follow: options.follow });
-  }, [options.follow, camera]);
+    dispatchRef.current({ type: "startTracking", follow: options.follow });
+  }, [options.follow]);
 
   return camera;
 }

@@ -14,6 +14,11 @@ export type {
 } from "./hooks/use-map-user-tracking";
 export { useMapUserTracking } from "./hooks/use-map-user-tracking";
 export type {
+  MapAnchorFollowConfig,
+  MapAnchorSession,
+  MapAnchorState,
+} from "./lib";
+export type {
   MapCameraMachineEffect,
   MapCameraMachineEvent,
   MapCameraState,

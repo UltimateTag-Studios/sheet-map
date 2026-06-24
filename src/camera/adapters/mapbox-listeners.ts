@@ -8,7 +8,7 @@ import {
   isUserMapGestureEvent,
   readMapAnchorPosition,
   resolveMoveEnd,
-} from "../anchor";
+} from "../lib";
 import type { MapCameraMachineDispatch } from "../machine";
 import type { MapCameraState } from "../machine/state";
 import {

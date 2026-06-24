@@ -1,6 +1,6 @@
 import type { SheetMotionPhase } from "../../viewport";
-import type { GestureSettleOutcome } from "../anchor/evaluate-gesture-settle";
-import { resolveMoveEnd } from "../anchor/resolve-move-end";
+import type { GestureSettleOutcome } from "../lib/evaluate-gesture-settle";
+import { resolveMoveEnd } from "../lib/resolve-move-end";
 import type { MapPaddingOptions } from "../padding/compute";
 import {
   type MapPosition,

@@ -1,9 +1,9 @@
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { mountPaddingAnchorHarness } from "./testing/mount-map-anchor-harness";
+import { mountPaddingAnchorHarness } from "./mount-map-anchor-harness";
 
-describe("padding + anchor integration", () => {
+describe("padding + camera integration", () => {
   it("updates padding without changing anchor or session when idle", () => {
     const harness = mountPaddingAnchorHarness(152);
     const bootAnchor = harness.latest.anchor;

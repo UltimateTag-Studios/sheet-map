@@ -13,10 +13,6 @@ export { isAtMapAnchorPosition } from "./is-at-position";
 export { isUserMapGestureEvent } from "./is-user-map-gesture-event";
 export { readMapAnchorPosition } from "./read-position";
 export {
-  type MapAnchorEvent,
-  reduceMapAnchor,
-} from "./reduce";
-export {
   type MoveEndResolution,
   type MoveEndTrackingContext,
   resolveMoveEnd,

@@ -1,10 +1,10 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
 import type { MapObscuredInsets, SheetMotionPhase } from "../../viewport";
-import type { MapAnchorFollowConfig } from "../anchor";
+import type { MapAnchorFollowConfig } from "../lib";
 import type { MapPosition } from "../shared/map-position";
 
-export type { MapAnchorFollowConfig } from "../anchor";
+export type { MapAnchorFollowConfig } from "../lib";
 
 export type NavigateToMapAnchorOptions = {
   /**
