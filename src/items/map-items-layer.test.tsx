@@ -3,10 +3,10 @@ import { forwardRef, useEffect } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createMapRouteContentStore } from "../shell/map-route-content-store";
 import type { MapShellState } from "../shell/map-route-context";
 import { MapRouteProvider } from "../shell/map-route-context";
 import { MapShellSlotsProvider } from "../shell/map-shell-slots-context";
+import { createTestMapRouteStores } from "../shell/testing/map-route-test-stores";
 import { MapItemsLayer } from "./map-items-layer";
 import type { MapItem } from "./types";
 
@@ -65,6 +65,8 @@ describe("MapItemsLayer", () => {
   });
 
   it("renders markers only for located items", () => {
+    const { routeContentStore } = createTestMapRouteStores();
+
     render(
       <MapRouteProvider
         shell={
@@ -73,7 +75,7 @@ describe("MapItemsLayer", () => {
             selectItem: vi.fn(),
           } as unknown as MapShellState
         }
-        routeContentStore={createMapRouteContentStore()}
+        routeContentStore={routeContentStore}
       >
         <MapShellSlotsProvider slots={{}}>
           <MapItemsLayer items={items} />
@@ -86,6 +88,7 @@ describe("MapItemsLayer", () => {
 
   it("calls selectItem when a default marker is pressed", () => {
     const selectItem = vi.fn();
+    const { routeContentStore } = createTestMapRouteStores();
 
     render(
       <MapRouteProvider
@@ -95,7 +98,7 @@ describe("MapItemsLayer", () => {
             selectItem,
           } as unknown as MapShellState
         }
-        routeContentStore={createMapRouteContentStore()}
+        routeContentStore={routeContentStore}
       >
         <MapShellSlotsProvider slots={{}}>
           <MapItemsLayer items={items} />

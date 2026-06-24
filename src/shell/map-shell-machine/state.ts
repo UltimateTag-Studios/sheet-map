@@ -3,6 +3,7 @@ import type { SheetSnap } from "@siegetag/sheet";
 import type { MapAnchorSession } from "../../camera";
 import type { MapItemLocation } from "../../items/types";
 import type { SheetMotionPhase } from "../../viewport";
+import type { RouteEnterFly } from "./route-enter-fly";
 
 /**
  * Item-select orchestration while the sheet stays collapsed (fly-then-open).
@@ -15,12 +16,39 @@ export type ItemSelectPhase =
   | {
       status: "flyingToItem";
       location: MapItemLocation;
+    }
+  | {
+      /** Fly queued until sheet gesture motion returns to idle. */
+      status: "pendingFly";
+      location: MapItemLocation;
     };
 
-/** Snapshot from map camera + sheet gesture subsystems. */
+/** Snapshot from map camera, sheet gesture, and route enter-fly subsystems. */
 export type MapShellEnvironment = {
   cameraSession: MapAnchorSession;
   sheetMotionPhase: SheetMotionPhase;
+  mapPaddingReady: boolean;
+  hasUserLocation: boolean;
+};
+
+/**
+ * Route camera entry lifecycle for the current visit:
+ *
+ * - `waiting` — entry declared; not dispatched yet (data loading or gates closed)
+ * - `dispatched` — fly / select sent once for this entry
+ * - `satisfied` — entry goal met for this visit
+ * - `dismissed` — user explicitly cleared selection on this visit
+ */
+export type RouteEntryApplyStatus =
+  | "waiting"
+  | "dispatched"
+  | "satisfied"
+  | "dismissed";
+
+export type RouteEntryVisit = {
+  routeKey: string;
+  entry: RouteEnterFly | null;
+  applyStatus: RouteEntryApplyStatus;
 };
 
 export type MapShellMachineState = {
@@ -28,6 +56,7 @@ export type MapShellMachineState = {
   selectedItemId: string | null;
   environment: MapShellEnvironment;
   itemSelect: ItemSelectPhase;
+  routeVisit: RouteEntryVisit | null;
 };
 
 export function createInitialMapShellMachineState(): MapShellMachineState {
@@ -37,8 +66,11 @@ export function createInitialMapShellMachineState(): MapShellMachineState {
     environment: {
       cameraSession: "idle",
       sheetMotionPhase: "idle",
+      mapPaddingReady: false,
+      hasUserLocation: false,
     },
     itemSelect: { status: "idle" },
+    routeVisit: null,
   };
 }
 

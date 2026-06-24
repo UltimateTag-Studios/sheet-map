@@ -27,12 +27,17 @@ Orthogonal state:
 
 `userGesture` includes momentum: session stays active until `moveend` **and** `map.isMoving()` is false.
 
-## Boot and padding
+## Route enter fly and padding
 
-1. App passes first GPS fix → `useMapUserTracking` sets one-shot `bootRequest`.
-2. Padding DOM adapter dispatches `paddingMeasured` when sheet obscured height is readable.
-3. Machine issues boot fly via `navigateRequested` when gates are ready.
-4. Successful boot sets `boot: "done"`, `tracking: "on"`, and stores follow config.
+Inside `MapLayout`, the shell route FSM owns the first fly:
+
+1. Route registers with `useRegisterMapRoute(..., routeKey)` → default `flyToUser`, or `useRouteEnterFly` → `flyToItem`.
+2. FSM waits for sheet idle, map padding, and (for user location) `hasUserLocation`.
+3. Effects call `recenterOnUser` or `navigateRequested` on the camera machine. Optional `zoom` on the enter-fly entry: explicit value wins; omitted zoom preserves the current map level when set, otherwise the shell `initialZoom` applies.
+
+`useMapCamera` still supports an explicit `bootRequest` for low-level tests and harnesses; `useMapUserTracking` does not auto-boot.
+
+Padding DOM adapter dispatches `paddingMeasured` when sheet obscured height is readable.
 
 ## `navigateTo` (public camera API)
 

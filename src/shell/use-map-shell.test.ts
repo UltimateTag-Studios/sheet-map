@@ -34,6 +34,8 @@ vi.mock("../camera", () => ({
   useMapUserTracking: () => ({
     tracking: false,
     mapPaddingReady: true,
+    boot: "done",
+    hasUserLocation: false,
     get session() {
       return mockCameraSession;
     },

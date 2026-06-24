@@ -4,6 +4,11 @@ export type {
   MapShellMachineResult,
 } from "./machine";
 export { reduceMapShellMachine } from "./machine";
+export type { RouteEnterFly } from "./route-enter-fly";
+export {
+  routeEnterFliesEqual,
+  routeEnterFlyKey,
+} from "./route-enter-fly";
 export type {
   ItemSelectPhase,
   MapShellEnvironment,

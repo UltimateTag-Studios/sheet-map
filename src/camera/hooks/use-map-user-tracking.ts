@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import type { MapObscuredInsets, SheetMotionPhase } from "../../viewport";
 import type { PixelPoint } from "../../viewport/types/pixel";
 import { type MapPosition, positionKey } from "../shared/map-position";
-import type { MapCameraBootRequest } from "./types";
 import { useMapCamera } from "./use-map-camera";
 
 export type MapUserLocationCoords = {
@@ -32,15 +31,18 @@ export type UseMapUserTrackingOptions = {
   sheetPhase?: SheetMotionPhase;
   /** Visible-area center offset for tracking threshold. */
   centerOffset?: PixelPoint;
-  /** Zoom for the one-shot boot fly only. */
-  bootZoom?: number;
   smoothFlyDurationMs?: number;
   /** Screen pixels before tracking releases on user pan (demo default 40). */
   trackingReleaseThresholdPx?: number;
   onMapInstanceReleased?: () => void;
 };
 
-/** Public map camera hook: boot fly, GPS tracking, gesture threshold, `navigateTo`. */
+/**
+ * Map camera hook: GPS tracking, gesture threshold, `navigateTo`, `recenterOnUser`.
+ *
+ * The first fly is owned by the map shell route entry (`flyToUser` / `flyToItem`), not
+ * this hook.
+ */
 export function useMapUserTracking({
   mapRef,
   userLocation,
@@ -50,19 +52,14 @@ export function useMapUserTracking({
   mapPaddingDebug = false,
   sheetPhase = "idle",
   centerOffset = { x: 0, y: 0 },
-  bootZoom = 15,
   smoothFlyDurationMs = 600,
   trackingReleaseThresholdPx = DEFAULT_TRACKING_RELEASE_THRESHOLD_PX,
-  onMapInstanceReleased: onMapInstanceReleasedOption,
+  onMapInstanceReleased,
 }: UseMapUserTrackingOptions) {
   const userLocationLng = userLocation?.lng;
   const userLocationLat = userLocation?.lat;
   const hasUserLocation =
     userLocationLng !== undefined && userLocationLat !== undefined;
-
-  const [bootRequest, setBootRequest] = useState<MapCameraBootRequest | null>(
-    null,
-  );
 
   const buildUserPosition = useCallback((): MapPosition | null => {
     if (!hasUserLocation) {
@@ -93,40 +90,6 @@ export function useMapUserTracking({
     trackingReleaseThresholdPx,
   ]);
 
-  useEffect(() => {
-    if (!hasUserLocation || bootRequest !== null) {
-      return;
-    }
-
-    const position = {
-      lat: userLocationLat,
-      lng: userLocationLng,
-      zoom: bootZoom,
-    };
-    const follow = buildFollowConfig();
-    if (!follow) {
-      return;
-    }
-
-    setBootRequest({
-      position,
-      follow,
-      positionKey: positionKey(position),
-    });
-  }, [
-    hasUserLocation,
-    userLocationLat,
-    userLocationLng,
-    bootZoom,
-    bootRequest,
-    buildFollowConfig,
-  ]);
-
-  const onMapInstanceReleased = useCallback(() => {
-    setBootRequest(null);
-    onMapInstanceReleasedOption?.();
-  }, [onMapInstanceReleasedOption]);
-
   const {
     anchor,
     session,
@@ -143,8 +106,6 @@ export function useMapUserTracking({
     mapPaddingDebug,
     sheetPhase,
     smoothFlyDurationMs,
-    bootRequest,
-    bootDurationMs: smoothFlyDurationMs,
     onMapInstanceReleased,
   });
 
@@ -196,6 +157,7 @@ export function useMapUserTracking({
     navigateTo,
     dispatch,
     userLocation: hasUserLocation ? userLocation : null,
+    hasUserLocation,
     tracking,
     recenterOnUser,
   };

@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from "react";
 
-import type { MapItemLocation } from "../../items/types";
 import {
   type MapShellMachineEffect,
   type MapShellMachineEvent,
@@ -13,25 +12,14 @@ import {
 
 export type MapShellMachineDispatch = (event: MapShellMachineEvent) => void;
 
-function applyEffects(
-  effects: MapShellMachineEffect[],
-  onFlyToItem: (location: MapItemLocation) => void,
-) {
-  for (const effect of effects) {
-    if (effect.type === "flyToItem") {
-      onFlyToItem(effect.location);
-    }
-  }
-}
-
 export function useMapShellMachine(
-  onFlyToItem: (location: MapItemLocation) => void,
+  onEffect: (effect: MapShellMachineEffect) => void,
 ): {
   state: MapShellMachineState;
   dispatch: MapShellMachineDispatch;
 } {
-  const onFlyToItemRef = useRef(onFlyToItem);
-  onFlyToItemRef.current = onFlyToItem;
+  const onEffectRef = useRef(onEffect);
+  onEffectRef.current = onEffect;
 
   const stateRef = useRef(createInitialMapShellMachineState());
   const [state, setState] = useState(createInitialMapShellMachineState);
@@ -40,9 +28,9 @@ export function useMapShellMachine(
     const result = reduceMapShellMachine(stateRef.current, event);
     stateRef.current = result.state;
     setState(result.state);
-    applyEffects(result.effects, (location) =>
-      onFlyToItemRef.current(location),
-    );
+    for (const effect of result.effects) {
+      onEffectRef.current(effect);
+    }
   }, []);
 
   return { state, dispatch };

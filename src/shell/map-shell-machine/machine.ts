@@ -2,36 +2,57 @@ import type { SheetLayoutFrameChange, SheetSnap } from "@siegetag/sheet";
 
 import type { MapItemLocation } from "../../items/types";
 import {
-  type ItemSelectPhase,
-  isSheetMotionIdle,
-  isSheetReadyAtHalf,
-  type MapShellEnvironment,
-  type MapShellMachineState,
+  resolveLocatedSelect,
+  resolveLocatedSelectOrPending,
+} from "./resolve-located-select";
+import type { RouteEnterFly } from "./route-enter-fly";
+import {
+  advanceRouteEntry,
+  completeRouteUserEnterFly,
+  dismissRouteEntry,
+  resetRouteEntryToWaiting,
+  routeEnterFliesEqual,
+  tryApplyRouteEntry,
+} from "./route-enter-fly";
+import type {
+  ItemSelectPhase,
+  MapShellEnvironment,
+  MapShellMachineState,
 } from "./state";
 
 type SheetPhase = SheetLayoutFrameChange["phase"];
 
 /**
- * Map shell machine events — three sources only:
+ * Map shell machine events — four sources:
  *
  * 1. **Intent** — user / app actions (`selectItem`, `clearSelection`, `dismissSheet`)
  * 2. **Sheet** — `@siegetag/sheet` reports snap + gesture phase
- * 3. **Environment** — camera session + sheet motion phase from live subsystems
+ * 3. **Environment** — camera session, sheet motion, boot, padding from live subsystems
+ * 4. **Route** — active route declares enter fly (`routeEnterFlyChanged`)
  *
- * Side effects (`flyToItem`) are outputs, not events. The camera and sheet
- * subsystems report back through `environmentSynced` and `sheetReported`.
+ * Side effects are outputs, not events. Subsystems report back through
+ * `environmentSynced` and `sheetReported`.
  */
 export type MapShellMachineEvent =
   | { type: "selectItem"; id: string; location: MapItemLocation | null }
-  | { type: "clearSelection" }
+  | { type: "clearSelection"; dismissRouteEntry?: boolean }
   | { type: "dismissSheet" }
   | { type: "sheetReported"; snap: SheetSnap; phase: SheetPhase }
-  | { type: "environmentSynced"; environment: MapShellEnvironment };
+  | { type: "environmentSynced"; environment: MapShellEnvironment }
+  | {
+      type: "routeEnterFlyChanged";
+      routeKey: string;
+      entry: RouteEnterFly | null;
+    };
 
-export type MapShellMachineEffect = {
-  type: "flyToItem";
-  location: MapItemLocation;
-};
+export type MapShellMachineEffect =
+  | {
+      type: "flyToItem";
+      location: MapItemLocation;
+      enterFly?: boolean;
+      zoom?: number;
+    }
+  | { type: "flyToUser"; zoom?: number };
 
 export type MapShellMachineResult = {
   state: MapShellMachineState;
@@ -70,23 +91,46 @@ function isFlyingToItem(
   return state.itemSelect.status === "flyingToItem";
 }
 
+function isPendingFly(
+  state: MapShellMachineState,
+): state is MapShellMachineState & {
+  itemSelect: {
+    status: "pendingFly";
+    location: MapItemLocation;
+  };
+} {
+  return state.itemSelect.status === "pendingFly";
+}
+
 function environmentsEqual(
   a: MapShellEnvironment,
   b: MapShellEnvironment,
 ): boolean {
   return (
     a.cameraSession === b.cameraSession &&
-    a.sheetMotionPhase === b.sheetMotionPhase
+    a.sheetMotionPhase === b.sheetMotionPhase &&
+    a.mapPaddingReady === b.mapPaddingReady &&
+    a.hasUserLocation === b.hasUserLocation
   );
+}
+
+function mergeResults(
+  first: MapShellMachineResult,
+  second: MapShellMachineResult,
+): MapShellMachineResult {
+  return {
+    state: second.state,
+    effects: [...first.effects, ...second.effects],
+  };
 }
 
 function applyEnvironment(
   state: MapShellMachineState,
   environment: MapShellEnvironment,
-): MapShellMachineState {
+): MapShellMachineResult {
   const previousEnvironment = state.environment;
   if (environmentsEqual(previousEnvironment, environment)) {
-    return state;
+    return { state, effects: [] };
   }
 
   const withEnvironment: MapShellMachineState = { ...state, environment };
@@ -96,31 +140,129 @@ function applyEnvironment(
     previousEnvironment.cameraSession === "flying" &&
     environment.cameraSession === "idle"
   ) {
-    return completeFlyingToItem(withEnvironment);
+    return {
+      state: completeFlyingToItem(withEnvironment),
+      effects: [],
+    };
   }
 
-  return withEnvironment;
+  if (
+    isPendingFly(withEnvironment) &&
+    previousEnvironment.sheetMotionPhase !== "idle" &&
+    environment.sheetMotionPhase === "idle"
+  ) {
+    const selectedItemId = withEnvironment.selectedItemId;
+    if (selectedItemId === null) {
+      return {
+        state: { ...withEnvironment, itemSelect: idleItemSelect() },
+        effects: [],
+      };
+    }
+
+    return resolveLocatedSelect(
+      withEnvironment,
+      selectedItemId,
+      withEnvironment.itemSelect.location,
+    );
+  }
+
+  const afterUserFly = completeRouteUserEnterFly(
+    withEnvironment,
+    previousEnvironment,
+    environment,
+  );
+
+  return { state: afterUserFly, effects: [] };
 }
 
-/** Unified map-shell selection, sheet snap, and item-select sequencing. */
+function reduceRouteEnterFlyChanged(
+  state: MapShellMachineState,
+  routeKey: string,
+  entry: RouteEnterFly | null,
+): MapShellMachineResult {
+  if (!routeKey) {
+    return {
+      state: {
+        ...state,
+        routeVisit: null,
+        selectedItemId: null,
+        itemSelect: idleItemSelect(),
+      },
+      effects: [],
+    };
+  }
+
+  const sameRoute = state.routeVisit?.routeKey === routeKey;
+  const sameEntry = routeEnterFliesEqual(state.routeVisit?.entry, entry);
+
+  if (sameRoute && sameEntry) {
+    return { state, effects: [] };
+  }
+
+  const nextState: MapShellMachineState = {
+    ...state,
+    selectedItemId: sameRoute ? state.selectedItemId : null,
+    itemSelect: sameRoute ? state.itemSelect : idleItemSelect(),
+    routeVisit: {
+      routeKey,
+      entry,
+      applyStatus: "waiting",
+    },
+  };
+
+  if (!entry) {
+    return { state: nextState, effects: [] };
+  }
+
+  return tryApplyRouteEntry(nextState);
+}
+
+function routeEntryInterruptedOnCollapse(state: MapShellMachineState): boolean {
+  const visit = state.routeVisit;
+  if (!visit?.entry || visit.entry.kind !== "item") {
+    return false;
+  }
+
+  if (visit.applyStatus === "waiting") {
+    return state.selectedItemId !== visit.entry.id;
+  }
+
+  return (
+    visit.applyStatus === "dispatched" &&
+    state.selectedItemId !== visit.entry.id
+  );
+}
+
+/** Unified map-shell selection, sheet snap, route entry, and item-select sequencing. */
 export function reduceMapShellMachine(
   state: MapShellMachineState,
   event: MapShellMachineEvent,
 ): MapShellMachineResult {
   switch (event.type) {
     case "environmentSynced": {
-      return {
-        state: applyEnvironment(state, event.environment),
-        effects: [],
-      };
+      const envResult = applyEnvironment(state, event.environment);
+      const advanced = advanceRouteEntry(envResult.state);
+      return mergeResults(envResult, tryApplyRouteEntry(advanced));
+    }
+
+    case "routeEnterFlyChanged": {
+      return reduceRouteEnterFlyChanged(state, event.routeKey, event.entry);
     }
 
     case "sheetReported": {
       if (event.phase === "idle" && event.snap === "collapsed") {
-        return {
-          state: sheetClosedState({ ...state, sheetSnap: event.snap }),
-          effects: [],
-        };
+        if (routeEntryInterruptedOnCollapse(state)) {
+          return {
+            state: resetRouteEntryToWaiting(
+              sheetClosedState({ ...state, sheetSnap: event.snap }),
+            ),
+            effects: [],
+          };
+        }
+
+        const closed = sheetClosedState({ ...state, sheetSnap: event.snap });
+        const next = closed.routeVisit ? dismissRouteEntry(closed) : closed;
+        return { state: next, effects: [] };
       }
 
       if (event.snap === state.sheetSnap) {
@@ -146,57 +288,31 @@ export function reduceMapShellMachine(
         };
       }
 
-      if (isSheetReadyAtHalf(state)) {
-        return {
-          state: {
-            ...state,
-            selectedItemId: event.id,
-            sheetSnap: "half",
-            itemSelect: idleItemSelect(),
-          },
-          effects: [{ type: "flyToItem", location: event.location }],
-        };
-      }
-
-      if (!isSheetMotionIdle(state)) {
-        return {
-          state: {
-            ...state,
-            selectedItemId: event.id,
-            sheetSnap: "half",
-            itemSelect: idleItemSelect(),
-          },
-          effects: [],
-        };
-      }
-
-      return {
-        state: {
-          ...state,
-          selectedItemId: event.id,
-          sheetSnap: "collapsed",
-          itemSelect: {
-            status: "flyingToItem",
-            location: event.location,
-          },
-        },
-        effects: [{ type: "flyToItem", location: event.location }],
-      };
+      return resolveLocatedSelectOrPending(state, event.id, event.location);
     }
 
     case "clearSelection": {
       if (state.selectedItemId === null && state.itemSelect.status === "idle") {
+        if (event.dismissRouteEntry !== false && state.routeVisit) {
+          return {
+            state: dismissRouteEntry(state),
+            effects: [],
+          };
+        }
         return { state, effects: [] };
       }
 
-      return {
-        state: {
-          ...state,
-          selectedItemId: null,
-          itemSelect: idleItemSelect(),
-        },
-        effects: [],
+      const cleared: MapShellMachineState = {
+        ...state,
+        selectedItemId: null,
+        itemSelect: idleItemSelect(),
+        routeVisit:
+          event.dismissRouteEntry === false || !state.routeVisit
+            ? state.routeVisit
+            : dismissRouteEntry(state).routeVisit,
       };
+
+      return { state: cleared, effects: [] };
     }
 
     case "dismissSheet": {

@@ -75,6 +75,11 @@ export {
   mergeMapShellLayout,
   SHEET_MAP_LAYOUT_VARS,
 } from "./map-shell-layout-vars";
+export type { RouteEnterFly } from "./map-shell-machine/route-enter-fly";
+export {
+  routeEnterFliesEqual,
+  routeEnterFlyKey,
+} from "./map-shell-machine/route-enter-fly";
 export {
   MapShellSlotsProvider,
   mergeMapShellSlots,
@@ -109,3 +114,4 @@ export {
 export type { UseMapShellOptions } from "./use-map-shell";
 export { useMapShell } from "./use-map-shell";
 export { useRegisterMapRoute } from "./use-register-map-route";
+export { useRouteEnterFly } from "./use-route-enter-fly";

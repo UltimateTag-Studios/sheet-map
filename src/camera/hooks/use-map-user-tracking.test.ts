@@ -36,7 +36,6 @@ function mountUserTrackingWithMapRef(
   options: {
     userLocation?: MapUserLocationCoords | null;
     liveSheetObscuredBottomPx?: number;
-    bootZoom?: number;
     smoothFlyDurationMs?: number;
     onMapInstanceReleased?: () => void;
   } = {},
@@ -57,7 +56,6 @@ function mountUserTrackingWithMapRef(
             mapRef: harness.mapRef,
             userLocation: options.userLocation ?? null,
             liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
-            bootZoom: options.bootZoom,
             smoothFlyDurationMs: options.smoothFlyDurationMs,
             onMapInstanceReleased: options.onMapInstanceReleased,
           });
@@ -119,68 +117,16 @@ function mountUserTrackingWithLiveSheetPadding(
   };
 }
 
-function mountUserTrackingWithDeferredLocation(initialPx = 152) {
-  stubViewport();
-  const fixture = mountSheetHostFixture(
-    mockCanvas,
-    {},
-    {
-      top: 800 - initialPx,
-      bottom: 800,
-      height: initialPx,
-      y: 800 - initialPx,
-    },
-  );
-
-  const harness = createTestMapRef({
-    canvas: fixture.canvas,
-    initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
-  });
-
-  const container = document.createElement("div");
-  const root: Root = createRoot(container);
-  const latestRef: { current: UserTrackingHookResult | null } = {
-    current: null,
-  };
-  let setUserLocation: ((next: MapUserLocationCoords | null) => void) | null =
-    null;
-
+function startFollowingUser(
+  latest: UserTrackingHookResult,
+  map: TestMapRefHarness["map"],
+  location: MapUserLocationCoords,
+  zoom = 15,
+) {
   act(() => {
-    root.render(
-      createElement(function Harness() {
-        const [userLocation, setUserLocationState] =
-          useState<MapUserLocationCoords | null>(null);
-        setUserLocation = setUserLocationState;
-        latestRef.current = useMapUserTracking({
-          mapRef: harness.mapRef,
-          userLocation,
-          liveSheetObscuredBottomPx: initialPx,
-        });
-        return null;
-      }),
-    );
+    latest.recenterOnUser({ zoom });
   });
-
-  return {
-    ...harness,
-    get latest(): UserTrackingHookResult {
-      if (!latestRef.current) {
-        throw new Error("hook not mounted");
-      }
-      return latestRef.current;
-    },
-    setUserLocation(next: MapUserLocationCoords | null) {
-      act(() => {
-        setUserLocation?.(next);
-      });
-    },
-    unmount() {
-      act(() => {
-        root.unmount();
-      });
-      fixture.remove();
-    },
-  };
+  settleNavigation(map, { ...location, zoom });
 }
 
 describe("useMapUserTracking", () => {
@@ -189,141 +135,85 @@ describe("useMapUserTracking", () => {
     lng: -74,
   };
 
-  it("boots once when userLocation is present and padding is ready", () => {
+  it("does not fly on mount when user location is present", () => {
     const harness = mountUserTrackingWithLiveSheetPadding(userLocation);
 
-    expect(harness.latest.tracking).toBe(true);
-    expect(harness.latest.boot).toBe("done");
-    expect(harness.latest.mapPaddingReady).toBe(true);
+    expect(harness.latest.tracking).toBe(false);
+    expect(harness.latest.boot).not.toBe("done");
+    expect(harness.map.flyTo).not.toHaveBeenCalled();
+
+    harness.unmount();
+  });
+
+  it("does not fly when userLocation stays null", () => {
+    const harness = mountUserTrackingWithLiveSheetPadding(null);
+
+    expect(harness.latest.tracking).toBe(false);
+    expect(harness.map.flyTo).not.toHaveBeenCalled();
+
+    harness.unmount();
+  });
+
+  it("recenterOnUser flies to the user and enables tracking", () => {
+    stubViewport();
+    const fixture = mountSheetHostFixture(
+      mockCanvas,
+      {},
+      {
+        top: 800 - 152,
+        bottom: 800,
+        height: 152,
+        y: 800 - 152,
+      },
+    );
+
+    const harness = createTestMapRef({
+      canvas: fixture.canvas,
+      initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
+    });
+
+    const { result } = renderHook(() =>
+      useMapUserTracking({
+        mapRef: harness.mapRef,
+        userLocation,
+        liveSheetObscuredBottomPx: 152,
+      }),
+    );
+
+    act(() => {
+      result.current.recenterOnUser();
+    });
+
+    expect(result.current.tracking).toBe(true);
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
     expect(harness.map.flyTo).toHaveBeenCalledWith(
       expect.objectContaining({
         center: [userLocation.lng, userLocation.lat],
-        zoom: 15,
+      }),
+    );
+    expect(harness.map.flyTo.mock.calls[0]?.[0]).not.toHaveProperty("zoom");
+
+    fixture.remove();
+  });
+
+  it("recenterOnUser accepts an explicit zoom", () => {
+    const harness = mountUserTrackingWithLiveSheetPadding(userLocation);
+
+    act(() => {
+      harness.latest.recenterOnUser({ zoom: 12 });
+    });
+
+    expect(harness.map.flyTo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        center: [userLocation.lng, userLocation.lat],
+        zoom: 12,
       }),
     );
 
     harness.unmount();
   });
 
-  it("boots when userLocation arrives after padding is ready", () => {
-    const harness = mountUserTrackingWithDeferredLocation();
-
-    expect(harness.latest.tracking).toBe(false);
-    expect(harness.map.flyTo).not.toHaveBeenCalled();
-
-    harness.setUserLocation(userLocation);
-
-    expect(harness.latest.tracking).toBe(true);
-    expect(harness.latest.boot).toBe("done");
-    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-
-    harness.unmount();
-  });
-
-  it("boots when padding becomes ready after userLocation is already set", () => {
-    stubViewport();
-    const fixture = mountSheetHostFixture(
-      mockCanvas,
-      {},
-      {
-        top: 800 - 152,
-        bottom: 800,
-        height: 152,
-        y: 800 - 152,
-      },
-    );
-
-    const harness = createTestMapRef({
-      canvas: fixture.canvas,
-      styleLoaded: false,
-      initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
-    });
-
-    const mounted = mountUserTrackingWithMapRef(harness, {
-      userLocation,
-      liveSheetObscuredBottomPx: 152,
-    });
-
-    expect(mounted.latest.mapPaddingReady).toBe(false);
-    expect(mounted.map.flyTo).not.toHaveBeenCalled();
-
-    act(() => {
-      mounted.map.emitLoad();
-    });
-
-    expect(mounted.latest.mapPaddingReady).toBe(true);
-    expect(mounted.latest.boot).toBe("done");
-    expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
-
-    mounted.unmount();
-    fixture.remove();
-  });
-
-  it("boots when padding becomes ready without map idle or moveend", () => {
-    stubViewport();
-    const fixture = mountSheetHostFixture(
-      mockCanvas,
-      {},
-      {
-        top: 800 - 152,
-        bottom: 800,
-        height: 152,
-        y: 800 - 152,
-      },
-    );
-
-    const harness = createTestMapRef({
-      canvas: fixture.canvas,
-      emitEventsOnSetPadding: false,
-      initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
-    });
-
-    const mounted = mountUserTrackingWithMapRef(harness, {
-      userLocation,
-      liveSheetObscuredBottomPx: 152,
-    });
-
-    expect(mounted.latest.mapPaddingReady).toBe(true);
-    expect(mounted.latest.boot).toBe("done");
-    expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
-
-    mounted.unmount();
-    fixture.remove();
-  });
-
-  it("does not boot when userLocation stays null", () => {
-    const harness = mountUserTrackingWithLiveSheetPadding(null);
-
-    expect(harness.latest.tracking).toBe(false);
-    expect(harness.latest.boot).not.toBe("done");
-    expect(harness.latest.mapPaddingReady).toBe(true);
-    expect(harness.map.flyTo).not.toHaveBeenCalled();
-
-    harness.unmount();
-  });
-
-  it("can boot again after map instance release", async () => {
-    const onMapInstanceReleased = vi.fn();
-    const harness = createTestMapRef();
-    const first = mountUserTrackingWithMapRef(harness, {
-      userLocation,
-      onMapInstanceReleased,
-    });
-
-    expect(first.latest.boot).toBe("done");
-    expect(first.map.flyTo).toHaveBeenCalledTimes(1);
-    await first.unmount();
-    expect(onMapInstanceReleased).toHaveBeenCalledTimes(1);
-
-    const second = mountUserTrackingWithMapRef(harness, { userLocation });
-    expect(second.map.flyTo).toHaveBeenCalledTimes(2);
-    expect(second.latest.boot).toBe("done");
-
-    await second.unmount();
-  });
-
-  it("does not re-issue boot when userLocation coordinates update", () => {
+  it("does not re-issue fly when userLocation coordinates update before recenter", () => {
     stubViewport();
     const fixture = mountSheetHostFixture(
       mockCanvas,
@@ -368,11 +258,7 @@ describe("useMapUserTracking", () => {
       );
     });
 
-    expect(latestRef.current?.boot).toBe("done");
-    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-    settleNavigation(harness.map, { ...userLocation, zoom: 15 });
-    expect(latestRef.current?.session).toBe("idle");
-    vi.mocked(harness.map.jumpTo).mockClear();
+    expect(harness.map.flyTo).not.toHaveBeenCalled();
 
     act(() => {
       setCoords?.({
@@ -381,22 +267,12 @@ describe("useMapUserTracking", () => {
       });
     });
 
-    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-    expect(harness.map.jumpTo).toHaveBeenCalledTimes(1);
+    expect(harness.map.flyTo).not.toHaveBeenCalled();
 
     act(() => {
       root.unmount();
     });
     fixture.remove();
-  });
-
-  it("does not reposition immediately after boot for the same coordinates", () => {
-    const harness = mountUserTrackingWithLiveSheetPadding(userLocation);
-
-    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-    expect(harness.map.jumpTo).not.toHaveBeenCalled();
-
-    harness.unmount();
   });
 
   it("repositions via jumpTo when GPS updates while idle and following", () => {
@@ -419,6 +295,9 @@ describe("useMapUserTracking", () => {
 
     const container = document.createElement("div");
     const root: Root = createRoot(container);
+    const latestRef: { current: UserTrackingHookResult | null } = {
+      current: null,
+    };
     let setCoords: ((next: MapUserLocationCoords) => void) | null = null;
 
     act(() => {
@@ -430,7 +309,7 @@ describe("useMapUserTracking", () => {
             const [coords, setCoordsState] =
               useState<MapUserLocationCoords>(userLocation);
             setCoords = setCoordsState;
-            useMapUserTracking({
+            latestRef.current = useMapUserTracking({
               mapRef: harness.mapRef,
               userLocation: coords,
               liveSheetObscuredBottomPx: 152,
@@ -441,8 +320,11 @@ describe("useMapUserTracking", () => {
       );
     });
 
-    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-    settleNavigation(harness.map, { ...userLocation, zoom: 15 });
+    if (!latestRef.current) {
+      throw new Error("hook not mounted");
+    }
+
+    startFollowingUser(latestRef.current, harness.map, userLocation);
 
     vi.mocked(harness.map.jumpTo).mockClear();
 
@@ -532,7 +414,7 @@ describe("useMapUserTracking", () => {
     fixture.remove();
   });
 
-  it("does not follow before boot and tracks after boot", () => {
+  it("does not follow before recenter and tracks after recenter", () => {
     stubViewport();
     const fixture = mountSheetHostFixture(
       mockCanvas,
@@ -547,48 +429,24 @@ describe("useMapUserTracking", () => {
 
     const harness = createTestMapRef({
       canvas: fixture.canvas,
-      styleLoaded: false,
       initialPadding: { top: 0, left: 0, right: 0, bottom: 0 },
     });
 
-    const mounted = mountUserTrackingWithMapRef(harness, {
-      userLocation,
-      liveSheetObscuredBottomPx: 152,
-    });
-
-    expect(mounted.latest.tracking).toBe(false);
-    expect(mounted.latest.tracking).toBe(false);
-
-    act(() => {
-      mounted.map.emitLoad();
-    });
-
-    expect(mounted.latest.tracking).toBe(true);
-    expect(mounted.latest.tracking).toBe(true);
-
-    mounted.unmount();
-    fixture.remove();
-  });
-
-  it("recenterOnUser flies to the user and enables tracking", () => {
-    const harness = mountUserTrackingWithLiveSheetPadding(userLocation);
-
-    vi.mocked(harness.map.flyTo).mockClear();
-
-    act(() => {
-      harness.latest.recenterOnUser();
-    });
-
-    expect(harness.latest.tracking).toBe(true);
-    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-    expect(harness.map.flyTo).toHaveBeenCalledWith(
-      expect.objectContaining({
-        center: [userLocation.lng, userLocation.lat],
+    const { result } = renderHook(() =>
+      useMapUserTracking({
+        mapRef: harness.mapRef,
+        userLocation,
+        liveSheetObscuredBottomPx: 152,
       }),
     );
-    expect(harness.map.flyTo.mock.calls[0]?.[0]).not.toHaveProperty("zoom");
 
-    harness.unmount();
+    expect(result.current.tracking).toBe(false);
+
+    startFollowingUser(result.current, harness.map, userLocation);
+
+    expect(result.current.tracking).toBe(true);
+
+    fixture.remove();
   });
 
   it("navigateTo away from user releases tracking", () => {
@@ -620,6 +478,11 @@ describe("useMapUserTracking", () => {
         wrapper: ({ children }) => createElement(StrictMode, null, children),
       },
     );
+
+    act(() => {
+      result.current.recenterOnUser({ zoom: 15 });
+    });
+    settleNavigation(harness.map, { ...userLocation, zoom: 15 });
 
     expect(result.current.tracking).toBe(true);
 

@@ -1,9 +1,9 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { createMapRouteContentStore } from "./map-route-content-store";
 import type { MapRouteContent, MapShellState } from "./map-route-context";
 import { MapRouteProvider } from "./map-route-context";
+import { createTestMapRouteStores } from "./testing/map-route-test-stores";
 import { useRegisterMapRoute } from "./use-register-map-route";
 
 const shellStub = {} as MapShellState;
@@ -14,7 +14,7 @@ const baseContent: MapRouteContent = {
 };
 
 function mountRegisterRoute(initialContent: MapRouteContent) {
-  const routeContentStore = createMapRouteContentStore();
+  const { routeContentStore } = createTestMapRouteStores();
   let content = initialContent;
 
   function Harness() {
@@ -78,8 +78,33 @@ describe("useRegisterMapRoute", () => {
     expect(harness.routeContentStore.getContent()).toBeNull();
   });
 
+  it("reports default user-location camera when routeKey is provided", () => {
+    const reportRouteEnterFly = vi.fn();
+    const shell = { reportRouteEnterFly } as unknown as MapShellState;
+    const { routeContentStore } = createTestMapRouteStores();
+
+    function Harness() {
+      useRegisterMapRoute(baseContent, "inventory");
+      return null;
+    }
+
+    const { unmount } = render(
+      <MapRouteProvider shell={shell} routeContentStore={routeContentStore}>
+        <Harness />
+      </MapRouteProvider>,
+    );
+
+    expect(reportRouteEnterFly).toHaveBeenCalledWith("inventory", {
+      kind: "userLocation",
+    });
+
+    unmount();
+
+    expect(reportRouteEnterFly).toHaveBeenLastCalledWith("", null);
+  });
+
   it("notifies subscribers when content is registered", () => {
-    const routeContentStore = createMapRouteContentStore();
+    const { routeContentStore } = createTestMapRouteStores();
     const listener = vi.fn();
 
     const unsubscribe = routeContentStore.subscribe(listener);

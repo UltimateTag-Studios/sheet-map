@@ -1,10 +1,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createMapRouteContentStore } from "../shell/map-route-content-store";
 import type { MapShellState } from "../shell/map-route-context";
 import { MapRouteProvider } from "../shell/map-route-context";
 import { MapShellSlotsProvider } from "../shell/map-shell-slots-context";
+import { createTestMapRouteStores } from "../shell/testing/map-route-test-stores";
 import { MapSheetList } from "./map-sheet-list";
 import type { MapItem } from "./types";
 
@@ -26,7 +26,7 @@ const items: MapItem[] = [
 function mountList(
   shell: Pick<MapShellState, "selectedItemId" | "selectItem">,
 ) {
-  const routeContentStore = createMapRouteContentStore();
+  const { routeContentStore } = createTestMapRouteStores();
 
   return render(
     <MapRouteProvider
@@ -72,6 +72,8 @@ describe("MapSheetList", () => {
   });
 
   it("uses renderSheetListItem slot when provided", () => {
+    const { routeContentStore } = createTestMapRouteStores();
+
     render(
       <MapRouteProvider
         shell={
@@ -80,7 +82,7 @@ describe("MapSheetList", () => {
             selectItem: vi.fn(),
           } as unknown as MapShellState
         }
-        routeContentStore={createMapRouteContentStore()}
+        routeContentStore={routeContentStore}
       >
         <MapShellSlotsProvider
           slots={{
