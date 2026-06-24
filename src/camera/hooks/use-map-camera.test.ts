@@ -9,15 +9,15 @@ import {
   createTestMapRef,
 } from "../testing/create-test-map-ref";
 import {
-  mountAnchor,
-  mountAnchorWithDeferredBootTarget,
-  mountAnchorWithLiveSheetPadding,
-  mountAnchorWithMapRef,
-} from "../testing/mount-map-anchor-harness";
+  mountCamera,
+  mountCameraWithDeferredBootTarget,
+  mountCameraWithLiveSheetPadding,
+  mountCameraWithMapRef,
+} from "../testing/mount-map-camera-harness";
 
 describe("useMapCamera", () => {
   it("boots anchor from the map center when enabled", () => {
-    const harness = mountAnchor();
+    const harness = mountCamera();
 
     expect(harness.latest.anchor).toEqual({ lat: 10, lng: 20, zoom: 14 });
     expect(harness.latest.session).toBe("idle");
@@ -26,7 +26,7 @@ describe("useMapCamera", () => {
   });
 
   it("skips moveend commits while the map is still moving", () => {
-    const harness = mountAnchorWithMapRef(createTestMapRef({ isMoving: true }));
+    const harness = mountCameraWithMapRef(createTestMapRef({ isMoving: true }));
 
     act(() => {
       harness.map.emit("dragstart", {
@@ -42,7 +42,7 @@ describe("useMapCamera", () => {
   });
 
   it("commits after moveend when the map has settled", () => {
-    const harness = mountAnchorWithMapRef(
+    const harness = mountCameraWithMapRef(
       createTestMapRef({ isMoving: false }),
     );
 
@@ -70,7 +70,7 @@ describe("useMapCamera", () => {
   });
 
   it("ignores dragstart without a user originalEvent", () => {
-    const harness = mountAnchor();
+    const harness = mountCamera();
 
     act(() => {
       harness.map.emit("dragstart");
@@ -84,7 +84,7 @@ describe("useMapCamera", () => {
   });
 
   it("ignores padding-only moveend during a user gesture", () => {
-    const harness = mountAnchor();
+    const harness = mountCamera();
 
     act(() => {
       harness.map.emit("dragstart", {
@@ -113,7 +113,7 @@ describe("useMapCamera", () => {
 
   it("boots during userGesture without waiting for gesture settle", () => {
     const target = { lat: 40, lng: -74, zoom: 12 };
-    const harness = mountAnchorWithDeferredBootTarget(152);
+    const harness = mountCameraWithDeferredBootTarget(152);
 
     act(() => {
       harness.map.emit("dragstart", {
@@ -136,7 +136,7 @@ describe("useMapCamera", () => {
   });
 
   it("navigateTo sets anchor, opens flying session, and flies", () => {
-    const harness = mountAnchor();
+    const harness = mountCamera();
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
     act(() => {
@@ -157,7 +157,7 @@ describe("useMapCamera", () => {
 
   it("navigateTo without keepTracking calls onReleaseTracking", () => {
     const onReleaseTracking = vi.fn();
-    const harness = mountAnchor({ onReleaseTracking });
+    const harness = mountCamera({ onReleaseTracking });
 
     act(() => {
       harness.latest.navigateTo({ lat: 3, lng: 4 }, { duration: 500 });
@@ -169,7 +169,7 @@ describe("useMapCamera", () => {
   });
 
   it("navigateTo with duration 0 jumps and stays idle", () => {
-    const harness = mountAnchor();
+    const harness = mountCamera();
 
     act(() => {
       harness.latest.navigateTo({ lat: 3, lng: 4, zoom: 16 });
@@ -184,7 +184,7 @@ describe("useMapCamera", () => {
   });
 
   it("navigateTo stops inertial map motion before flying", () => {
-    const harness = mountAnchorWithMapRef(createTestMapRef({ isMoving: true }));
+    const harness = mountCameraWithMapRef(createTestMapRef({ isMoving: true }));
 
     act(() => {
       harness.latest.navigateTo(
@@ -200,7 +200,7 @@ describe("useMapCamera", () => {
   });
 
   it("navigateTo without duration jumps and omits zoom when not in position", () => {
-    const harness = mountAnchor();
+    const harness = mountCamera();
     const destination = { lat: 3, lng: 4 };
 
     act(() => {
@@ -217,7 +217,7 @@ describe("useMapCamera", () => {
   });
 
   it("settles flying session on moveend when at target", () => {
-    const harness = mountAnchorWithMapRef(
+    const harness = mountCameraWithMapRef(
       createTestMapRef({
         center: { lat: 3, lng: 4 },
         zoom: 16,
@@ -242,7 +242,7 @@ describe("useMapCamera", () => {
   });
 
   it("settles flying session on padding-flagged moveend when at target", () => {
-    const harness = mountAnchorWithMapRef(
+    const harness = mountCameraWithMapRef(
       createTestMapRef({
         center: { lat: 3, lng: 4 },
         zoom: 16,
@@ -267,7 +267,7 @@ describe("useMapCamera", () => {
   });
 
   it("navigateTo jump clears a stuck flying session", () => {
-    const harness = mountAnchor();
+    const harness = mountCamera();
 
     act(() => {
       harness.latest.navigateTo(
@@ -288,7 +288,7 @@ describe("useMapCamera", () => {
   });
 
   it("waits on flying moveend while the map is still moving", () => {
-    const harness = mountAnchorWithMapRef(createTestMapRef({ isMoving: true }));
+    const harness = mountCameraWithMapRef(createTestMapRef({ isMoving: true }));
 
     act(() => {
       harness.latest.navigateTo(
@@ -307,7 +307,7 @@ describe("useMapCamera", () => {
   });
 
   it("navigateTo jumps when sheet is dragging", () => {
-    const harness = mountAnchor({ sheetPhase: "dragging" });
+    const harness = mountCamera({ sheetPhase: "dragging" });
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
     act(() => {
@@ -322,7 +322,7 @@ describe("useMapCamera", () => {
   });
 
   it("navigateTo jumps while sheet is settling", () => {
-    const harness = mountAnchor({ sheetPhase: "settling" });
+    const harness = mountCamera({ sheetPhase: "settling" });
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
     act(() => {
@@ -336,7 +336,7 @@ describe("useMapCamera", () => {
   });
 
   it("jumps to anchor when map padding changes during navigation", () => {
-    const harness = mountAnchorWithLiveSheetPadding(152);
+    const harness = mountCameraWithLiveSheetPadding(152);
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
     act(() => {
@@ -362,7 +362,7 @@ describe("useMapCamera", () => {
   });
 
   it("user pan during flying cancels fly and opens userGesture", () => {
-    const harness = mountAnchor();
+    const harness = mountCamera();
 
     act(() => {
       harness.latest.navigateTo({ lat: 3, lng: 4 }, { duration: 1000 });
@@ -381,7 +381,7 @@ describe("useMapCamera", () => {
 
   it("issues one boot fly after map padding is ready", () => {
     const target = { lat: 40, lng: -74, zoom: 12 };
-    const harness = mountAnchorWithLiveSheetPadding(152, {
+    const harness = mountCameraWithLiveSheetPadding(152, {
       bootTarget: target,
       bootDurationMs: 500,
     });
@@ -402,7 +402,7 @@ describe("useMapCamera", () => {
 
   it("skips boot fly when boot already completed", () => {
     const target = { lat: 40, lng: -74, zoom: 12 };
-    const harness = mountAnchorWithLiveSheetPadding(152, {
+    const harness = mountCameraWithLiveSheetPadding(152, {
       bootTarget: target,
     });
 
@@ -418,7 +418,7 @@ describe("useMapCamera", () => {
   });
 
   it("skips boot fly when boot target is null", () => {
-    const harness = mountAnchorWithLiveSheetPadding(152, {
+    const harness = mountCameraWithLiveSheetPadding(152, {
       bootTarget: null,
     });
 
@@ -432,7 +432,7 @@ describe("useMapCamera", () => {
   describe("boot fly hardening", () => {
     it("waits for map style load before boot fly", () => {
       const target = { lat: 40, lng: -74, zoom: 12 };
-      const harness = mountAnchorWithLiveSheetPadding(152, {
+      const harness = mountCameraWithLiveSheetPadding(152, {
         styleLoaded: false,
         bootTarget: target,
       });
@@ -453,7 +453,7 @@ describe("useMapCamera", () => {
 
     it("boots when boot target becomes available after padding is ready", () => {
       const target = { lat: 40, lng: -74, zoom: 12 };
-      const harness = mountAnchorWithDeferredBootTarget(152);
+      const harness = mountCameraWithDeferredBootTarget(152);
 
       expect(harness.latest.mapPaddingReady).toBe(true);
       expect(harness.map.flyTo).not.toHaveBeenCalled();
@@ -476,7 +476,7 @@ describe("useMapCamera", () => {
 
     it("does not boot fly twice on the same map instance", () => {
       const target = { lat: 40, lng: -74, zoom: 12 };
-      const harness = mountAnchorWithLiveSheetPadding(152, {
+      const harness = mountCameraWithLiveSheetPadding(152, {
         bootTarget: target,
       });
 
@@ -512,7 +512,7 @@ describe("useMapCamera", () => {
       });
 
       const target = { lat: 40, lng: -74, zoom: 12 };
-      const mounted = mountAnchorWithMapRef(harness, {
+      const mounted = mountCameraWithMapRef(harness, {
         bootTarget: target,
         liveSheetObscuredBottomPx: initialPx,
       });
@@ -536,11 +536,11 @@ describe("useMapCamera", () => {
       const harness = createTestMapRef();
       const bootTarget = { lat: 40, lng: -74, zoom: 12 };
 
-      const first = mountAnchorWithMapRef(harness, { bootTarget });
+      const first = mountCameraWithMapRef(harness, { bootTarget });
       expect(first.map.flyTo).toHaveBeenCalledTimes(1);
       await first.unmount();
 
-      const second = mountAnchorWithMapRef(harness, { bootTarget });
+      const second = mountCameraWithMapRef(harness, { bootTarget });
       expect(second.map.flyTo).toHaveBeenCalledTimes(2);
 
       await second.unmount();
@@ -548,7 +548,7 @@ describe("useMapCamera", () => {
 
     it("navigateTo after boot does not re-issue boot fly", () => {
       const target = { lat: 40, lng: -74, zoom: 12 };
-      const harness = mountAnchorWithLiveSheetPadding(152, {
+      const harness = mountCameraWithLiveSheetPadding(152, {
         bootTarget: target,
       });
 
@@ -592,7 +592,7 @@ describe("useMapCamera", () => {
         x: 220,
         y: 320,
       }));
-      const mounted = mountAnchorWithMapRef(harness, {
+      const mounted = mountCameraWithMapRef(harness, {
         follow,
         onReleaseTracking,
         smoothFlyDurationMs: 600,
@@ -621,7 +621,7 @@ describe("useMapCamera", () => {
         x: 300,
         y: 320,
       }));
-      const mounted = mountAnchorWithMapRef(harness, {
+      const mounted = mountCameraWithMapRef(harness, {
         follow,
         onReleaseTracking,
       });
@@ -651,7 +651,7 @@ describe("useMapCamera", () => {
         x: 220,
         y: 320,
       }));
-      const mounted = mountAnchorWithMapRef(harness, {
+      const mounted = mountCameraWithMapRef(harness, {
         follow,
         onReleaseTracking,
         smoothFlyDurationMs: 600,
@@ -678,7 +678,7 @@ describe("useMapCamera", () => {
       const onReleaseTracking = vi.fn();
       let projected = { x: 220, y: 320 };
       const harness = withProject(createTestMapRef(), () => projected);
-      const mounted = mountAnchorWithMapRef(harness, {
+      const mounted = mountCameraWithMapRef(harness, {
         follow,
         onReleaseTracking,
       });

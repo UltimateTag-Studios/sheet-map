@@ -9,11 +9,10 @@ export {
 export { flushDeferredMapInstanceRelease } from "./flush-deferred-map-instance-release";
 export {
   type LiveSheetPaddingHarness,
-  type MapAnchorHookResult,
-  type MountAnchorOptions,
-  mountAnchor,
-  mountAnchorWithDeferredBootTarget,
-  mountAnchorWithLiveSheetPadding,
-  mountAnchorWithMapRef,
-  mountPaddingAnchorHarness,
-} from "./mount-map-anchor-harness";
+  type MapCameraHookResult,
+  type MountCameraOptions,
+  mountCamera,
+  mountCameraWithDeferredBootTarget,
+  mountCameraWithLiveSheetPadding,
+  mountCameraWithMapRef,
+} from "./mount-map-camera-harness";

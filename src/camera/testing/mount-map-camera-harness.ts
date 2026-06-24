@@ -23,9 +23,9 @@ import {
 } from "./create-test-map-ref";
 import { flushDeferredMapInstanceRelease } from "./flush-deferred-map-instance-release";
 
-export type MapAnchorHookResult = ReturnType<typeof useMapCamera>;
+export type MapCameraHookResult = ReturnType<typeof useMapCamera>;
 
-export type MountAnchorOptions = {
+export type MountCameraOptions = {
   liveSheetObscuredBottomPx?: number;
   sheetPhase?: SheetMotionPhase;
   bootTarget?: MapPosition | null;
@@ -63,7 +63,7 @@ function buildBootRequest(
 
 function useMapCameraHarness(
   mapRef: TestMapRefHarness["mapRef"],
-  options: MountAnchorOptions,
+  options: MountCameraOptions,
 ) {
   const camera = useMapCamera({
     mapRef,
@@ -89,14 +89,14 @@ function useMapCameraHarness(
   return camera;
 }
 
-function renderMapAnchorHarness(
+function renderMapCameraHarness(
   harness: TestMapRefHarness,
-  renderHook: () => MapAnchorHookResult,
+  renderHook: () => MapCameraHookResult,
   onUnmount?: () => void,
 ) {
   const container = document.createElement("div");
   const root: Root = createRoot(container);
-  const latestRef: { current: MapAnchorHookResult | null } = { current: null };
+  const latestRef: { current: MapCameraHookResult | null } = { current: null };
 
   act(() => {
     root.render(
@@ -111,7 +111,7 @@ function renderMapAnchorHarness(
 
   return {
     ...harness,
-    get latest(): MapAnchorHookResult {
+    get latest(): MapCameraHookResult {
       if (!latestRef.current) {
         throw new Error("hook not mounted");
       }
@@ -127,29 +127,29 @@ function renderMapAnchorHarness(
   };
 }
 
-export function mountAnchorWithMapRef(
+export function mountCameraWithMapRef(
   harness: TestMapRefHarness,
-  options: MountAnchorOptions = {},
+  options: MountCameraOptions = {},
 ) {
-  return renderMapAnchorHarness(harness, () =>
+  return renderMapCameraHarness(harness, () =>
     useMapCameraHarness(harness.mapRef, options),
   );
 }
 
-export function mountAnchor(options: MountAnchorOptions = {}) {
-  return mountAnchorWithMapRef(
+export function mountCamera(options: MountCameraOptions = {}) {
+  return mountCameraWithMapRef(
     createTestMapRef({ styleLoaded: options.styleLoaded }),
     options,
   );
 }
 
 export type LiveSheetPaddingHarness = ReturnType<
-  typeof mountAnchorWithLiveSheetPadding
+  typeof mountCameraWithLiveSheetPadding
 >;
 
-export function mountAnchorWithLiveSheetPadding(
+export function mountCameraWithLiveSheetPadding(
   initialPx = 152,
-  options: Omit<MountAnchorOptions, "liveSheetObscuredBottomPx"> = {},
+  options: Omit<MountCameraOptions, "liveSheetObscuredBottomPx"> = {},
 ) {
   stubViewport();
   const fixture = mountSheetHostFixture(
@@ -170,7 +170,7 @@ export function mountAnchorWithLiveSheetPadding(
   });
   const container = document.createElement("div");
   const root: Root = createRoot(container);
-  const latestRef: { current: MapAnchorHookResult | null } = { current: null };
+  const latestRef: { current: MapCameraHookResult | null } = { current: null };
   let setLivePx: ((next: number) => void) | null = null;
   let setSheetPhase: ((next: SheetMotionPhase) => void) | null = null;
 
@@ -212,7 +212,7 @@ export function mountAnchorWithLiveSheetPadding(
 
   return {
     ...harness,
-    get latest(): MapAnchorHookResult {
+    get latest(): MapCameraHookResult {
       if (!latestRef.current) {
         throw new Error("hook not mounted");
       }
@@ -239,7 +239,7 @@ export function mountAnchorWithLiveSheetPadding(
   };
 }
 
-export function mountAnchorWithDeferredBootTarget(initialPx = 152) {
+export function mountCameraWithDeferredBootTarget(initialPx = 152) {
   stubViewport();
   const fixture = mountSheetHostFixture(
     mockCanvas,
@@ -258,7 +258,7 @@ export function mountAnchorWithDeferredBootTarget(initialPx = 152) {
   });
   const container = document.createElement("div");
   const root: Root = createRoot(container);
-  const latestRef: { current: MapAnchorHookResult | null } = { current: null };
+  const latestRef: { current: MapCameraHookResult | null } = { current: null };
   let setBootTarget: ((next: MapPosition | null) => void) | null = null;
 
   act(() => {
@@ -281,7 +281,7 @@ export function mountAnchorWithDeferredBootTarget(initialPx = 152) {
 
   return {
     ...harness,
-    get latest(): MapAnchorHookResult {
+    get latest(): MapCameraHookResult {
       if (!latestRef.current) {
         throw new Error("hook not mounted");
       }
@@ -301,6 +301,3 @@ export function mountAnchorWithDeferredBootTarget(initialPx = 152) {
     },
   };
 }
-
-/** Alias for padding + anchor integration tests. */
-export const mountPaddingAnchorHarness = mountAnchorWithLiveSheetPadding;

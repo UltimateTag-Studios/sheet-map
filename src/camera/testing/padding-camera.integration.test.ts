@@ -1,11 +1,11 @@
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { mountPaddingAnchorHarness } from "./mount-map-anchor-harness";
+import { mountCameraWithLiveSheetPadding } from "./mount-map-camera-harness";
 
 describe("padding + camera integration", () => {
   it("updates padding without changing anchor or session when idle", () => {
-    const harness = mountPaddingAnchorHarness(152);
+    const harness = mountCameraWithLiveSheetPadding(152);
     const bootAnchor = harness.latest.anchor;
 
     expect(bootAnchor).toEqual({ lat: 10, lng: 20, zoom: 14 });
@@ -36,7 +36,7 @@ describe("padding + camera integration", () => {
   });
 
   it("keeps user session open when padding moveend fires during momentum", () => {
-    const harness = mountPaddingAnchorHarness(152);
+    const harness = mountCameraWithLiveSheetPadding(152);
     const bootAnchor = harness.latest.anchor;
 
     act(() => {
@@ -68,7 +68,7 @@ describe("padding + camera integration", () => {
   });
 
   it("applies padding live during userGesture without jumpTo", () => {
-    const harness = mountPaddingAnchorHarness(152);
+    const harness = mountCameraWithLiveSheetPadding(152);
 
     act(() => {
       harness.map.setMoving(true);
@@ -91,7 +91,7 @@ describe("padding + camera integration", () => {
   });
 
   it("jumps to nav target when padding changes during navigation and sheet moves", () => {
-    const harness = mountPaddingAnchorHarness(152);
+    const harness = mountCameraWithLiveSheetPadding(152);
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
     act(() => {
@@ -120,7 +120,7 @@ describe("padding + camera integration", () => {
   });
 
   it("settles flying session on fly moveend", () => {
-    const harness = mountPaddingAnchorHarness(152);
+    const harness = mountCameraWithLiveSheetPadding(152);
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
     act(() => {
