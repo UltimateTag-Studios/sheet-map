@@ -8,10 +8,11 @@ export type ApplyMapPaddingInput = {
   mapRef: MapRef;
   state: MapAnchorState;
   paddingChanged: boolean;
-  /** When false, only sync padding — no camera realign. Used before programmatic navigateTo. */
+  /**
+   * When false, only sync padding — no camera realign.
+   * Set by the camera machine from sheet phase and session.
+   */
   realign?: boolean;
-  /** True while sheet phase is dragging or settling. */
-  sheetMotionActive?: boolean;
   /** Keeps stored anchor in sync when padding triggers an instant realign. */
   onRealignAnchor?: (position: MapPosition) => void;
   debug?: boolean;
@@ -26,11 +27,10 @@ export function applyMapPadding({
   state,
   paddingChanged,
   realign = true,
-  sheetMotionActive = false,
   onRealignAnchor,
   debug = false,
 }: ApplyMapPaddingInput): void {
-  if (!paddingChanged || !realign || !sheetMotionActive) {
+  if (!paddingChanged || !realign) {
     return;
   }
 

@@ -28,4 +28,3 @@ export {
   type MapAnchorState,
 } from "./state";
 export { stopMapMotion } from "./stop-map-motion";
-export { trySettleFlyingSession } from "./try-settle-flying-session";

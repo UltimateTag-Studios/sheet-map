@@ -1,4 +1,5 @@
 import type { SheetMotionPhase } from "../../viewport";
+import { isSheetMotionIdle } from "../../viewport/dom/sheet-motion";
 import type { PixelPoint } from "../../viewport/types/pixel";
 import type { MapPaddingOptions } from "../padding/compute";
 import type { MapPosition } from "../shared/map-position";
@@ -87,6 +88,4 @@ export function createInitialMapCameraMachineState(
   };
 }
 
-export function isSheetMotionIdle(phase: SheetMotionPhase): boolean {
-  return phase === "idle";
-}
+export { isSheetMotionIdle };

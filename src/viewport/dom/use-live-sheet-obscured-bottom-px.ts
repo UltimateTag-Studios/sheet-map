@@ -12,8 +12,6 @@ export type UseLiveSheetObscuredBottomPxResult = {
   sheetObscuredBottomPx: number;
   /** Sheet gesture machine phase — idle once drag and settle animation finish. */
   sheetPhase: SheetMotionPhase;
-  /** True while phase is dragging or settling (sheet geometry still moving). */
-  sheetMotionActive: boolean;
   onSheetLayoutFrameChange: (frame: SheetLayoutFrameChange) => void;
 };
 
@@ -70,7 +68,6 @@ export function useLiveSheetObscuredBottomPx(
   return {
     sheetObscuredBottomPx,
     sheetPhase,
-    sheetMotionActive: sheetPhase !== "idle",
     onSheetLayoutFrameChange,
   };
 }

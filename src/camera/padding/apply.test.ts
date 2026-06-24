@@ -41,7 +41,6 @@ describe("applyMapPadding", () => {
       mapRef,
       state: flyingState,
       paddingChanged: false,
-      sheetMotionActive: true,
     });
 
     expect(map.jumpTo).not.toHaveBeenCalled();
@@ -55,7 +54,6 @@ describe("applyMapPadding", () => {
       state: flyingState,
       paddingChanged: true,
       realign: false,
-      sheetMotionActive: true,
     });
 
     expect(map.jumpTo).not.toHaveBeenCalled();
@@ -68,7 +66,6 @@ describe("applyMapPadding", () => {
       mapRef,
       state: idleState,
       paddingChanged: true,
-      sheetMotionActive: true,
     });
 
     expect(map.jumpTo).toHaveBeenCalledWith(
@@ -86,7 +83,6 @@ describe("applyMapPadding", () => {
       mapRef,
       state: userGestureState,
       paddingChanged: true,
-      sheetMotionActive: true,
     });
 
     expect(map.jumpTo).not.toHaveBeenCalled();
@@ -100,7 +96,6 @@ describe("applyMapPadding", () => {
       mapRef,
       state: flyingState,
       paddingChanged: true,
-      sheetMotionActive: true,
       onRealignAnchor,
     });
 
@@ -117,14 +112,14 @@ describe("applyMapPadding", () => {
     });
   });
 
-  it("flying + sheet idle: no jump", () => {
+  it("flying + realign disabled: no jump", () => {
     const { mapRef, map } = createMapRefMock();
 
     applyMapPadding({
       mapRef,
       state: flyingState,
       paddingChanged: true,
-      sheetMotionActive: false,
+      realign: false,
     });
 
     expect(map.jumpTo).not.toHaveBeenCalled();

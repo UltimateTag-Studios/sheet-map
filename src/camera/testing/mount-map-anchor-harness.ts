@@ -74,7 +74,7 @@ function useMapCameraHarness(
     }
 
     camera.dispatch({ type: "startTracking", follow: options.follow });
-  }, [options.follow, camera.dispatch]);
+  }, [options.follow, camera]);
 
   return camera;
 }

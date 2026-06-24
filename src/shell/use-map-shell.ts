@@ -92,7 +92,7 @@ export function useMapShell({
         durationMs: resolvedConfig.smoothFlyDurationMs,
       });
     },
-    [userTracking.dispatch, resolvedConfig.smoothFlyDurationMs],
+    [userTracking, resolvedConfig.smoothFlyDurationMs],
   );
 
   const { state: machine, dispatch } = useMapShellMachine(flyToItem);
