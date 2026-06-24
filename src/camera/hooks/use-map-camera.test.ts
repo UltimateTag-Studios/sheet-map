@@ -155,7 +155,7 @@ describe("useMapCamera", () => {
     harness.unmount();
   });
 
-  it("navigateTo without keepTracking calls onReleaseTracking", () => {
+  it("navigateTo without preserveTracking calls onReleaseTracking", () => {
     const onReleaseTracking = vi.fn();
     const harness = mountCamera({ onReleaseTracking });
 

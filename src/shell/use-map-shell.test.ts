@@ -219,7 +219,7 @@ describe("useMapShell", () => {
     expect(result.current.selectedItemId).toBeNull();
   });
 
-  it("keeps selection on navigateTo with keepTracking", async () => {
+  it("keeps selection on navigateTo with preserveTracking", async () => {
     const mapInstanceStore = createMapInstanceStore();
     const { result } = renderHook(() =>
       useMapShell({
@@ -235,12 +235,12 @@ describe("useMapShell", () => {
     const position: MapPosition = { lat: 3, lng: 4, zoom: 12 };
 
     await act(async () => {
-      result.current.navigateTo(position, { keepTracking: true });
+      result.current.navigateTo(position, { preserveTracking: true });
     });
 
     expect(result.current.selectedItemId).toBe("a");
     expect(navigateToMock).toHaveBeenCalledWith(position, {
-      keepTracking: true,
+      preserveTracking: true,
     });
   });
 });

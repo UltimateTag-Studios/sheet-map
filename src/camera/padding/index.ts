@@ -15,8 +15,3 @@ export {
   readSyncedMapPadding,
   syncMapPadding,
 } from "./sync";
-export type {
-  SyncMapPaddingFromCanvasInput,
-  SyncMapPaddingFromCanvasResult,
-} from "./sync-from-canvas";
-export { syncMapPaddingFromCanvas } from "./sync-from-canvas";

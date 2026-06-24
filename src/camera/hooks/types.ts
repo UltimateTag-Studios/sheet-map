@@ -6,17 +6,17 @@ import type { MapPosition } from "../shared/map-position";
 
 export type { MapAnchorFollowConfig } from "../lib";
 
-export type NavigateToMapAnchorOptions = {
+export type NavigateToMapCameraOptions = {
   /**
    * ms. 0 or omitted = jump; >0 = fly when sheet is idle.
-   * Jump when sheet is dragging or settling.
+   * Sheet dragging/settling forces jump in the machine.
    */
   duration?: number;
   /**
    * Keep user tracking enabled after this move. Boot, snap-back, and recenter pass `true`.
    * Default `false` releases tracking (e.g. fly to a map item or demo point).
    */
-  keepTracking?: boolean;
+  preserveTracking?: boolean;
 };
 
 export type MapCameraBootRequest = {

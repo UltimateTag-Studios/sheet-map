@@ -1,7 +1,7 @@
 import type { SheetSnap } from "@siegetag/sheet";
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 
-import { type NavigateToMapAnchorOptions, useMapUserTracking } from "../camera";
+import { type NavigateToMapCameraOptions, useMapUserTracking } from "../camera";
 import type { MapPosition } from "../camera/shared/map-position";
 import type { MapItemLocation } from "../items/types";
 import {
@@ -109,8 +109,8 @@ export function useMapShell({
   }, [dispatch]);
 
   const navigateTo = useCallback(
-    (position: MapPosition, options?: NavigateToMapAnchorOptions) => {
-      if (!options?.keepTracking) {
+    (position: MapPosition, options?: NavigateToMapCameraOptions) => {
+      if (!options?.preserveTracking) {
         clearSelection();
       }
       userTracking.navigateTo(position, options);

@@ -8,7 +8,7 @@ export type { MapCameraDispatch } from "./hooks/use-map-camera";
 export { useMapCamera } from "./hooks/use-map-camera";
 export type {
   MapUserLocationCoords,
-  NavigateToMapAnchorOptions,
+  NavigateToMapCameraOptions,
   RecenterOnUserOptions,
   UseMapUserTrackingOptions,
 } from "./hooks/use-map-user-tracking";

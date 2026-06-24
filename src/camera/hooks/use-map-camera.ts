@@ -19,17 +19,18 @@ import {
 } from "../machine";
 import type { MapCameraState } from "../machine/state";
 import { moveCameraProgrammatic } from "../movement";
+import { syncMapPadding } from "../padding/sync";
 import { canNavigateMap } from "../shared/can-navigate-map";
 import type { MapPosition } from "../shared/map-position";
 import type {
   MapCameraBootRequest,
-  NavigateToMapAnchorOptions,
+  NavigateToMapCameraOptions,
   UseMapCameraOptions,
 } from "./types";
 
 export type {
   MapCameraBootRequest,
-  NavigateToMapAnchorOptions,
+  NavigateToMapCameraOptions,
   UseMapCameraOptions,
 } from "./types";
 
@@ -89,7 +90,7 @@ export function useMapCamera({
 
         case "applyPadding": {
           const map = mapRef.getMap();
-          map.setPadding(effect.options);
+          syncMapPadding(map, effect.options);
 
           if (
             effect.realign &&
@@ -234,7 +235,7 @@ export function useMapCamera({
   const navigateTo = useCallback(
     (
       position: MapPosition,
-      options: NavigateToMapAnchorOptions = {},
+      options: NavigateToMapCameraOptions = {},
     ): boolean => {
       if (!mapRef) {
         return false;
@@ -254,7 +255,7 @@ export function useMapCamera({
         type: "navigateRequested",
         position,
         mode,
-        preserveTracking: options.keepTracking === true,
+        preserveTracking: options.preserveTracking === true,
         durationMs: requestedDuration > 0 ? requestedDuration : undefined,
       });
 

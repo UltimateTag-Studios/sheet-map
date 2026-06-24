@@ -20,7 +20,7 @@ export type RecenterOnUserOptions = {
   zoom?: number;
 };
 
-export type { NavigateToMapAnchorOptions } from "./types";
+export type { NavigateToMapCameraOptions } from "./types";
 
 export type UseMapUserTrackingOptions = {
   mapRef: MapRef | null;
