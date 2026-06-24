@@ -12,4 +12,14 @@ export type {
 } from "./hooks/use-map-user-tracking";
 export { useMapUserTracking } from "./hooks/use-map-user-tracking";
 export { releaseMapInstanceCameraState } from "./instance";
+export type {
+  MapCameraMachineEffect,
+  MapCameraMachineEvent,
+  MapCameraState,
+} from "./machine";
+export {
+  createInitialMapCameraMachineState,
+  reduceMapCameraMachine,
+  useMapCameraMachine,
+} from "./machine";
 export { whenMapStyleReady } from "./shared";
