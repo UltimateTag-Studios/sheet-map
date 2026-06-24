@@ -3,11 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../../viewport/testing/mount-sheet-host-fixture";
-import { clearMapPaddingSyncState, syncMapPadding } from "../padding/sync";
-import {
-  asTestMapboxMap,
-  createTestMapRef,
-} from "../testing/create-test-map-ref";
+import { createTestMapRef } from "../testing/create-test-map-ref";
 import {
   mountCamera,
   mountCameraWithDeferredBootTarget,
@@ -96,18 +92,16 @@ describe("useMapCamera", () => {
     expect(harness.latest.session).toBe("userGesture");
 
     act(() => {
-      syncMapPadding(asTestMapboxMap(harness.map), {
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 200,
+      harness.latest.dispatch({
+        type: "paddingMeasured",
+        options: { top: 0, left: 0, right: 0, bottom: 200 },
+        changed: true,
       });
     });
 
     expect(harness.latest.session).toBe("userGesture");
     expect(harness.latest.anchor).toEqual({ lat: 10, lng: 20, zoom: 14 });
 
-    clearMapPaddingSyncState(asTestMapboxMap(harness.map));
     harness.unmount();
   });
 
@@ -131,7 +125,6 @@ describe("useMapCamera", () => {
     expect(harness.latest.session).toBe("flying");
     expect(harness.latest.boot).toBe("done");
 
-    clearMapPaddingSyncState(asTestMapboxMap(harness.map));
     harness.unmount();
   });
 
@@ -257,7 +250,11 @@ describe("useMapCamera", () => {
     expect(harness.latest.session).toBe("flying");
 
     act(() => {
-      syncMapPadding(asTestMapboxMap(harness.map), harness.map.getPadding());
+      harness.latest.dispatch({
+        type: "paddingMeasured",
+        options: harness.map.getPadding(),
+        changed: true,
+      });
       harness.map.emit("moveend");
     });
 

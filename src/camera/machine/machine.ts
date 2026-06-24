@@ -52,6 +52,7 @@ export type MapCameraMachineEvent =
       options: MapPaddingOptions;
       changed: boolean;
     }
+  | { type: "paddingSuppressDrained" }
   | { type: "mapInstanceReleased" };
 
 export type MapCameraMachineEffect =
@@ -494,6 +495,23 @@ export function reduceMapCameraMachine(
 
     case "paddingMeasured": {
       return reducePaddingMeasured(state, event);
+    }
+
+    case "paddingSuppressDrained": {
+      if (!state.padding.suppressNextMoveEnd) {
+        return { state, effects: [] };
+      }
+
+      return {
+        state: {
+          ...state,
+          padding: {
+            ...state.padding,
+            suppressNextMoveEnd: false,
+          },
+        },
+        effects: [],
+      };
     }
 
     case "mapInstanceReleased": {

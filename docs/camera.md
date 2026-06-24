@@ -78,7 +78,7 @@ Set `config.debug: true` or `VITE_SHEET_MAP_DEBUG=true` for padding and GPS cons
 
 ## Map instance lifecycle
 
-`mapInstanceReleased` resets camera machine state and bumps `mapGeneration`. Padding sync WeakMap entries are cleared on release (DOM dedupe only, not FSM state).
+`mapInstanceReleased` resets camera machine state and bumps `mapGeneration`. Padding moveend suppression lives in machine `padding.suppressNextMoveEnd` only.
 
 ## Manual QA checklist
 

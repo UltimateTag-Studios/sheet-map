@@ -11,10 +11,6 @@ import {
 } from "../lib";
 import type { MapCameraMachineDispatch } from "../machine";
 import type { MapCameraState } from "../machine/state";
-import {
-  consumePaddingSyncMoveEnd,
-  drainPaddingSyncMoveEnd,
-} from "../padding/sync";
 import { readUserLocationFollowDistancePx } from "../shared/user-location-follow-distance";
 
 const mapListenerCleanupByMap = new WeakMap<
@@ -102,9 +98,7 @@ export function useMapboxListeners({
     };
 
     const handleMoveEnd = () => {
-      const paddingMoveEnd =
-        stateRef.current.padding.suppressNextMoveEnd ||
-        consumePaddingSyncMoveEnd(map);
+      const paddingMoveEnd = stateRef.current.padding.suppressNextMoveEnd;
 
       const resolution = resolveMoveEnd({
         paddingMoveEnd,
@@ -151,7 +145,10 @@ export function useMapboxListeners({
     };
 
     const attachListeners = () => {
-      drainPaddingSyncMoveEnd(map);
+      if (stateRef.current.padding.suppressNextMoveEnd) {
+        dispatch({ type: "paddingSuppressDrained" });
+      }
+
       bootAnchor();
       map.on("dragstart", beginUserGesture);
       map.on("zoomstart", beginUserGesture);

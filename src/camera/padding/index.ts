@@ -7,11 +7,4 @@ export {
   type MapPaddingOptions,
 } from "./compute";
 export { readMapPaddingFromCanvas } from "./read-from-canvas";
-export {
-  clearMapPaddingSyncState,
-  consumePaddingSyncMoveEnd,
-  drainPaddingSyncMoveEnd,
-  hasSyncedMapPadding,
-  readSyncedMapPadding,
-  syncMapPadding,
-} from "./sync";
+export { setMapPaddingIfChanged } from "./sync";

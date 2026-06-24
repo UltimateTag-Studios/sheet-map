@@ -312,4 +312,20 @@ describe("reduceMapCameraMachine", () => {
     expect(result.state.padding.suppressNextMoveEnd).toBe(false);
     expect(result.state.session).toBe("idle");
   });
+
+  it("clears stale padding suppress when listeners attach late", () => {
+    const state = baseState({
+      padding: {
+        phase: "ready",
+        options: samplePadding,
+        suppressNextMoveEnd: true,
+      },
+    });
+
+    const result = reduceMapCameraMachine(state, {
+      type: "paddingSuppressDrained",
+    });
+
+    expect(result.state.padding.suppressNextMoveEnd).toBe(false);
+  });
 });

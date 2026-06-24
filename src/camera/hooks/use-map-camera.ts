@@ -19,7 +19,7 @@ import {
 } from "../machine";
 import type { MapCameraState } from "../machine/state";
 import { moveCameraProgrammatic } from "../movement";
-import { syncMapPadding } from "../padding/sync";
+import { setMapPaddingIfChanged } from "../padding/sync";
 import { canNavigateMap } from "../shared/can-navigate-map";
 import type { MapPosition } from "../shared/map-position";
 import type {
@@ -90,7 +90,7 @@ export function useMapCamera({
 
         case "applyPadding": {
           const map = mapRef.getMap();
-          syncMapPadding(map, effect.options);
+          setMapPaddingIfChanged(map, effect.options);
 
           if (
             effect.realign &&
