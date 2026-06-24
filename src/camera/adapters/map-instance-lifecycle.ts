@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import { releaseMapInstanceCameraState } from "../instance/camera-state";
 import type { MapCameraMachineDispatch } from "../machine";
+import { clearMapPaddingSyncState } from "../padding/sync";
 
 export type UseMapInstanceLifecycleInput = {
   mapRef: MapRef | null;
@@ -37,7 +37,7 @@ export function useMapInstanceLifecycle({
     previousMapRef.current = mapRef;
 
     if (previous && previous !== mapRef) {
-      releaseMapInstanceCameraState(previous.getMap());
+      clearMapPaddingSyncState(previous.getMap());
       dispatch({ type: "mapInstanceReleased" });
       onMapInstanceReleasedRef.current?.();
     }
@@ -57,7 +57,7 @@ export function useMapInstanceLifecycle({
         if (releaseGenerationRef.current !== generationAtCleanup) {
           return;
         }
-        releaseMapInstanceCameraState(map);
+        clearMapPaddingSyncState(map);
         dispatch({ type: "mapInstanceReleased" });
         onMapInstanceReleasedRef.current?.();
       });

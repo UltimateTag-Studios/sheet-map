@@ -28,6 +28,8 @@ export type MapCameraState = {
   followThresholdExceeded: boolean;
   boot: MapCameraBootPhase;
   bootTarget: MapPosition | null;
+  bootFollow: MapCameraFollowConfig | null;
+  bootPositionKey: string | null;
   padding: {
     phase: MapCameraPaddingPhase;
     options: MapPaddingOptions | null;
@@ -70,6 +72,8 @@ export function createInitialMapCameraMachineState(
     followThresholdExceeded: false,
     boot: "none",
     bootTarget: null,
+    bootFollow: null,
+    bootPositionKey: null,
     padding: {
       phase: paddingFromCanvasEnabled ? "pending" : "ready",
       options: null,

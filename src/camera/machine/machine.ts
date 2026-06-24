@@ -40,7 +40,12 @@ export type MapCameraMachineEvent =
       follow: MapCameraState["follow"];
     }
   | { type: "gpsFix"; position: MapPosition; positionKey: string }
-  | { type: "bootTargetReady"; position: MapPosition }
+  | {
+      type: "bootTargetReady";
+      position: MapPosition;
+      follow: MapCameraState["follow"];
+      positionKey: string;
+    }
   | { type: "sheetPhaseChanged"; phase: SheetMotionPhase }
   | {
       type: "paddingMeasured";
@@ -52,8 +57,7 @@ export type MapCameraMachineEvent =
 export type MapCameraMachineEffect =
   | { type: "moveCamera"; position: MapPosition; duration: number }
   | { type: "applyPadding"; options: MapPaddingOptions; realign: boolean }
-  | { type: "releaseTracking" }
-  | { type: "notifyBootComplete" };
+  | { type: "releaseTracking" };
 
 export type MapCameraMachineResult = {
   state: MapCameraState;
@@ -151,8 +155,13 @@ function tryIssueBootFly(state: MapCameraState): MapCameraMachineResult | null {
     state: {
       ...navigate.state,
       boot: "done",
+      tracking: "on",
+      follow: state.bootFollow,
+      lastAppliedGpsKey: state.bootPositionKey,
+      bootFollow: null,
+      bootPositionKey: null,
     },
-    effects: [...navigate.effects, { type: "notifyBootComplete" }],
+    effects: navigate.effects,
   };
 }
 
@@ -464,6 +473,8 @@ export function reduceMapCameraMachine(
         ...state,
         boot: "pending",
         bootTarget: event.position,
+        bootFollow: event.follow,
+        bootPositionKey: event.positionKey,
       };
 
       const bootResult = tryIssueBootFly(nextState);

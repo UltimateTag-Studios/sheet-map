@@ -1,27 +1,28 @@
 import type { ReactElement } from "react";
-import { act, createElement, StrictMode, useState } from "react";
+import { act, createElement, StrictMode, useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 import type { SheetMotionPhase } from "../../viewport";
 import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../../viewport/testing/mount-sheet-host-fixture";
 import type { MapAnchorFollowConfig } from "../anchor";
-import { useMapAnchor } from "../hooks/use-map-anchor";
+import type { MapCameraBootRequest } from "../hooks/types";
+import { useMapCamera } from "../hooks/use-map-camera";
 import type { MapPosition } from "../shared/map-position";
+import { positionKey } from "../shared/map-position";
 import {
   createTestMapRef,
   type TestMapRefHarness,
 } from "./create-test-map-ref";
 import { flushDeferredMapInstanceRelease } from "./flush-deferred-map-instance-release";
 
-export type MapAnchorHookResult = ReturnType<typeof useMapAnchor>;
+export type MapAnchorHookResult = ReturnType<typeof useMapCamera>;
 
 export type MountAnchorOptions = {
   liveSheetObscuredBottomPx?: number;
   sheetPhase?: SheetMotionPhase;
   bootTarget?: MapPosition | null;
   bootDurationMs?: number;
-  onBootIssued?: () => void;
   smoothFlyDurationMs?: number;
   styleLoaded?: boolean;
   follow?: MapAnchorFollowConfig | null;
@@ -30,6 +31,52 @@ export type MountAnchorOptions = {
 
 function renderStrictMode(element: ReactElement) {
   return createElement(StrictMode, null, element);
+}
+
+function buildBootRequest(
+  bootTarget: MapPosition | null | undefined,
+  follow?: MapAnchorFollowConfig | null,
+): MapCameraBootRequest | null {
+  if (!bootTarget) {
+    return null;
+  }
+
+  const followConfig = follow ?? {
+    userLocation: { lat: bootTarget.lat, lng: bootTarget.lng },
+    centerOffset: { x: 0, y: 0 },
+    thresholdPx: 40,
+  };
+
+  return {
+    position: bootTarget,
+    follow: followConfig,
+    positionKey: positionKey(bootTarget),
+  };
+}
+
+function useMapCameraHarness(
+  mapRef: TestMapRefHarness["mapRef"],
+  options: MountAnchorOptions,
+) {
+  const camera = useMapCamera({
+    mapRef,
+    liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
+    sheetPhase: options.sheetPhase,
+    bootRequest: buildBootRequest(options.bootTarget, options.follow),
+    bootDurationMs: options.bootDurationMs,
+    smoothFlyDurationMs: options.smoothFlyDurationMs,
+    onReleaseTracking: options.onReleaseTracking,
+  });
+
+  useEffect(() => {
+    if (!options.follow) {
+      return;
+    }
+
+    camera.dispatch({ type: "startTracking", follow: options.follow });
+  }, [options.follow, camera.dispatch]);
+
+  return camera;
 }
 
 function renderMapAnchorHarness(
@@ -75,17 +122,7 @@ export function mountAnchorWithMapRef(
   options: MountAnchorOptions = {},
 ) {
   return renderMapAnchorHarness(harness, () =>
-    useMapAnchor({
-      mapRef: harness.mapRef,
-      liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
-      sheetPhase: options.sheetPhase,
-      bootTarget: options.bootTarget,
-      bootDurationMs: options.bootDurationMs,
-      onBootIssued: options.onBootIssued,
-      smoothFlyDurationMs: options.smoothFlyDurationMs,
-      follow: options.follow,
-      onReleaseTracking: options.onReleaseTracking,
-    }),
+    useMapCameraHarness(harness.mapRef, options),
   );
 }
 
@@ -152,14 +189,10 @@ export function mountAnchorWithLiveSheetPadding(
             useState<SheetMotionPhase>("idle");
           setLivePx = setLiveSheetObscuredBottomPx;
           setSheetPhase = setSheetPhaseState;
-          latestRef.current = useMapAnchor({
-            mapRef: harness.mapRef,
+          latestRef.current = useMapCameraHarness(harness.mapRef, {
             liveSheetObscuredBottomPx,
             sheetPhase,
-            bootTarget: options.bootTarget,
-            bootDurationMs: options.bootDurationMs,
-            onBootIssued: options.onBootIssued,
-            smoothFlyDurationMs: options.smoothFlyDurationMs,
+            ...options,
           });
           return null;
         }),
@@ -226,8 +259,7 @@ export function mountAnchorWithDeferredBootTarget(initialPx = 152) {
             null,
           );
           setBootTarget = setBootTargetState;
-          latestRef.current = useMapAnchor({
-            mapRef: harness.mapRef,
+          latestRef.current = useMapCameraHarness(harness.mapRef, {
             liveSheetObscuredBottomPx: initialPx,
             bootTarget,
           });

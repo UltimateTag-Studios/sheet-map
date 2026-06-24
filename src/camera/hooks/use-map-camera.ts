@@ -12,25 +12,37 @@ import {
   usePaddingDomSync,
 } from "../adapters";
 import { isAtMapAnchorPosition } from "../anchor";
-import { areBootFlyGatesReady } from "../boot/try-boot-fly";
 import {
-  hasBootIssuedForMapInstance,
-  markBootIssuedForMapInstance,
-} from "../instance/camera-state";
-import { type MapCameraMachineEffect, useMapCameraMachine } from "../machine";
+  type MapCameraMachineDispatch,
+  type MapCameraMachineEffect,
+  useMapCameraMachine,
+} from "../machine";
 import type { MapCameraState } from "../machine/state";
 import { moveCameraProgrammatic } from "../movement";
 import { canNavigateMap } from "../shared/can-navigate-map";
 import type { MapPosition } from "../shared/map-position";
 import type {
+  MapCameraBootRequest,
   NavigateToMapAnchorOptions,
-  UseMapAnchorOptions,
-} from "./use-map-anchor/types";
+  UseMapCameraOptions,
+} from "./types";
 
 export type {
+  MapCameraBootRequest,
   NavigateToMapAnchorOptions,
-  UseMapAnchorOptions,
-} from "./use-map-anchor/types";
+  UseMapCameraOptions,
+} from "./types";
+
+function areBootFlyGatesReady(input: {
+  enabled: boolean;
+  mapRef: UseMapCameraOptions["mapRef"];
+  bootRequest: MapCameraBootRequest | null | undefined;
+  mapPaddingReady: boolean;
+}): boolean {
+  return Boolean(
+    input.enabled && input.mapRef && input.bootRequest && input.mapPaddingReady,
+  );
+}
 
 export function useMapCamera({
   mapRef,
@@ -39,22 +51,17 @@ export function useMapCamera({
   fixedChromeInsets,
   mapPaddingDebug = false,
   sheetPhase = "idle",
-  bootTarget = null,
+  bootRequest = null,
   bootDurationMs,
-  onBootIssued,
   smoothFlyDurationMs = 600,
-  follow = null,
   onReleaseTracking,
   onMapInstanceReleased,
-}: UseMapAnchorOptions) {
+}: UseMapCameraOptions) {
   const mapPaddingFromCanvasEnabled = liveSheetObscuredBottomPx !== undefined;
   const bootFlyDurationMs = bootDurationMs ?? smoothFlyDurationMs;
 
   const onReleaseTrackingRef = useRef(onReleaseTracking);
   onReleaseTrackingRef.current = onReleaseTracking;
-
-  const onBootIssuedRef = useRef(onBootIssued);
-  onBootIssuedRef.current = onBootIssued;
 
   const machineStateRef = useRef<RefObject<MapCameraState> | null>(null);
 
@@ -108,12 +115,6 @@ export function useMapCamera({
           onReleaseTrackingRef.current?.();
           break;
         }
-
-        case "notifyBootComplete": {
-          markBootIssuedForMapInstance(mapRef.getMap());
-          onBootIssuedRef.current?.();
-          break;
-        }
       }
     },
     [mapRef, mapPaddingDebug],
@@ -133,7 +134,7 @@ export function useMapCamera({
     !mapPaddingFromCanvasEnabled || state.padding.phase === "ready";
 
   const attemptBoot = useCallback(() => {
-    if (!bootTarget) {
+    if (!bootRequest) {
       return;
     }
 
@@ -141,7 +142,7 @@ export function useMapCamera({
       !areBootFlyGatesReady({
         enabled,
         mapRef,
-        bootTarget,
+        bootRequest,
         mapPaddingReady:
           !mapPaddingFromCanvasEnabled ||
           stateRef.current.padding.phase === "ready",
@@ -150,22 +151,22 @@ export function useMapCamera({
       return;
     }
 
-    const map = mapRef?.getMap();
-    if (map && hasBootIssuedForMapInstance(map)) {
-      return;
-    }
-
     if (stateRef.current.boot === "done") {
       return;
     }
 
     if (mapPaddingDebug) {
-      console.info("[boot-fly] attempt", { target: bootTarget });
+      console.info("[boot-fly] attempt", { target: bootRequest.position });
     }
 
-    dispatch({ type: "bootTargetReady", position: bootTarget });
+    dispatch({
+      type: "bootTargetReady",
+      position: bootRequest.position,
+      follow: bootRequest.follow,
+      positionKey: bootRequest.positionKey,
+    });
   }, [
-    bootTarget,
+    bootRequest,
     enabled,
     mapRef,
     mapPaddingFromCanvasEnabled,
@@ -209,7 +210,6 @@ export function useMapCamera({
     enabled,
     dispatch,
     stateRef,
-    follow,
   });
 
   usePaddingDomSync({
@@ -271,9 +271,14 @@ export function useMapCamera({
   return {
     anchor: state.anchor,
     session: state.session,
+    boot: state.boot,
+    tracking: state.tracking === "on",
     readCameraSession,
     mapPadding: state.padding.options,
     mapPaddingReady,
     navigateTo,
+    dispatch,
   };
 }
+
+export type MapCameraDispatch = MapCameraMachineDispatch;

@@ -1,10 +1,10 @@
 import type { MapRef } from "react-map-gl/mapbox";
 
-import type { MapObscuredInsets, SheetMotionPhase } from "../../../viewport";
-import type { MapAnchorFollowConfig } from "../../anchor";
-import type { MapPosition } from "../../shared/map-position";
+import type { MapObscuredInsets, SheetMotionPhase } from "../../viewport";
+import type { MapAnchorFollowConfig } from "../anchor";
+import type { MapPosition } from "../shared/map-position";
 
-export type { MapAnchorFollowConfig } from "../../anchor";
+export type { MapAnchorFollowConfig } from "../anchor";
 
 export type NavigateToMapAnchorOptions = {
   /**
@@ -19,7 +19,13 @@ export type NavigateToMapAnchorOptions = {
   keepTracking?: boolean;
 };
 
-export type UseMapAnchorOptions = {
+export type MapCameraBootRequest = {
+  position: MapPosition;
+  follow: MapAnchorFollowConfig;
+  positionKey: string;
+};
+
+export type UseMapCameraOptions = {
   mapRef: MapRef | null;
   enabled?: boolean;
   /**
@@ -31,19 +37,11 @@ export type UseMapAnchorOptions = {
   mapPaddingDebug?: boolean;
   /** Sheet gesture phase from `useLiveSheetObscuredBottomPx` (or sheet `onLayoutFrameChange`). */
   sheetPhase?: SheetMotionPhase;
-  /** Fly here once when padding and style are ready. */
-  bootTarget?: MapPosition | null;
-  /** Boot fly duration; falls back to `smoothFlyDurationMs`. */
+  /** One-shot boot when padding and style are ready. */
+  bootRequest?: MapCameraBootRequest | null;
   bootDurationMs?: number;
-  onBootIssued?: () => void;
   smoothFlyDurationMs?: number;
-  /** Active tracking config for gesture settle. */
-  follow?: MapAnchorFollowConfig | null;
-  /** Called when pan exceeds tracking threshold or settle releases tracking. */
+  /** Optional test hook when tracking is released by the machine. */
   onReleaseTracking?: () => void;
   onMapInstanceReleased?: () => void;
-};
-
-export type RefreshMapPaddingFromCanvasOptions = {
-  realign?: boolean;
 };

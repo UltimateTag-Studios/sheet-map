@@ -207,9 +207,16 @@ describe("reduceMapCameraMachine", () => {
   });
 
   it("issues boot fly when padding becomes ready", () => {
+    const follow = {
+      userLocation: { lat: 1, lng: 2 },
+      centerOffset: { x: 0, y: 0 },
+      thresholdPx: 40,
+    };
     const state = baseState({
       boot: "pending",
       bootTarget: samplePosition,
+      bootFollow: follow,
+      bootPositionKey: "2:1:15",
       padding: { phase: "pending", options: null, suppressNextMoveEnd: false },
     });
 
@@ -220,12 +227,14 @@ describe("reduceMapCameraMachine", () => {
     });
 
     expect(result.state.boot).toBe("done");
+    expect(result.state.tracking).toBe("on");
+    expect(result.state.follow).toEqual(follow);
+    expect(result.state.lastAppliedGpsKey).toBe("2:1:15");
     expect(result.state.session).toBe("flying");
     expect(result.effects).toEqual([
       { type: "applyPadding", options: samplePadding, realign: false },
       { type: "applyPadding", options: samplePadding, realign: false },
       { type: "moveCamera", position: samplePosition, duration: 600 },
-      { type: "notifyBootComplete" },
     ]);
   });
 

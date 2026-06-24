@@ -28,6 +28,8 @@ vi.mock("../viewport", () => ({
   }),
 }));
 
+const dispatchMock = vi.fn();
+
 vi.mock("../camera", () => ({
   useMapUserTracking: () => ({
     tracking: false,
@@ -38,6 +40,7 @@ vi.mock("../camera", () => ({
     readCameraSession: () => mockCameraSession,
     navigateTo: navigateToMock,
     recenterOnUser: recenterOnUserMock,
+    dispatch: dispatchMock,
   }),
 }));
 
@@ -45,15 +48,15 @@ describe("useMapShell", () => {
   beforeEach(() => {
     navigateToMock.mockClear();
     recenterOnUserMock.mockClear();
+    dispatchMock.mockClear();
     mockSheetPhase = "idle";
     mockCameraSession = "idle";
     navigateToMock.mockReturnValue(true);
   });
 
   it("flies first and opens half after camera settles", async () => {
-    navigateToMock.mockImplementation(() => {
+    dispatchMock.mockImplementation(() => {
       mockCameraSession = "flying";
-      return true;
     });
 
     const mapInstanceStore = createMapInstanceStore();
@@ -71,10 +74,13 @@ describe("useMapShell", () => {
 
     expect(result.current.selectedItemId).toBe("a");
     expect(result.current.sheetSnap).toBe("collapsed");
-    expect(navigateToMock).toHaveBeenCalledWith(
-      { lat: 1, lng: 2 },
-      { duration: 600, keepTracking: false },
-    );
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: "navigateRequested",
+      position: { lat: 1, lng: 2 },
+      mode: "fly",
+      preserveTracking: false,
+      durationMs: 600,
+    });
 
     mockCameraSession = "idle";
     await act(async () => {
@@ -84,9 +90,8 @@ describe("useMapShell", () => {
   });
 
   it("keeps sheet collapsed until camera reports flying then idle", async () => {
-    navigateToMock.mockImplementation(() => {
+    dispatchMock.mockImplementation(() => {
       mockCameraSession = "flying";
-      return true;
     });
 
     const mapInstanceStore = createMapInstanceStore();
@@ -143,7 +148,7 @@ describe("useMapShell", () => {
       result.current.handleSheetSnapSettled("half");
     });
 
-    navigateToMock.mockClear();
+    dispatchMock.mockClear();
 
     await act(async () => {
       result.current.selectItem("b", { lat: 3, lng: 4 });
@@ -151,10 +156,13 @@ describe("useMapShell", () => {
 
     expect(result.current.selectedItemId).toBe("b");
     expect(result.current.sheetSnap).toBe("half");
-    expect(navigateToMock).toHaveBeenCalledWith(
-      { lat: 3, lng: 4 },
-      { duration: 600, keepTracking: false },
-    );
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: "navigateRequested",
+      position: { lat: 3, lng: 4 },
+      mode: "fly",
+      preserveTracking: false,
+      durationMs: 600,
+    });
   });
 
   it("clears selection when dragging the sheet closed", async () => {

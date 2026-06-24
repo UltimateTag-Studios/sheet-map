@@ -3,10 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 
 import { mockCanvas, stubViewport } from "../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../viewport/testing/mount-sheet-host-fixture";
-import {
-  hasBootIssuedForMapInstance,
-  markBootIssuedForMapInstance,
-} from "./instance/camera-state";
 import { clearMapPaddingSyncState, syncMapPadding } from "./padding/sync";
 import {
   asTestMapboxMap,
@@ -133,9 +129,7 @@ describe("useMapAnchor", () => {
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
     expect(harness.map.stop).toHaveBeenCalledTimes(1);
     expect(harness.latest.session).toBe("flying");
-    expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
-      true,
-    );
+    expect(harness.latest.boot).toBe("done");
 
     clearMapPaddingSyncState(asTestMapboxMap(harness.map));
     harness.unmount();
@@ -386,12 +380,10 @@ describe("useMapAnchor", () => {
   });
 
   it("issues one boot fly after map padding is ready", () => {
-    const onBootIssued = vi.fn();
     const target = { lat: 40, lng: -74, zoom: 12 };
     const harness = mountAnchorWithLiveSheetPadding(152, {
       bootTarget: target,
       bootDurationMs: 500,
-      onBootIssued,
     });
 
     expect(harness.latest.mapPaddingReady).toBe(true);
@@ -403,24 +395,26 @@ describe("useMapAnchor", () => {
       padding: { top: 0, left: 0, right: 0, bottom: 152 },
       duration: 500,
     });
-    expect(onBootIssued).toHaveBeenCalledTimes(1);
-    expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
-      true,
-    );
+    expect(harness.latest.boot).toBe("done");
 
     harness.unmount();
   });
 
-  it("skips boot fly when the latch is already set", () => {
-    const harness = createTestMapRef();
-    markBootIssuedForMapInstance(asTestMapboxMap(harness.map));
-
-    const mounted = mountAnchorWithMapRef(harness, {
-      bootTarget: { lat: 40, lng: -74, zoom: 12 },
+  it("skips boot fly when boot already completed", () => {
+    const target = { lat: 40, lng: -74, zoom: 12 };
+    const harness = mountAnchorWithLiveSheetPadding(152, {
+      bootTarget: target,
     });
 
-    expect(mounted.map.flyTo).not.toHaveBeenCalled();
-    mounted.unmount();
+    expect(harness.latest.boot).toBe("done");
+    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      harness.setObscuredBottomPx?.(200);
+    });
+
+    expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
+    harness.unmount();
   });
 
   it("skips boot fly when boot target is null", () => {
@@ -430,9 +424,7 @@ describe("useMapAnchor", () => {
 
     expect(harness.latest.mapPaddingReady).toBe(true);
     expect(harness.map.flyTo).not.toHaveBeenCalled();
-    expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
-      false,
-    );
+    expect(harness.latest.boot).not.toBe("done");
 
     harness.unmount();
   });
@@ -454,9 +446,7 @@ describe("useMapAnchor", () => {
 
       expect(harness.latest.mapPaddingReady).toBe(true);
       expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-      expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
-        true,
-      );
+      expect(harness.latest.boot).toBe("done");
 
       harness.unmount();
     });
@@ -479,9 +469,7 @@ describe("useMapAnchor", () => {
           zoom: target.zoom,
         }),
       );
-      expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
-        true,
-      );
+      expect(harness.latest.boot).toBe("done");
 
       harness.unmount();
     });
@@ -538,9 +526,7 @@ describe("useMapAnchor", () => {
 
       expect(mounted.latest.mapPaddingReady).toBe(true);
       expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
-      expect(hasBootIssuedForMapInstance(asTestMapboxMap(mounted.map))).toBe(
-        true,
-      );
+      expect(mounted.latest.boot).toBe("done");
 
       mounted.unmount();
       fixture.remove();
@@ -576,9 +562,7 @@ describe("useMapAnchor", () => {
       });
 
       expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
-      expect(hasBootIssuedForMapInstance(asTestMapboxMap(harness.map))).toBe(
-        true,
-      );
+      expect(harness.latest.boot).toBe("done");
 
       harness.unmount();
     });

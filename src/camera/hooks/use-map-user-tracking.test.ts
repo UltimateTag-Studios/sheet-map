@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 
 import { mockCanvas, stubViewport } from "../../viewport/testing/fixtures";
 import { mountSheetHostFixture } from "../../viewport/testing/mount-sheet-host-fixture";
-import { hasBootIssuedForMapInstance } from "../instance/camera-state";
 import {
   createTestMapRef,
   type TestMapRefHarness,
@@ -194,7 +193,7 @@ describe("useMapUserTracking", () => {
     const harness = mountUserTrackingWithLiveSheetPadding(userLocation);
 
     expect(harness.latest.tracking).toBe(true);
-    expect(hasBootIssuedForMapInstance(harness.mapRef.getMap())).toBe(true);
+    expect(harness.latest.boot).toBe("done");
     expect(harness.latest.mapPaddingReady).toBe(true);
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
     expect(harness.map.flyTo).toHaveBeenCalledWith(
@@ -216,7 +215,7 @@ describe("useMapUserTracking", () => {
     harness.setUserLocation(userLocation);
 
     expect(harness.latest.tracking).toBe(true);
-    expect(hasBootIssuedForMapInstance(harness.mapRef.getMap())).toBe(true);
+    expect(harness.latest.boot).toBe("done");
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
 
     harness.unmount();
@@ -254,7 +253,7 @@ describe("useMapUserTracking", () => {
     });
 
     expect(mounted.latest.mapPaddingReady).toBe(true);
-    expect(hasBootIssuedForMapInstance(mounted.mapRef.getMap())).toBe(true);
+    expect(mounted.latest.boot).toBe("done");
     expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
 
     mounted.unmount();
@@ -286,7 +285,7 @@ describe("useMapUserTracking", () => {
     });
 
     expect(mounted.latest.mapPaddingReady).toBe(true);
-    expect(hasBootIssuedForMapInstance(mounted.mapRef.getMap())).toBe(true);
+    expect(mounted.latest.boot).toBe("done");
     expect(mounted.map.flyTo).toHaveBeenCalledTimes(1);
 
     mounted.unmount();
@@ -297,7 +296,7 @@ describe("useMapUserTracking", () => {
     const harness = mountUserTrackingWithLiveSheetPadding(null);
 
     expect(harness.latest.tracking).toBe(false);
-    expect(hasBootIssuedForMapInstance(harness.mapRef.getMap())).toBe(false);
+    expect(harness.latest.boot).not.toBe("done");
     expect(harness.latest.mapPaddingReady).toBe(true);
     expect(harness.map.flyTo).not.toHaveBeenCalled();
 
@@ -312,14 +311,14 @@ describe("useMapUserTracking", () => {
       onMapInstanceReleased,
     });
 
-    expect(hasBootIssuedForMapInstance(first.mapRef.getMap())).toBe(true);
+    expect(first.latest.boot).toBe("done");
     expect(first.map.flyTo).toHaveBeenCalledTimes(1);
     await first.unmount();
     expect(onMapInstanceReleased).toHaveBeenCalledTimes(1);
 
     const second = mountUserTrackingWithMapRef(harness, { userLocation });
     expect(second.map.flyTo).toHaveBeenCalledTimes(2);
-    expect(hasBootIssuedForMapInstance(second.mapRef.getMap())).toBe(true);
+    expect(second.latest.boot).toBe("done");
 
     await second.unmount();
   });
@@ -369,7 +368,7 @@ describe("useMapUserTracking", () => {
       );
     });
 
-    expect(hasBootIssuedForMapInstance(harness.mapRef.getMap())).toBe(true);
+    expect(latestRef.current?.boot).toBe("done");
     expect(harness.map.flyTo).toHaveBeenCalledTimes(1);
     settleNavigation(harness.map, { ...userLocation, zoom: 15 });
     expect(latestRef.current?.session).toBe("idle");

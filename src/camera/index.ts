@@ -4,6 +4,7 @@ export {
   type MapUserTrackingProviderProps,
   useMapUserTrackingContext,
 } from "./hooks/map-user-tracking-context";
+export type { MapCameraDispatch } from "./hooks/use-map-camera";
 export { useMapCamera } from "./hooks/use-map-camera";
 export type {
   MapUserLocationCoords,
@@ -12,7 +13,6 @@ export type {
   UseMapUserTrackingOptions,
 } from "./hooks/use-map-user-tracking";
 export { useMapUserTracking } from "./hooks/use-map-user-tracking";
-export { releaseMapInstanceCameraState } from "./instance";
 export type {
   MapCameraMachineEffect,
   MapCameraMachineEvent,

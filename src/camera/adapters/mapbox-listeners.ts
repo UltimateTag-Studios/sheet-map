@@ -1,12 +1,11 @@
 import type { MapEventOf } from "mapbox-gl";
-import { type RefObject, useEffect, useRef } from "react";
+import { type RefObject, useEffect } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import {
   evaluateFollowAtGestureSettle,
   isAtMapAnchorPosition,
   isUserMapGestureEvent,
-  type MapAnchorFollowConfig,
   readMapAnchorPosition,
   resolveMoveEnd,
 } from "../anchor";
@@ -28,7 +27,6 @@ export type UseMapboxListenersInput = {
   enabled: boolean;
   dispatch: MapCameraMachineDispatch;
   stateRef: RefObject<MapCameraState>;
-  follow: MapAnchorFollowConfig | null;
 };
 
 export function useMapboxListeners({
@@ -36,11 +34,7 @@ export function useMapboxListeners({
   enabled,
   dispatch,
   stateRef,
-  follow,
 }: UseMapboxListenersInput): void {
-  const followRef = useRef(follow);
-  followRef.current = follow;
-
   useEffect(() => {
     if (!mapRef || !enabled) {
       return;
@@ -77,7 +71,8 @@ export function useMapboxListeners({
         return;
       }
 
-      const activeFollow = followRef.current;
+      const activeFollow =
+        stateRef.current.tracking === "on" ? stateRef.current.follow : null;
       if (!activeFollow) {
         return;
       }
@@ -122,14 +117,18 @@ export function useMapboxListeners({
         return;
       }
 
-      if (resolution.kind === "userGestureSettled" && followRef.current) {
-        const outcome = evaluateFollowAtGestureSettle(
-          map,
-          followRef.current,
-          stateRef.current.followThresholdExceeded,
-        );
-        dispatch({ type: "gestureSettleResolved", outcome });
-        return;
+      if (resolution.kind === "userGestureSettled") {
+        const activeFollow =
+          stateRef.current.tracking === "on" ? stateRef.current.follow : null;
+        if (activeFollow) {
+          const outcome = evaluateFollowAtGestureSettle(
+            map,
+            activeFollow,
+            stateRef.current.followThresholdExceeded,
+          );
+          dispatch({ type: "gestureSettleResolved", outcome });
+          return;
+        }
       }
 
       const facts = readMoveFacts();

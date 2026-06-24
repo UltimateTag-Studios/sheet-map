@@ -84,15 +84,15 @@ export function useMapShell({
 
   const flyToItem = useCallback(
     (location: MapItemLocation) => {
-      userTracking.navigateTo(
-        { lat: location.lat, lng: location.lng },
-        {
-          duration: resolvedConfig.smoothFlyDurationMs,
-          keepTracking: false,
-        },
-      );
+      userTracking.dispatch({
+        type: "navigateRequested",
+        position: { lat: location.lat, lng: location.lng },
+        mode: "fly",
+        preserveTracking: false,
+        durationMs: resolvedConfig.smoothFlyDurationMs,
+      });
     },
-    [userTracking, resolvedConfig.smoothFlyDurationMs],
+    [userTracking.dispatch, resolvedConfig.smoothFlyDurationMs],
   );
 
   const { state: machine, dispatch } = useMapShellMachine(flyToItem);
