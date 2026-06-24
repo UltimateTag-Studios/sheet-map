@@ -144,7 +144,7 @@ function tryIssueBootFly(state: MapCameraState): MapCameraMachineResult | null {
     position: state.bootTarget,
     mode: "fly",
     preserveTracking: true,
-    durationMs: state.flyDurationMs,
+    durationMs: state.bootFlyDurationMs,
   });
 
   return {
@@ -197,7 +197,9 @@ function reduceGestureSettleResolved(
     return {
       state: {
         ...withTrackingOff(state),
+        anchor: outcome.position,
         session: "idle",
+        followThresholdExceeded: true,
       },
       effects: [{ type: "releaseTracking" }],
     };
@@ -315,12 +317,26 @@ function reducePaddingMeasured(
     },
   };
 
-  const bootResult = tryIssueBootFly(nextState);
-  if (bootResult) {
-    return bootResult;
+  const effects: MapCameraMachineEffect[] = [];
+
+  if (event.changed) {
+    effects.push({
+      type: "applyPadding",
+      options: event.options,
+      realign:
+        !isSheetMotionIdle(state.sheetPhase) && state.session !== "userGesture",
+    });
   }
 
-  return { state: nextState, effects: [] };
+  const bootResult = tryIssueBootFly(nextState);
+  if (bootResult) {
+    return {
+      state: bootResult.state,
+      effects: [...effects, ...bootResult.effects],
+    };
+  }
+
+  return { state: nextState, effects };
 }
 
 /** Unified map camera session, tracking, boot, and padding orchestration. */
@@ -357,7 +373,10 @@ export function reduceMapCameraMachine(
       }
 
       return {
-        state: withTrackingOff(state),
+        state: {
+          ...withTrackingOff(state),
+          followThresholdExceeded: true,
+        },
         effects: [{ type: "releaseTracking" }],
       };
     }
@@ -437,7 +456,7 @@ export function reduceMapCameraMachine(
     }
 
     case "bootTargetReady": {
-      if (state.boot !== "none") {
+      if (state.boot === "done") {
         return { state, effects: [] };
       }
 
@@ -471,6 +490,8 @@ export function reduceMapCameraMachine(
         enabled: state.enabled,
         sheetPhase: state.sheetPhase,
         flyDurationMs: state.flyDurationMs,
+        bootFlyDurationMs: state.bootFlyDurationMs,
+        paddingFromCanvasEnabled: state.paddingFromCanvasEnabled,
       });
 
       return {

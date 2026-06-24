@@ -1,24 +1,26 @@
 import { useEffect, useRef } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import { releaseMapInstanceCameraState } from "../../instance/camera-state";
+import { releaseMapInstanceCameraState } from "../instance/camera-state";
+import type { MapCameraMachineDispatch } from "../machine";
 
-export type UseMapInstanceReleaseInput = {
+export type UseMapInstanceLifecycleInput = {
   mapRef: MapRef | null;
   enabled: boolean;
+  dispatch: MapCameraMachineDispatch;
   onMapInstanceReleased?: () => void;
 };
 
 /**
- * Release per-map camera latches when the anchor hook detaches from a map
- * instance for real (unmount or mapRef swap), not on React Strict Mode's
- * effect re-run cleanup.
+ * Dispatches `mapInstanceReleased` when the hook detaches from a map instance
+ * for real (unmount or mapRef swap), not on React Strict Mode effect re-run cleanup.
  */
-export function useMapInstanceRelease({
+export function useMapInstanceLifecycle({
   mapRef,
   enabled,
+  dispatch,
   onMapInstanceReleased,
-}: UseMapInstanceReleaseInput): void {
+}: UseMapInstanceLifecycleInput): void {
   const onMapInstanceReleasedRef = useRef(onMapInstanceReleased);
   onMapInstanceReleasedRef.current = onMapInstanceReleased;
 
@@ -36,9 +38,10 @@ export function useMapInstanceRelease({
 
     if (previous && previous !== mapRef) {
       releaseMapInstanceCameraState(previous.getMap());
+      dispatch({ type: "mapInstanceReleased" });
       onMapInstanceReleasedRef.current?.();
     }
-  }, [mapRef, enabled]);
+  }, [mapRef, enabled, dispatch]);
 
   useEffect(() => {
     if (!mapRef || !enabled) {
@@ -55,8 +58,9 @@ export function useMapInstanceRelease({
           return;
         }
         releaseMapInstanceCameraState(map);
+        dispatch({ type: "mapInstanceReleased" });
         onMapInstanceReleasedRef.current?.();
       });
     };
-  }, [mapRef, enabled]);
+  }, [mapRef, enabled, dispatch]);
 }

@@ -36,6 +36,7 @@ describe("evaluateFollowAtGestureSettle", () => {
 
     expect(evaluateFollowAtGestureSettle(map, follow, true)).toEqual({
       kind: "releaseTracking",
+      position: { lat: 10, lng: 20, zoom: 14 },
     });
   });
 
@@ -44,6 +45,7 @@ describe("evaluateFollowAtGestureSettle", () => {
 
     expect(evaluateFollowAtGestureSettle(map, follow, false)).toEqual({
       kind: "releaseTracking",
+      position: { lat: 10, lng: 20, zoom: 14 },
     });
   });
 

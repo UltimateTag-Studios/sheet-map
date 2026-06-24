@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { type RefObject, useCallback, useRef, useState } from "react";
 
 import {
   type MapCameraMachineEffect,
@@ -30,6 +30,7 @@ export function useMapCameraMachine(
   initialState: CreateMapCameraMachineStateInput = {},
 ): {
   state: MapCameraState;
+  stateRef: React.RefObject<MapCameraState>;
   dispatch: MapCameraMachineDispatch;
 } {
   const runEffectRef = useRef(runEffect);
@@ -50,5 +51,5 @@ export function useMapCameraMachine(
     applyEffects(result.effects, (effect) => runEffectRef.current(effect));
   }, []);
 
-  return { state, dispatch };
+  return { state, stateRef: stateRef as RefObject<MapCameraState>, dispatch };
 }

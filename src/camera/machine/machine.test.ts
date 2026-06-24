@@ -223,6 +223,7 @@ describe("reduceMapCameraMachine", () => {
     expect(result.state.session).toBe("flying");
     expect(result.effects).toEqual([
       { type: "applyPadding", options: samplePadding, realign: false },
+      { type: "applyPadding", options: samplePadding, realign: false },
       { type: "moveCamera", position: samplePosition, duration: 600 },
       { type: "notifyBootComplete" },
     ]);

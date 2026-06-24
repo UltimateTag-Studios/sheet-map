@@ -9,8 +9,8 @@ import {
   markFollowReleasedForMapInstance,
 } from "../instance/camera-state";
 import { type MapPosition, positionKey } from "../shared/map-position";
-import { useMapAnchor } from "./use-map-anchor";
 import type { NavigateToMapAnchorOptions } from "./use-map-anchor/types";
+import { useMapCamera } from "./use-map-camera";
 
 export type MapUserLocationCoords = {
   lng: number;
@@ -137,7 +137,7 @@ export function useMapUserTracking({
         }
       : null;
 
-  const { anchor, session, navigateTo, ...anchorRest } = useMapAnchor({
+  const { anchor, session, navigateTo, ...anchorRest } = useMapCamera({
     mapRef,
     enabled,
     liveSheetObscuredBottomPx,

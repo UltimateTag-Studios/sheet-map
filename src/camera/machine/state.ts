@@ -33,10 +33,14 @@ export type MapCameraState = {
     options: MapPaddingOptions | null;
     suppressNextMoveEnd: boolean;
   };
+  /** When false, padding is not measured from canvas and boot may proceed immediately. */
+  paddingFromCanvasEnabled: boolean;
   sheetPhase: SheetMotionPhase;
   lastAppliedGpsKey: string | null;
   /** Default duration for programmatic fly moves. */
   flyDurationMs: number;
+  /** One-shot boot fly duration; falls back to `flyDurationMs`. */
+  bootFlyDurationMs: number;
 };
 
 export type CreateMapCameraMachineStateInput = {
@@ -45,12 +49,16 @@ export type CreateMapCameraMachineStateInput = {
   tracking?: boolean;
   follow?: MapCameraFollowConfig | null;
   flyDurationMs?: number;
+  bootFlyDurationMs?: number;
+  paddingFromCanvasEnabled?: boolean;
 };
 
 export function createInitialMapCameraMachineState(
   input: CreateMapCameraMachineStateInput = {},
 ): MapCameraState {
   const tracking = input.tracking ?? false;
+  const flyDurationMs = input.flyDurationMs ?? 600;
+  const paddingFromCanvasEnabled = input.paddingFromCanvasEnabled ?? true;
 
   return {
     mapGeneration: 0,
@@ -63,13 +71,15 @@ export function createInitialMapCameraMachineState(
     boot: "none",
     bootTarget: null,
     padding: {
-      phase: "pending",
+      phase: paddingFromCanvasEnabled ? "pending" : "ready",
       options: null,
       suppressNextMoveEnd: false,
     },
+    paddingFromCanvasEnabled,
     sheetPhase: input.sheetPhase ?? "idle",
     lastAppliedGpsKey: null,
-    flyDurationMs: input.flyDurationMs ?? 600,
+    flyDurationMs,
+    bootFlyDurationMs: input.bootFlyDurationMs ?? flyDurationMs,
   };
 }
 
