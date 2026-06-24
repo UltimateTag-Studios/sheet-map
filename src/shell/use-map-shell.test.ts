@@ -1,17 +1,24 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { MapAnchorSession } from "../camera/anchor/state";
 import type { MapPosition } from "../camera/shared/map-position";
+import type { SheetMotionPhase } from "../viewport";
 import { createMapInstanceStore } from "./map-instance-store";
 import { useMapShell } from "./use-map-shell";
 
 const navigateToMock = vi.fn();
 const recenterOnUserMock = vi.fn();
 
+let mockSheetPhase: SheetMotionPhase = "idle";
+let mockCameraSession: MapAnchorSession = "idle";
+
 vi.mock("../viewport", () => ({
   useLiveSheetObscuredBottomPx: () => ({
     sheetObscuredBottomPx: 0,
-    sheetPhase: "idle" as const,
+    get sheetPhase() {
+      return mockSheetPhase;
+    },
     onSheetLayoutFrameChange: vi.fn(),
   }),
   useMapVisibleViewportSync: () => ({
@@ -25,6 +32,9 @@ vi.mock("../camera", () => ({
   useMapUserTracking: () => ({
     tracking: false,
     mapPaddingReady: true,
+    get session() {
+      return mockCameraSession;
+    },
     navigateTo: navigateToMock,
     recenterOnUser: recenterOnUserMock,
   }),
@@ -34,40 +44,72 @@ describe("useMapShell", () => {
   beforeEach(() => {
     navigateToMock.mockClear();
     recenterOnUserMock.mockClear();
+    mockSheetPhase = "idle";
+    mockCameraSession = "idle";
   });
 
-  it("tracks sheet snap and selection via reducer", () => {
+  it("flies first and keeps sheet collapsed until camera settles", () => {
     const mapInstanceStore = createMapInstanceStore();
-    const { result } = renderHook(() =>
+    const { result, rerender } = renderHook(() =>
       useMapShell({
         mapInstanceStore,
         accessToken: "token",
-        userLocation: null,
       }),
     );
-
-    expect(result.current.sheetSnap).toBe("collapsed");
-    expect(result.current.selectedItemId).toBeNull();
 
     act(() => {
       result.current.selectItem("a", { lat: 1, lng: 2 });
     });
 
     expect(result.current.selectedItemId).toBe("a");
-    expect(result.current.sheetSnap).toBe("half");
+    expect(result.current.sheetSnap).toBe("collapsed");
     expect(navigateToMock).toHaveBeenCalledWith(
       { lat: 1, lng: 2 },
       { duration: 600, keepTracking: false },
     );
 
+    mockCameraSession = "flying";
     act(() => {
-      result.current.handleSheetSnapSettled("collapsed");
+      rerender();
     });
+    expect(result.current.sheetSnap).toBe("collapsed");
 
-    expect(result.current.selectedItemId).toBeNull();
+    mockCameraSession = "idle";
+    act(() => {
+      rerender();
+    });
+    expect(result.current.sheetSnap).toBe("half");
   });
 
-  it("selectItem without location skips navigateTo", () => {
+  it("flies immediately when the sheet is already open and idle at half", () => {
+    const mapInstanceStore = createMapInstanceStore();
+    const { result } = renderHook(() =>
+      useMapShell({
+        mapInstanceStore,
+        accessToken: "token",
+      }),
+    );
+
+    act(() => {
+      result.current.handleSheetSnapChange("half");
+      result.current.handleSheetSnapSettled("half");
+    });
+
+    navigateToMock.mockClear();
+
+    act(() => {
+      result.current.selectItem("b", { lat: 3, lng: 4 });
+    });
+
+    expect(result.current.selectedItemId).toBe("b");
+    expect(result.current.sheetSnap).toBe("half");
+    expect(navigateToMock).toHaveBeenCalledWith(
+      { lat: 3, lng: 4 },
+      { duration: 600, keepTracking: false },
+    );
+  });
+
+  it("selectItem without location opens half without flying", () => {
     const mapInstanceStore = createMapInstanceStore();
     const { result } = renderHook(() =>
       useMapShell({
@@ -81,6 +123,7 @@ describe("useMapShell", () => {
     });
 
     expect(result.current.selectedItemId).toBe("a");
+    expect(result.current.sheetSnap).toBe("half");
     expect(navigateToMock).not.toHaveBeenCalled();
   });
 
@@ -97,8 +140,6 @@ describe("useMapShell", () => {
     act(() => {
       result.current.selectItem("a", null);
     });
-
-    expect(result.current.selectedItemId).toBe("a");
 
     act(() => {
       result.current.recenterOnUser();
@@ -167,13 +208,12 @@ describe("useMapShell", () => {
       result.current.selectItem("a", { lat: 1, lng: 2 });
     });
 
+    mockCameraSession = "flying";
     act(() => {
       result.current.handleSheetSnapChange("collapsed");
     });
 
-    expect(result.current.sheetSnap).toBe("collapsed");
-    expect(result.current.selectedItemId).toBe("a");
-
+    mockCameraSession = "idle";
     act(() => {
       result.current.handleSheetSnapSettled("collapsed");
     });

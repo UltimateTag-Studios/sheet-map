@@ -1,5 +1,11 @@
 import type { SheetSnap } from "@siegetag/sheet";
-import { useCallback, useReducer, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 
 import { type NavigateToMapAnchorOptions, useMapUserTracking } from "../camera";
 import type { MapPosition } from "../camera/shared/map-position";
@@ -16,6 +22,7 @@ import {
 import type { MapInstanceStore } from "./map-instance-store";
 import {
   createInitialMapShellSelectionState,
+  isFlyingToItem,
   reduceMapShellSelection,
 } from "./map-shell-machine";
 
@@ -80,6 +87,24 @@ export function useMapShell({
     mapPaddingDebug: debug,
   });
 
+  const flyToSelectedItem = useCallback(
+    (location: MapItemLocation) => {
+      userTracking.navigateTo(
+        { lat: location.lat, lng: location.lng },
+        {
+          duration: resolvedConfig.smoothFlyDurationMs,
+          keepTracking: false,
+        },
+      );
+    },
+    [userTracking, resolvedConfig.smoothFlyDurationMs],
+  );
+
+  const flyToSelectedItemRef = useRef(flyToSelectedItem);
+  flyToSelectedItemRef.current = flyToSelectedItem;
+
+  const itemSelectFlyStartedRef = useRef(false);
+
   const clearSelection = useCallback(() => {
     dispatch({ type: "clearSelection" });
   }, []);
@@ -101,19 +126,51 @@ export function useMapShell({
 
   const selectItem = useCallback(
     (id: string, location: MapItemLocation | null) => {
-      dispatch({ type: "selectItem", id });
-      if (location) {
-        userTracking.navigateTo(
-          { lat: location.lat, lng: location.lng },
-          {
-            duration: resolvedConfig.smoothFlyDurationMs,
-            keepTracking: false,
-          },
-        );
+      const sheetWasOpenAtHalf = selection.sheetSnap === "half";
+      const flyImmediately =
+        location !== null && sheetWasOpenAtHalf && sheetPhase === "idle";
+      const deferSheetOpen =
+        location !== null && !sheetWasOpenAtHalf && sheetPhase === "idle";
+
+      dispatch({
+        type: "selectItem",
+        id,
+        location,
+        flyImmediately,
+        deferSheetOpen,
+      });
+
+      if (flyImmediately && location) {
+        flyToSelectedItem(location);
       }
     },
-    [userTracking, resolvedConfig.smoothFlyDurationMs],
+    [flyToSelectedItem, selection.sheetSnap, sheetPhase],
   );
+
+  useEffect(() => {
+    if (!isFlyingToItem(selection.itemSelectCamera)) {
+      itemSelectFlyStartedRef.current = false;
+      return;
+    }
+
+    itemSelectFlyStartedRef.current = false;
+    flyToSelectedItemRef.current(selection.itemSelectCamera.location);
+  }, [selection.itemSelectCamera]);
+
+  useEffect(() => {
+    if (!isFlyingToItem(selection.itemSelectCamera)) {
+      return;
+    }
+
+    if (userTracking.session === "flying") {
+      itemSelectFlyStartedRef.current = true;
+      return;
+    }
+
+    if (userTracking.session === "idle" && itemSelectFlyStartedRef.current) {
+      dispatch({ type: "flyCompletedOpenSheet" });
+    }
+  }, [userTracking.session, selection.itemSelectCamera]);
 
   const closeSheet = useCallback(() => {
     dispatch({ type: "closeSheet" });
