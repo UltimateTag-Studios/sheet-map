@@ -18,6 +18,7 @@ import type { MapInstanceStore } from "./map-instance-store";
 import type {
   MapShellEnvironment,
   MapShellMachineEffect,
+  MapShellMachineEvent,
 } from "./map-shell-machine";
 import { useMapShellMachine } from "./map-shell-machine";
 import type { RouteEnterFly } from "./map-shell-machine/route-enter-fly";
@@ -61,12 +62,55 @@ export function useMapShell({
   const sheetPhaseRef = useRef(sheetPhase);
   sheetPhaseRef.current = sheetPhase;
 
+  const physicalSnapRef = useRef<SheetSnap>("collapsed");
+  const syncedMotionPhaseRef = useRef<SheetMotionPhase>("idle");
+  const dispatchRef = useRef<(event: MapShellMachineEvent) => void>(() => {});
+  const userTrackingRef = useRef<
+    ReturnType<typeof useMapUserTracking> | undefined
+  >(undefined);
+
   const viewport = useMapVisibleViewportSync({
     mapRef,
     liveSheetObscuredBottomPx: sheetObscuredBottomPx,
     fixedChromeInsets: config.fixedChromeInsets,
     debug,
   });
+
+  const buildEnvironment = useCallback(
+    (
+      sheetMotionPhase: SheetMotionPhase,
+      physicalSnap: SheetSnap,
+    ): MapShellEnvironment => {
+      const tracking = userTrackingRef.current;
+      if (!tracking) {
+        return {
+          cameraSession: "idle",
+          sheetMotionPhase,
+          physicalSnap,
+          mapPaddingReady: false,
+          hasUserLocation: false,
+        };
+      }
+      return {
+        cameraSession: tracking.session,
+        sheetMotionPhase,
+        physicalSnap,
+        mapPaddingReady: tracking.mapPaddingReady,
+        hasUserLocation: tracking.hasUserLocation,
+      };
+    },
+    [],
+  );
+
+  const syncEnvironment = useCallback(
+    (sheetMotionPhase: SheetMotionPhase, physicalSnap: SheetSnap) => {
+      dispatchRef.current({
+        type: "environmentSynced",
+        environment: buildEnvironment(sheetMotionPhase, physicalSnap),
+      });
+    },
+    [buildEnvironment],
+  );
 
   const userTracking = useMapUserTracking({
     mapRef,
@@ -79,6 +123,8 @@ export function useMapShell({
     smoothFlyDurationMs: resolvedConfig.smoothFlyDurationMs,
     mapPaddingDebug: debug,
   });
+
+  userTrackingRef.current = userTracking;
 
   const flyToItem = useCallback(
     (
@@ -139,33 +185,12 @@ export function useMapShell({
   );
 
   const { state: machine, dispatch } = useMapShellMachine(handleMachineEffect);
-
-  const userTrackingRef = useRef(userTracking);
-  userTrackingRef.current = userTracking;
-
-  const syncedMotionPhaseRef = useRef<SheetMotionPhase>("idle");
-
-  const buildEnvironment = useCallback(
-    (sheetMotionPhase: SheetMotionPhase): MapShellEnvironment => {
-      const tracking = userTrackingRef.current;
-      return {
-        cameraSession: tracking.session,
-        sheetMotionPhase,
-        mapPaddingReady: tracking.mapPaddingReady,
-        hasUserLocation: tracking.hasUserLocation,
-      };
-    },
-    [],
-  );
+  dispatchRef.current = dispatch;
 
   const readEnvironment = useCallback((): MapShellEnvironment => {
-    return {
-      cameraSession: userTracking.session,
-      sheetMotionPhase: sheetPhase,
-      mapPaddingReady: userTracking.mapPaddingReady,
-      hasUserLocation: userTracking.hasUserLocation,
-    };
+    return buildEnvironment(sheetPhase, physicalSnapRef.current);
   }, [
+    buildEnvironment,
     sheetPhase,
     userTracking.session,
     userTracking.mapPaddingReady,
@@ -194,9 +219,8 @@ export function useMapShell({
   );
 
   const recenterOnUser = useCallback(() => {
-    clearSelection();
-    userTracking.recenterOnUser();
-  }, [clearSelection, userTracking]);
+    dispatch({ type: "recenterUser" });
+  }, [dispatch]);
 
   const selectItem = useCallback(
     (id: string, location: MapItemLocation | null) => {
@@ -230,6 +254,10 @@ export function useMapShell({
 
   const handleSheetSnapSettled = useCallback(
     (snap: SheetSnap) => {
+      physicalSnapRef.current = snap;
+      sheetPhaseRef.current = "idle";
+      syncedMotionPhaseRef.current = "idle";
+
       dispatch({
         type: "sheetReported",
         snap,
@@ -240,33 +268,25 @@ export function useMapShell({
     [dispatch],
   );
 
-  /**
-   * Sheet emits layout frame (authoritative phase) before `onSnapSettled`.
-   * Sync camera + shell environment on phase transitions so pending flies run
-   * with motion idle before the settled snap event completes selection.
-   */
   const handleSheetLayoutFrameChange = useCallback(
     (frame: SheetLayoutFrameChange) => {
       onSheetLayoutFrameChange(frame);
 
-      if (frame.phase === syncedMotionPhaseRef.current) {
-        return;
+      physicalSnapRef.current = frame.restingSnap;
+
+      if (frame.phase !== syncedMotionPhaseRef.current) {
+        syncedMotionPhaseRef.current = frame.phase;
+        sheetPhaseRef.current = frame.phase;
+
+        userTrackingRef.current?.dispatch({
+          type: "sheetPhaseChanged",
+          phase: frame.phase,
+        });
       }
 
-      syncedMotionPhaseRef.current = frame.phase;
-      sheetPhaseRef.current = frame.phase;
-
-      userTrackingRef.current.dispatch({
-        type: "sheetPhaseChanged",
-        phase: frame.phase,
-      });
-
-      dispatch({
-        type: "environmentSynced",
-        environment: buildEnvironment(frame.phase),
-      });
+      syncEnvironment(frame.phase, frame.restingSnap);
     },
-    [buildEnvironment, dispatch, onSheetLayoutFrameChange],
+    [onSheetLayoutFrameChange, syncEnvironment],
   );
 
   return {

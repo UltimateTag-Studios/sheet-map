@@ -5,42 +5,35 @@ import type { MapItemLocation } from "../../items/types";
 import type { SheetMotionPhase } from "../../viewport";
 import type { RouteEnterFly } from "./route-enter-fly";
 
-/**
- * Item-select orchestration while the sheet stays collapsed (fly-then-open).
- *
- * Completion is driven by `environmentSynced` when the camera reports
- * `flying → idle`.
- */
-export type ItemSelectPhase =
-  | { status: "idle" }
+export type ShellCameraIntent =
   | {
-      status: "flyingToItem";
-      location: MapItemLocation;
-    }
-  | {
-      /** Fly queued until the sheet reaches half at rest. */
-      status: "pendingFly";
+      kind: "flyToItem";
       location: MapItemLocation;
       enterFly?: boolean;
       zoom?: number;
-    };
+    }
+  | { kind: "flyToUser"; zoom?: number };
+
+export type ShellIntent = {
+  itemId: string | null;
+  /** Pending camera move; cleared after the fly effect is emitted. */
+  camera: ShellCameraIntent | null;
+  /** null = do not change sheet snap (user location). */
+  sheetTarget: SheetSnap | null;
+  /** Collapsed item select: open half after camera fly completes. */
+  openHalfAfterCameraIdle: boolean;
+};
 
 /** Snapshot from map camera, sheet gesture, and route enter-fly subsystems. */
 export type MapShellEnvironment = {
   cameraSession: MapAnchorSession;
   sheetMotionPhase: SheetMotionPhase;
+  /** Live resting snap from sheet layout frames (while moving). */
+  physicalSnap: SheetSnap;
   mapPaddingReady: boolean;
   hasUserLocation: boolean;
 };
 
-/**
- * Route camera entry lifecycle for the current visit:
- *
- * - `waiting` — entry declared; not dispatched yet (data loading or gates closed)
- * - `dispatched` — fly / select sent once for this entry
- * - `satisfied` — entry goal met for this visit
- * - `dismissed` — user explicitly cleared selection on this visit
- */
 export type RouteEntryApplyStatus =
   | "waiting"
   | "dispatched"
@@ -54,13 +47,11 @@ export type RouteEntryVisit = {
 };
 
 export type MapShellMachineState = {
-  /** Commanded snap passed to `<Sheet snap={…} />`. */
   sheetSnap: SheetSnap;
-  /** Last settled snap reported by the sheet (physical position). */
   reportedSheetSnap: SheetSnap;
   selectedItemId: string | null;
   environment: MapShellEnvironment;
-  itemSelect: ItemSelectPhase;
+  intent: ShellIntent | null;
   routeVisit: RouteEntryVisit | null;
 };
 
@@ -72,21 +63,72 @@ export function createInitialMapShellMachineState(): MapShellMachineState {
     environment: {
       cameraSession: "idle",
       sheetMotionPhase: "idle",
+      physicalSnap: "collapsed",
       mapPaddingReady: false,
       hasUserLocation: false,
     },
-    itemSelect: { status: "idle" },
+    intent: null,
     routeVisit: null,
   };
 }
 
-export function isSheetReadyAtHalf(state: MapShellMachineState): boolean {
+export function isSheetMotionIdle(state: MapShellMachineState): boolean {
+  return state.environment.sheetMotionPhase === "idle";
+}
+
+/** Where the sheet physically rests — settled snap when idle, layout frame while moving. */
+export function resolvePhysicalSnap(state: MapShellMachineState): SheetSnap {
+  if (isSheetMotionIdle(state)) {
+    return state.reportedSheetSnap;
+  }
+  return state.environment.physicalSnap;
+}
+
+export function gatesOpen(environment: MapShellEnvironment): boolean {
+  return environment.sheetMotionPhase === "idle" && environment.mapPaddingReady;
+}
+
+export function sheetAtTarget(
+  state: MapShellMachineState,
+  sheetTarget: SheetSnap | null,
+): boolean {
+  if (sheetTarget === null) {
+    return true;
+  }
+  return resolvePhysicalSnap(state) === sheetTarget;
+}
+
+/**
+ * Shell may emit a camera fly when the sheet is at rest at the intent target.
+ * Padding-before-fly is enforced by the camera machine (`applyPadding` then `moveCamera`).
+ */
+export function canEmitCameraFly(state: MapShellMachineState): boolean {
+  const intent = state.intent;
+  if (!intent?.camera) {
+    return false;
+  }
+
+  if (
+    intent.camera.kind === "flyToUser" &&
+    !state.environment.hasUserLocation
+  ) {
+    return false;
+  }
+
   return (
-    state.reportedSheetSnap === "half" &&
-    state.environment.sheetMotionPhase === "idle"
+    gatesOpen(state.environment) && sheetAtTarget(state, intent.sheetTarget)
   );
 }
 
-export function isSheetMotionIdle(state: MapShellMachineState): boolean {
-  return state.environment.sheetMotionPhase === "idle";
+export function environmentsEqual(
+  a: MapShellEnvironment,
+  b: MapShellEnvironment,
+): boolean {
+  return (
+    a.cameraSession === b.cameraSession &&
+    a.sheetMotionPhase === b.sheetMotionPhase &&
+    a.physicalSnap === b.physicalSnap &&
+    a.mapPaddingReady === b.mapPaddingReady &&
+    a.hasUserLocation === b.hasUserLocation
+  );
 }

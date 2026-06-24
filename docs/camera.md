@@ -77,9 +77,30 @@ Set `config.debug: true` or `VITE_SHEET_MAP_DEBUG=true` for padding and GPS cons
 
 ## Selection + sheet
 
-- Tap map marker or list row → `selectItem` → from collapsed: fly first, open half when camera settles; from half: fly at half; from full: snap to half, then fly.
-- Close sheet → `dismissSheet` → deselect.
-- `recenterOnUser` and `navigateTo` without `preserveTracking` also clear selection.
+Shell **`MapShellMachine`** owns a single **`ShellIntent`**. **`tryAdvanceIntent`** emits camera effects when:
+
+1. Sheet motion is **idle**
+2. **`resolvePhysicalSnap`** matches the intent’s `sheetTarget` (settled snap when idle, layout frame while moving)
+3. **`mapPaddingReady`** (boot)
+
+Padding-before-fly on each navigate is enforced by the **camera machine** (`applyPadding` then `moveCamera` in one effect batch — not a separate shell defer queue).
+
+| Trigger | Physical sheet | Sheet command | Camera | Notes |
+| ------- | -------------- | ------------- | ------ | ----- |
+| **Item** | collapsed | stay collapsed | fly when gates open | open half after `cameraSession: flying → idle` |
+| **Item** | half | stay half | fly when gates open | |
+| **Item** | full | command half | fly after physical half | fixes reselect-at-full |
+| **User location** | any | no change | fly/recenter when gates open | never opens half |
+| **Any** | sheet dragged while camera flying | — | jump (padding relign) | camera physics only |
+
+Latest user action **replaces** the prior intent (location mid-fly → item select works).
+
+- Tap map marker or list row → `selectItem`
+- Close sheet → `dismissSheet` → deselect
+- Location button → `recenterUser` (clears selection, flies to user; sheet unchanged)
+- `recenterOnUser` and `navigateTo` without `preserveTracking` also clear selection
+
+Camera **`navigateRequested`** applies padding before `moveCamera` on each navigate. Shell defers user-intent flies until padding is synced; camera does not queue user intents.
 
 ## Map instance lifecycle
 

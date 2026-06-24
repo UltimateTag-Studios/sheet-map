@@ -35,7 +35,8 @@ vi.mock("../camera", () => ({
     tracking: false,
     mapPaddingReady: true,
     boot: "done",
-    hasUserLocation: false,
+    hasUserLocation: true,
+    anchor: null,
     get session() {
       return mockCameraSession;
     },
@@ -84,56 +85,16 @@ describe("useMapShell", () => {
       durationMs: 600,
     });
 
+    mockCameraSession = "flying";
+    await act(async () => {
+      rerender();
+    });
+
     mockCameraSession = "idle";
     await act(async () => {
       rerender();
     });
     expect(result.current.sheetSnap).toBe("half");
-  });
-
-  it("keeps sheet collapsed until camera reports flying then idle", async () => {
-    dispatchMock.mockImplementation(() => {
-      mockCameraSession = "flying";
-    });
-
-    const mapInstanceStore = createMapInstanceStore();
-    const { result, rerender } = renderHook(() =>
-      useMapShell({
-        mapInstanceStore,
-        accessToken: "token",
-      }),
-    );
-
-    await act(async () => {
-      result.current.selectItem("a", { lat: 1, lng: 2 });
-      await Promise.resolve();
-    });
-
-    expect(result.current.sheetSnap).toBe("collapsed");
-
-    mockCameraSession = "idle";
-    await act(async () => {
-      rerender();
-    });
-
-    expect(result.current.sheetSnap).toBe("half");
-  });
-
-  it("does not open half while camera session stays idle", async () => {
-    const mapInstanceStore = createMapInstanceStore();
-    const { result } = renderHook(() =>
-      useMapShell({
-        mapInstanceStore,
-        accessToken: "token",
-      }),
-    );
-
-    await act(async () => {
-      result.current.selectItem("a", { lat: 1, lng: 2 });
-      await Promise.resolve();
-    });
-
-    expect(result.current.sheetSnap).toBe("collapsed");
   });
 
   it("flies immediately when the sheet is already open at half", async () => {
@@ -146,8 +107,12 @@ describe("useMapShell", () => {
     );
 
     await act(async () => {
-      result.current.handleSheetSnapChange("half");
       result.current.handleSheetSnapSettled("half");
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 300,
+        phase: "idle",
+        restingSnap: "half",
+      });
     });
 
     dispatchMock.mockClear();
@@ -167,6 +132,35 @@ describe("useMapShell", () => {
     });
   });
 
+  it("recenterUser routes through shell and does not change sheetSnap", async () => {
+    const mapInstanceStore = createMapInstanceStore();
+    const { result } = renderHook(() =>
+      useMapShell({
+        mapInstanceStore,
+        accessToken: "token",
+      }),
+    );
+
+    await act(async () => {
+      result.current.handleSheetSnapSettled("full");
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 600,
+        phase: "idle",
+        restingSnap: "full",
+      });
+    });
+
+    recenterOnUserMock.mockClear();
+
+    await act(async () => {
+      result.current.recenterOnUser();
+    });
+
+    expect(result.current.sheetSnap).toBe("full");
+    expect(result.current.selectedItemId).toBeNull();
+    expect(recenterOnUserMock).toHaveBeenCalled();
+  });
+
   it("clears selection when dragging the sheet closed", async () => {
     const mapInstanceStore = createMapInstanceStore();
     const { result, rerender } = renderHook(() =>
@@ -184,6 +178,11 @@ describe("useMapShell", () => {
     await act(async () => {
       mockSheetPhase = "dragging";
       rerender();
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 200,
+        phase: "dragging",
+        restingSnap: "collapsed",
+      });
     });
 
     await act(async () => {

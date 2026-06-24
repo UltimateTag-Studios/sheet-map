@@ -1,14 +1,12 @@
+import {
+  armIntent,
+  planItemSelect,
+  planRecenterUser,
+  tryAdvanceIntent,
+} from "./intent";
 import type { MapShellMachineResult } from "./machine";
-import { resolveLocatedSelectOrPending } from "./resolve-located-select";
-import type {
-  ItemSelectPhase,
-  MapShellEnvironment,
-  MapShellMachineState,
-  RouteEntryVisit,
-} from "./state";
-import { isSheetMotionIdle } from "./state";
-
-const idleItemSelect = (): ItemSelectPhase => ({ status: "idle" });
+import type { MapShellMachineState, RouteEntryVisit } from "./state";
+import { gatesOpen } from "./state";
 
 /** Where the map should fly when a route becomes active. */
 export type RouteEnterFly =
@@ -59,10 +57,6 @@ export function routeEnterFlyKey(
   }
   const zoomSuffix = entry.zoom !== undefined ? `:z${entry.zoom}` : "";
   return `item:${entry.id}:${entry.location.lat},${entry.location.lng}${zoomSuffix}`;
-}
-
-function routeEntryGatesReady(state: MapShellMachineState): boolean {
-  return isSheetMotionIdle(state) && state.environment.mapPaddingReady;
 }
 
 function withRouteVisit(
@@ -121,8 +115,8 @@ export function advanceRouteEntry(
 /** Marks user-location enter fly satisfied after the camera finishes flying. */
 export function completeRouteUserEnterFly(
   state: MapShellMachineState,
-  previous: MapShellEnvironment,
-  next: MapShellEnvironment,
+  previous: MapShellMachineState["environment"],
+  next: MapShellMachineState["environment"],
 ): MapShellMachineState {
   const visit = state.routeVisit;
   if (
@@ -149,7 +143,7 @@ export function tryApplyRouteEntry(
     return { state, effects: [] };
   }
 
-  if (!routeEntryGatesReady(state)) {
+  if (!gatesOpen(state.environment)) {
     return { state, effects: [] };
   }
 
@@ -160,33 +154,42 @@ export function tryApplyRouteEntry(
       return { state, effects: [] };
     }
 
-    return {
-      state: markRouteEntryDispatched({
+    const armed = armIntent(
+      {
         ...state,
         selectedItemId: null,
-        itemSelect: idleItemSelect(),
-      }),
-      effects: [
-        entry.zoom !== undefined
-          ? { type: "flyToUser", zoom: entry.zoom }
-          : { type: "flyToUser" },
-      ],
+        intent: null,
+      },
+      planRecenterUser(entry.zoom),
+    );
+
+    const advanced = tryAdvanceIntent(armed);
+    if (advanced.effects.length === 0) {
+      return { state: armed, effects: [] };
+    }
+
+    return {
+      state: markRouteEntryDispatched(advanced.state),
+      effects: advanced.effects,
     };
   }
 
-  const selectResult = resolveLocatedSelectOrPending(
+  const armed = armIntent(
     state,
-    entry.id,
-    entry.location,
-    {
+    planItemSelect(state, entry.id, entry.location, {
       zoom: entry.zoom,
       enterFly: true,
-    },
+    }),
   );
 
+  const advanced = tryAdvanceIntent(armed);
+  if (advanced.effects.length === 0) {
+    return { state: armed, effects: [] };
+  }
+
   return {
-    state: markRouteEntryDispatched(selectResult.state),
-    effects: selectResult.effects,
+    state: markRouteEntryDispatched(advanced.state),
+    effects: advanced.effects,
   };
 }
 
