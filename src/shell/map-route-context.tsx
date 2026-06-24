@@ -68,7 +68,7 @@ export function useMapShellContext() {
     clearSelection: shell.clearSelection,
     closeSheet: shell.closeSheet,
     navigateTo: shell.navigateTo,
-    recenterOnUser: shell.recenterOnUser,
+    recenterUser: shell.recenterUser,
     tracking: shell.tracking,
   };
 }

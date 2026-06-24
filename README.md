@@ -59,7 +59,7 @@ Pass **data** (`items`, `header` props) and optional **`mapLayers`** / **`overla
 | ------ | ---- |
 | `MapLayout` | App layout: map + sheet + route store |
 | `useRegisterMapRoute` | Publish route items, sheet chrome, map layers |
-| `useMapShellContext` | `selectItem`, `closeSheet`, `navigateTo`, `recenterOnUser`, `tracking` |
+| `useMapShellContext` | `selectItem`, `closeSheet`, `navigateTo`, `recenterUser`, `tracking` |
 | `MapShellConfig` | `theme`, `sheetLayout`, `layout`, `debug`, … |
 | `MapShellSlots` | Override close button, list rows, markers, overlay |
 

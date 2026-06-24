@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { type NavigateToMapCameraOptions, useMapUserTracking } from "../camera";
 import type { MapPosition } from "../camera/shared/map-position";
 import type { MapItemLocation } from "../items/types";
-import type { SheetMotionPhase } from "../viewport";
 import {
   useLiveSheetObscuredBottomPx,
   useMapVisibleViewportSync,
@@ -16,13 +15,12 @@ import {
 } from "./config";
 import type { MapInstanceStore } from "./map-instance-store";
 import type {
-  MapShellEnvironment,
+  MapShellCameraSnapshot,
   MapShellMachineEffect,
   MapShellMachineEvent,
 } from "./map-shell-machine";
 import { useMapShellMachine } from "./map-shell-machine";
 import type { RouteEnterFly } from "./map-shell-machine/route-enter-fly";
-import { resolveEnterFlyZoom } from "./resolve-enter-fly-zoom";
 
 export type UseMapShellOptions = {
   mapInstanceStore: MapInstanceStore;
@@ -59,11 +57,6 @@ export function useMapShell({
   const { sheetObscuredBottomPx, sheetPhase, onSheetLayoutFrameChange } =
     useLiveSheetObscuredBottomPx(mapRef);
 
-  const sheetPhaseRef = useRef(sheetPhase);
-  sheetPhaseRef.current = sheetPhase;
-
-  const physicalSnapRef = useRef<SheetSnap>("collapsed");
-  const syncedMotionPhaseRef = useRef<SheetMotionPhase>("idle");
   const dispatchRef = useRef<(event: MapShellMachineEvent) => void>(() => {});
   const userTrackingRef = useRef<
     ReturnType<typeof useMapUserTracking> | undefined
@@ -75,42 +68,6 @@ export function useMapShell({
     fixedChromeInsets: config.fixedChromeInsets,
     debug,
   });
-
-  const buildEnvironment = useCallback(
-    (
-      sheetMotionPhase: SheetMotionPhase,
-      physicalSnap: SheetSnap,
-    ): MapShellEnvironment => {
-      const tracking = userTrackingRef.current;
-      if (!tracking) {
-        return {
-          cameraSession: "idle",
-          sheetMotionPhase,
-          physicalSnap,
-          mapPaddingReady: false,
-          hasUserLocation: false,
-        };
-      }
-      return {
-        cameraSession: tracking.session,
-        sheetMotionPhase,
-        physicalSnap,
-        mapPaddingReady: tracking.mapPaddingReady,
-        hasUserLocation: tracking.hasUserLocation,
-      };
-    },
-    [],
-  );
-
-  const syncEnvironment = useCallback(
-    (sheetMotionPhase: SheetMotionPhase, physicalSnap: SheetSnap) => {
-      dispatchRef.current({
-        type: "environmentSynced",
-        environment: buildEnvironment(sheetMotionPhase, physicalSnap),
-      });
-    },
-    [buildEnvironment],
-  );
 
   const userTracking = useMapUserTracking({
     mapRef,
@@ -126,37 +83,44 @@ export function useMapShell({
 
   userTrackingRef.current = userTracking;
 
+  const buildCameraSnapshot = useCallback((): MapShellCameraSnapshot => {
+    const tracking = userTrackingRef.current;
+    if (!tracking) {
+      return {
+        cameraSession: "idle",
+        mapPaddingReady: false,
+        hasUserLocation: false,
+        anchorZoom: null,
+        defaultEnterFlyZoom: resolvedConfig.initialZoom,
+      };
+    }
+    return {
+      cameraSession: tracking.session,
+      mapPaddingReady: tracking.mapPaddingReady,
+      hasUserLocation: tracking.hasUserLocation,
+      anchorZoom: tracking.anchor?.zoom ?? null,
+      defaultEnterFlyZoom: resolvedConfig.initialZoom,
+    };
+  }, [resolvedConfig.initialZoom]);
+
   const flyToItem = useCallback(
     (
       location: MapItemLocation,
       options?: { enterFly?: boolean; zoom?: number },
     ) => {
-      const resolvedZoom =
-        options?.enterFly === true
-          ? resolveEnterFlyZoom({
-              explicitZoom: options.zoom,
-              anchorZoom: userTracking.anchor?.zoom,
-              defaultZoom: resolvedConfig.initialZoom,
-            })
-          : undefined;
-
       userTracking.dispatch({
         type: "navigateRequested",
         position: {
           lat: location.lat,
           lng: location.lng,
-          ...(resolvedZoom !== undefined ? { zoom: resolvedZoom } : {}),
+          ...(options?.zoom !== undefined ? { zoom: options.zoom } : {}),
         },
         mode: "fly",
         preserveTracking: false,
         durationMs: resolvedConfig.smoothFlyDurationMs,
       });
     },
-    [
-      userTracking,
-      resolvedConfig.initialZoom,
-      resolvedConfig.smoothFlyDurationMs,
-    ],
+    [userTracking, resolvedConfig.smoothFlyDurationMs],
   );
 
   const handleMachineEffect = useCallback(
@@ -168,41 +132,44 @@ export function useMapShell({
             zoom: effect.zoom,
           });
           break;
-        case "flyToUser": {
-          const zoom = resolveEnterFlyZoom({
-            explicitZoom: effect.zoom,
-            anchorZoom: userTracking.anchor?.zoom,
-            defaultZoom: resolvedConfig.initialZoom,
-          });
+        case "flyToUser":
           userTracking.recenterOnUser(
-            zoom !== undefined ? { zoom } : undefined,
+            effect.zoom !== undefined ? { zoom: effect.zoom } : undefined,
           );
           break;
-        }
+        case "flyToPosition":
+          userTracking.navigateTo(effect.position, {
+            duration: effect.duration,
+            preserveTracking: effect.preserveTracking,
+          });
+          break;
+        case "syncCameraSheetPhase":
+          userTracking.dispatch({
+            type: "sheetPhaseChanged",
+            phase: effect.phase,
+          });
+          break;
       }
     },
-    [flyToItem, userTracking, resolvedConfig.initialZoom],
+    [flyToItem, userTracking],
   );
 
   const { state: machine, dispatch } = useMapShellMachine(handleMachineEffect);
   dispatchRef.current = dispatch;
 
-  const readEnvironment = useCallback((): MapShellEnvironment => {
-    return buildEnvironment(sheetPhase, physicalSnapRef.current);
+  useEffect(() => {
+    dispatch({
+      type: "cameraSnapshotSynced",
+      snapshot: buildCameraSnapshot(),
+    });
   }, [
-    buildEnvironment,
-    sheetPhase,
+    dispatch,
+    buildCameraSnapshot,
     userTracking.session,
     userTracking.mapPaddingReady,
     userTracking.hasUserLocation,
+    userTracking.anchor?.zoom,
   ]);
-
-  useEffect(() => {
-    dispatch({
-      type: "environmentSynced",
-      environment: readEnvironment(),
-    });
-  }, [dispatch, readEnvironment]);
 
   const clearSelection = useCallback(() => {
     dispatch({ type: "clearSelection", dismissRouteEntry: true });
@@ -210,15 +177,12 @@ export function useMapShell({
 
   const navigateTo = useCallback(
     (position: MapPosition, options?: NavigateToMapCameraOptions) => {
-      if (!options?.preserveTracking) {
-        clearSelection();
-      }
-      userTracking.navigateTo(position, options);
+      dispatch({ type: "navigateTo", position, options });
     },
-    [clearSelection, userTracking],
+    [dispatch],
   );
 
-  const recenterOnUser = useCallback(() => {
+  const recenterUser = useCallback(() => {
     dispatch({ type: "recenterUser" });
   }, [dispatch]);
 
@@ -240,30 +204,9 @@ export function useMapShell({
     [dispatch],
   );
 
-  const handleSheetSnapChange = useCallback(
-    (snap: SheetSnap) => {
-      dispatch({
-        type: "sheetReported",
-        snap,
-        phase: sheetPhaseRef.current,
-        settled: false,
-      });
-    },
-    [dispatch],
-  );
-
   const handleSheetSnapSettled = useCallback(
     (snap: SheetSnap) => {
-      physicalSnapRef.current = snap;
-      sheetPhaseRef.current = "idle";
-      syncedMotionPhaseRef.current = "idle";
-
-      dispatch({
-        type: "sheetReported",
-        snap,
-        phase: "idle",
-        settled: true,
-      });
+      dispatch({ type: "sheetSettled", snap });
     },
     [dispatch],
   );
@@ -271,27 +214,17 @@ export function useMapShell({
   const handleSheetLayoutFrameChange = useCallback(
     (frame: SheetLayoutFrameChange) => {
       onSheetLayoutFrameChange(frame);
-
-      physicalSnapRef.current = frame.restingSnap;
-
-      if (frame.phase !== syncedMotionPhaseRef.current) {
-        syncedMotionPhaseRef.current = frame.phase;
-        sheetPhaseRef.current = frame.phase;
-
-        userTrackingRef.current?.dispatch({
-          type: "sheetPhaseChanged",
-          phase: frame.phase,
-        });
-      }
-
-      syncEnvironment(frame.phase, frame.restingSnap);
+      dispatch({
+        type: "sheetLayoutFrameChanged",
+        phase: frame.phase,
+        restingSnap: frame.restingSnap,
+      });
     },
-    [onSheetLayoutFrameChange, syncEnvironment],
+    [dispatch, onSheetLayoutFrameChange],
   );
 
   return {
-    sheetSnap: machine.sheetSnap,
-    handleSheetSnapChange,
+    sheetSnap: machine.commandedSnap,
     handleSheetSnapSettled,
     handleSheetLayoutFrameChange,
     mapRef,
@@ -299,12 +232,11 @@ export function useMapShell({
     userLocation,
     viewport,
     selectedItemId: machine.selectedItemId,
-    sheetMotionPhase: sheetPhase,
     selectItem,
     clearSelection,
     closeSheet,
     navigateTo,
-    recenterOnUser,
+    recenterUser,
     reportRouteEnterFly,
     tracking: userTracking.tracking,
     mapPaddingReady: userTracking.mapPaddingReady,

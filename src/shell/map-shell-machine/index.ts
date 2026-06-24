@@ -10,18 +10,17 @@ export {
   routeEnterFlyKey,
 } from "./route-enter-fly";
 export type {
-  MapShellEnvironment,
+  MapShellCameraSnapshot,
   MapShellMachineState,
   ShellCameraIntent,
   ShellIntent,
 } from "./state";
 export {
-  canEmitCameraFly,
   createInitialMapShellMachineState,
-  gatesOpen,
-  isSheetMotionIdle,
-  resolvePhysicalSnap,
-  sheetAtTarget,
+  intentReadyForCameraFly,
+  layoutSnapMatchesIntent,
+  sheetAndPaddingReady,
+  sheetMotionIdle,
 } from "./state";
 export type { MapShellMachineDispatch } from "./use-map-shell-machine";
 export { useMapShellMachine } from "./use-map-shell-machine";

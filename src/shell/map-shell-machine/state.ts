@@ -14,24 +14,25 @@ export type ShellCameraIntent =
     }
   | { kind: "flyToUser"; zoom?: number };
 
-export type ShellIntent = {
-  itemId: string | null;
-  /** Pending camera move; cleared after the fly effect is emitted. */
-  camera: ShellCameraIntent | null;
-  /** null = do not change sheet snap (user location). */
-  sheetTarget: SheetSnap | null;
-  /** Collapsed item select: open half after camera fly completes. */
-  openHalfAfterCameraIdle: boolean;
-};
+export type ShellIntent =
+  | {
+      phase: "awaitGates";
+      itemId: string | null;
+      camera: ShellCameraIntent;
+      sheetTarget: SheetSnap | null;
+      openHalfAfterFly?: boolean;
+    }
+  | {
+      phase: "awaitCameraIdleForHalf";
+      itemId: string;
+    };
 
-/** Snapshot from map camera, sheet gesture, and route enter-fly subsystems. */
-export type MapShellEnvironment = {
+export type MapShellCameraSnapshot = {
   cameraSession: MapAnchorSession;
-  sheetMotionPhase: SheetMotionPhase;
-  /** Live resting snap from sheet layout frames (while moving). */
-  physicalSnap: SheetSnap;
   mapPaddingReady: boolean;
   hasUserLocation: boolean;
+  anchorZoom: number | null;
+  defaultEnterFlyZoom: number;
 };
 
 export type RouteEntryApplyStatus =
@@ -47,88 +48,81 @@ export type RouteEntryVisit = {
 };
 
 export type MapShellMachineState = {
-  sheetSnap: SheetSnap;
-  reportedSheetSnap: SheetSnap;
+  commandedSnap: SheetSnap;
+  layoutSnap: SheetSnap;
+  sheetMotionPhase: SheetMotionPhase;
   selectedItemId: string | null;
-  environment: MapShellEnvironment;
+  cameraSnapshot: MapShellCameraSnapshot;
   intent: ShellIntent | null;
   routeVisit: RouteEntryVisit | null;
 };
 
 export function createInitialMapShellMachineState(): MapShellMachineState {
   return {
-    sheetSnap: "collapsed",
-    reportedSheetSnap: "collapsed",
+    commandedSnap: "collapsed",
+    layoutSnap: "collapsed",
+    sheetMotionPhase: "idle",
     selectedItemId: null,
-    environment: {
+    cameraSnapshot: {
       cameraSession: "idle",
-      sheetMotionPhase: "idle",
-      physicalSnap: "collapsed",
       mapPaddingReady: false,
       hasUserLocation: false,
+      anchorZoom: null,
+      defaultEnterFlyZoom: 14,
     },
     intent: null,
     routeVisit: null,
   };
 }
 
-export function isSheetMotionIdle(state: MapShellMachineState): boolean {
-  return state.environment.sheetMotionPhase === "idle";
+export function sheetMotionIdle(state: MapShellMachineState): boolean {
+  return state.sheetMotionPhase === "idle";
 }
 
-/** Where the sheet physically rests — settled snap when idle, layout frame while moving. */
-export function resolvePhysicalSnap(state: MapShellMachineState): SheetSnap {
-  if (isSheetMotionIdle(state)) {
-    return state.reportedSheetSnap;
-  }
-  return state.environment.physicalSnap;
+export function sheetAndPaddingReady(state: MapShellMachineState): boolean {
+  return (
+    state.sheetMotionPhase === "idle" && state.cameraSnapshot.mapPaddingReady
+  );
 }
 
-export function gatesOpen(environment: MapShellEnvironment): boolean {
-  return environment.sheetMotionPhase === "idle" && environment.mapPaddingReady;
-}
-
-export function sheetAtTarget(
+export function layoutSnapMatchesIntent(
   state: MapShellMachineState,
   sheetTarget: SheetSnap | null,
 ): boolean {
   if (sheetTarget === null) {
     return true;
   }
-  return resolvePhysicalSnap(state) === sheetTarget;
+  return state.layoutSnap === sheetTarget;
 }
 
-/**
- * Shell may emit a camera fly when the sheet is at rest at the intent target.
- * Padding-before-fly is enforced by the camera machine (`applyPadding` then `moveCamera`).
- */
-export function canEmitCameraFly(state: MapShellMachineState): boolean {
+export function intentReadyForCameraFly(state: MapShellMachineState): boolean {
   const intent = state.intent;
-  if (!intent?.camera) {
+  if (!intent || intent.phase !== "awaitGates") {
     return false;
   }
 
   if (
     intent.camera.kind === "flyToUser" &&
-    !state.environment.hasUserLocation
+    !state.cameraSnapshot.hasUserLocation
   ) {
     return false;
   }
 
   return (
-    gatesOpen(state.environment) && sheetAtTarget(state, intent.sheetTarget)
+    sheetAndPaddingReady(state) &&
+    layoutSnapMatchesIntent(state, intent.sheetTarget)
   );
 }
 
-export function environmentsEqual(
-  a: MapShellEnvironment,
-  b: MapShellEnvironment,
+export function cameraSnapshotsEqual(
+  a: MapShellCameraSnapshot,
+  b: MapShellCameraSnapshot,
 ): boolean {
   return (
     a.cameraSession === b.cameraSession &&
-    a.sheetMotionPhase === b.sheetMotionPhase &&
-    a.physicalSnap === b.physicalSnap &&
     a.mapPaddingReady === b.mapPaddingReady &&
-    a.hasUserLocation === b.hasUserLocation
+    a.hasUserLocation === b.hasUserLocation &&
+    a.anchorZoom === b.anchorZoom &&
+    a.defaultEnterFlyZoom === b.defaultEnterFlyZoom
   );
 }

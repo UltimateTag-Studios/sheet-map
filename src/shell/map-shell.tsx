@@ -43,13 +43,12 @@ export function MapShell({
     mapToken,
     publishMapInstance,
     sheetSnap,
-    handleSheetSnapChange,
     handleSheetSnapSettled,
     handleSheetLayoutFrameChange,
     userLocation,
     viewport,
     selectItem,
-    recenterOnUser,
+    recenterUser,
     closeSheet,
     userTracking,
     config,
@@ -79,8 +78,8 @@ export function MapShell({
   );
 
   const handleUserLocationPress = useCallback(() => {
-    recenterOnUser();
-  }, [recenterOnUser]);
+    recenterUser();
+  }, [recenterUser]);
 
   if (!mapToken) {
     return (
@@ -117,12 +116,11 @@ export function MapShell({
           mapToken={mapToken}
           publishMapInstance={publishMapInstance}
           sheetSnap={sheetSnap}
-          onSheetSnapChange={handleSheetSnapChange}
           onSheetSnapSettled={handleSheetSnapSettled}
           onSheetLayoutFrameChange={handleSheetLayoutFrameChange}
           userLocation={userLocation}
           userTracking={userTracking}
-          recenterOnUser={recenterOnUser}
+          recenterUser={recenterUser}
           mapChildren={mapChildren}
           header={header}
           body={body}

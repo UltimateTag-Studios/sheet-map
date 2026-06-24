@@ -35,12 +35,11 @@ export type MapShellContentProps = {
   mapToken: string;
   publishMapInstance: (map: MapRef | null) => void;
   sheetSnap: SheetSnap;
-  onSheetSnapChange: (snap: SheetSnap) => void;
   onSheetSnapSettled?: (snap: SheetSnap) => void;
   onSheetLayoutFrameChange: (frame: SheetLayoutFrameChange) => void;
   userLocation?: MapUserLocationCoords | null;
   userTracking: UserTrackingValue;
-  recenterOnUser: () => void;
+  recenterUser: () => void;
   onMarkerPress?: (markerId: string) => void;
   extraInteractiveLayerIds?: string[];
   onLayerFeaturePress?: (
@@ -63,12 +62,11 @@ export function MapShellContent({
   mapToken,
   publishMapInstance,
   sheetSnap,
-  onSheetSnapChange,
   onSheetSnapSettled,
   onSheetLayoutFrameChange,
   userLocation,
   userTracking,
-  recenterOnUser,
+  recenterUser,
   onMarkerPress,
   extraInteractiveLayerIds,
   onLayerFeaturePress,
@@ -136,14 +134,14 @@ export function MapShellContent({
         ) : null}
         {myLocationButton && userLocation && mapPaddingReady
           ? (slots.renderMyLocationButton?.(
-              recenterOnUser,
+              recenterUser,
               tracking,
               myLocationAriaLabel,
             ) ?? (
               <div className="sheet-map-overlay-slot--bottom-left">
                 <MapLocationButtonControl
                   ariaLabel={myLocationAriaLabel}
-                  onPress={recenterOnUser}
+                  onPress={recenterUser}
                   tracking={tracking}
                 />
               </div>
@@ -158,7 +156,6 @@ export function MapShellContent({
       <Sheet
         snap={sheetSnap}
         defaultSnap="collapsed"
-        onSnapChange={onSheetSnapChange}
         onSnapSettled={onSheetSnapSettled}
         onLayoutFrameChange={onSheetLayoutFrameChange}
         onSnapHeightsChange={handleSnapHeightsChange}

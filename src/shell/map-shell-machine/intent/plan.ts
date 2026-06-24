@@ -4,17 +4,16 @@ import type {
   ShellCameraIntent,
   ShellIntent,
 } from "../state";
-import { resolvePhysicalSnap } from "../state";
 
 type ItemSelectOptions = { zoom?: number; enterFly?: boolean };
 
-export function planItemSelect(
+export function planItemSelectIntent(
   state: MapShellMachineState,
   id: string,
   location: MapItemLocation,
   options?: ItemSelectOptions,
 ): ShellIntent {
-  const physicalSnap = resolvePhysicalSnap(state);
+  const layoutSnap = state.layoutSnap;
   const camera: ShellCameraIntent = options?.enterFly
     ? options.zoom !== undefined
       ? {
@@ -26,55 +25,49 @@ export function planItemSelect(
       : { kind: "flyToItem", location, enterFly: true }
     : { kind: "flyToItem", location };
 
-  if (physicalSnap === "collapsed") {
+  if (layoutSnap === "collapsed") {
     return {
+      phase: "awaitGates",
       itemId: id,
       camera,
       sheetTarget: "collapsed",
-      openHalfAfterCameraIdle: true,
+      openHalfAfterFly: true,
     };
   }
 
-  if (physicalSnap === "half") {
+  if (layoutSnap === "half") {
     return {
+      phase: "awaitGates",
       itemId: id,
       camera,
       sheetTarget: "half",
-      openHalfAfterCameraIdle: false,
     };
   }
 
   return {
+    phase: "awaitGates",
     itemId: id,
     camera,
     sheetTarget: "half",
-    openHalfAfterCameraIdle: false,
   };
 }
 
-export function planRecenterUser(zoom?: number): ShellIntent {
+export function planUserRecenterIntent(zoom?: number): ShellIntent {
   return {
+    phase: "awaitGates",
     itemId: null,
     camera:
       zoom !== undefined ? { kind: "flyToUser", zoom } : { kind: "flyToUser" },
     sheetTarget: null,
-    openHalfAfterCameraIdle: false,
   };
 }
 
-export function armIntent(
-  state: MapShellMachineState,
-  intent: ShellIntent,
-): MapShellMachineState {
-  const next: MapShellMachineState = {
-    ...state,
-    intent,
-    selectedItemId: intent.itemId,
+export function planSelectItemWithoutLocationIntent(
+  id: string,
+): Pick<MapShellMachineState, "commandedSnap" | "intent" | "selectedItemId"> {
+  return {
+    commandedSnap: "half",
+    intent: null,
+    selectedItemId: id,
   };
-
-  if (intent.sheetTarget !== null) {
-    next.sheetSnap = intent.sheetTarget;
-  }
-
-  return next;
 }

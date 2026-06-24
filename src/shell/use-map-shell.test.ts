@@ -153,7 +153,7 @@ describe("useMapShell", () => {
     recenterOnUserMock.mockClear();
 
     await act(async () => {
-      result.current.recenterOnUser();
+      result.current.recenterUser();
     });
 
     expect(result.current.sheetSnap).toBe("full");
@@ -183,10 +183,6 @@ describe("useMapShell", () => {
         phase: "dragging",
         restingSnap: "collapsed",
       });
-    });
-
-    await act(async () => {
-      result.current.handleSheetSnapChange("collapsed");
     });
 
     expect(result.current.selectedItemId).toBe("a");

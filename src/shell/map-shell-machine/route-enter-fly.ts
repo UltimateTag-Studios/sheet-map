@@ -1,12 +1,7 @@
-import {
-  armIntent,
-  planItemSelect,
-  planRecenterUser,
-  tryAdvanceIntent,
-} from "./intent";
 import type { MapShellMachineResult } from "./machine";
+import { reduceMapShellMachine } from "./machine";
 import type { MapShellMachineState, RouteEntryVisit } from "./state";
-import { gatesOpen } from "./state";
+import { sheetAndPaddingReady } from "./state";
 
 /** Where the map should fly when a route becomes active. */
 export type RouteEnterFly =
@@ -66,7 +61,7 @@ function withRouteVisit(
   return { ...state, routeVisit };
 }
 
-function markRouteEntryDispatched(
+export function markRouteEntryDispatched(
   state: MapShellMachineState,
 ): MapShellMachineState {
   if (!state.routeVisit) {
@@ -115,8 +110,8 @@ export function advanceRouteEntry(
 /** Marks user-location enter fly satisfied after the camera finishes flying. */
 export function completeRouteUserEnterFly(
   state: MapShellMachineState,
-  previous: MapShellMachineState["environment"],
-  next: MapShellMachineState["environment"],
+  previous: MapShellMachineState["cameraSnapshot"],
+  next: MapShellMachineState["cameraSnapshot"],
 ): MapShellMachineState {
   const visit = state.routeVisit;
   if (
@@ -143,54 +138,32 @@ export function tryApplyRouteEntry(
     return { state, effects: [] };
   }
 
-  if (!gatesOpen(state.environment)) {
+  if (!sheetAndPaddingReady(state)) {
     return { state, effects: [] };
   }
 
   const entry = visit.entry;
 
   if (entry.kind === "userLocation") {
-    if (!state.environment.hasUserLocation) {
+    if (!state.cameraSnapshot.hasUserLocation) {
       return { state, effects: [] };
     }
 
-    const armed = armIntent(
-      {
-        ...state,
-        selectedItemId: null,
-        intent: null,
-      },
-      planRecenterUser(entry.zoom),
-    );
-
-    const advanced = tryAdvanceIntent(armed);
-    if (advanced.effects.length === 0) {
-      return { state: armed, effects: [] };
-    }
-
-    return {
-      state: markRouteEntryDispatched(advanced.state),
-      effects: advanced.effects,
-    };
-  }
-
-  const armed = armIntent(
-    state,
-    planItemSelect(state, entry.id, entry.location, {
+    return reduceMapShellMachine(state, {
+      type: "recenterUser",
       zoom: entry.zoom,
-      enterFly: true,
-    }),
-  );
-
-  const advanced = tryAdvanceIntent(armed);
-  if (advanced.effects.length === 0) {
-    return { state: armed, effects: [] };
+      source: "route",
+    });
   }
 
-  return {
-    state: markRouteEntryDispatched(advanced.state),
-    effects: advanced.effects,
-  };
+  return reduceMapShellMachine(state, {
+    type: "selectItem",
+    id: entry.id,
+    location: entry.location,
+    enterFly: true,
+    zoom: entry.zoom,
+    source: "route",
+  });
 }
 
 export function resetRouteEntryToWaiting(
