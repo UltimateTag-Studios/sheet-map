@@ -1,16 +1,16 @@
 import { type RefObject, useCallback, useRef, useState } from "react";
 
-import {
-  type MapCameraMachineEffect,
-  type MapCameraMachineEvent,
-  type MapCameraMachineResult,
-  reduceMapCameraMachine,
-} from "./machine";
+import { reduceMapCameraMachine } from "./reduce";
 import {
   type CreateMapCameraMachineStateInput,
   createInitialMapCameraMachineState,
   type MapCameraState,
 } from "./state";
+import type {
+  MapCameraMachineEffect,
+  MapCameraMachineEvent,
+  MapCameraMachineResult,
+} from "./types";
 
 export type MapCameraMachineDispatch = (event: MapCameraMachineEvent) => void;
 

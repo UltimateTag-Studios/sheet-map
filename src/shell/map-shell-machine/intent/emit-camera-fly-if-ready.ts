@@ -1,7 +1,7 @@
 import { resolveEnterFlyZoomFromState } from "../../resolve-enter-fly-zoom-from-state";
-import type { MapShellMachineEffect, MapShellMachineResult } from "../machine";
 import type { MapShellMachineState } from "../state";
 import { intentReadyForCameraFly } from "../state";
+import type { MapShellMachineEffect, MapShellMachineResult } from "../types";
 
 function cameraIntentToEffect(
   state: MapShellMachineState,

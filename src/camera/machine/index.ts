@@ -1,9 +1,4 @@
-export type {
-  MapCameraMachineEffect,
-  MapCameraMachineEvent,
-  MapCameraMachineResult,
-} from "./machine";
-export { reduceMapCameraMachine } from "./machine";
+export { reduceMapCameraMachine } from "./reduce";
 export type {
   CreateMapCameraMachineStateInput,
   MapCameraBootPhase,
@@ -17,6 +12,11 @@ export {
   createInitialMapCameraMachineState,
   isSheetMotionIdle,
 } from "./state";
+export type {
+  MapCameraMachineEffect,
+  MapCameraMachineEvent,
+  MapCameraMachineResult,
+} from "./types";
 export type {
   MapCameraEffectRunner,
   MapCameraMachineDispatch,

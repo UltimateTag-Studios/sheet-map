@@ -21,6 +21,7 @@ import type {
 } from "./map-shell-machine";
 import { useMapShellMachine } from "./map-shell-machine";
 import type { RouteEnterFly } from "./map-shell-machine/route-enter-fly";
+import { runMapShellMachineEffect } from "./run-map-shell-effect";
 
 export type UseMapShellOptions = {
   mapInstanceStore: MapInstanceStore;
@@ -84,31 +85,27 @@ export function useMapShell({
   userTrackingRef.current = userTracking;
 
   const buildCameraSnapshot = useCallback((): MapShellCameraSnapshot => {
-    const tracking = userTrackingRef.current;
-    if (!tracking) {
-      return {
-        cameraSession: "idle",
-        mapPaddingReady: false,
-        hasUserLocation: false,
-        anchorZoom: null,
-        defaultEnterFlyZoom: resolvedConfig.initialZoom,
-      };
-    }
     return {
-      cameraSession: tracking.session,
-      mapPaddingReady: tracking.mapPaddingReady,
-      hasUserLocation: tracking.hasUserLocation,
-      anchorZoom: tracking.anchor?.zoom ?? null,
+      cameraSession: userTracking.session,
+      mapPaddingReady: userTracking.mapPaddingReady,
+      hasUserLocation: userTracking.hasUserLocation,
+      anchorZoom: userTracking.anchor?.zoom ?? null,
       defaultEnterFlyZoom: resolvedConfig.initialZoom,
     };
-  }, [resolvedConfig.initialZoom]);
+  }, [
+    userTracking.session,
+    userTracking.mapPaddingReady,
+    userTracking.hasUserLocation,
+    userTracking.anchor?.zoom,
+    resolvedConfig.initialZoom,
+  ]);
 
   const flyToItem = useCallback(
     (
       location: MapItemLocation,
       options?: { enterFly?: boolean; zoom?: number },
     ) => {
-      userTracking.dispatch({
+      userTrackingRef.current?.dispatch({
         type: "navigateRequested",
         position: {
           lat: location.lat,
@@ -120,38 +117,17 @@ export function useMapShell({
         durationMs: resolvedConfig.smoothFlyDurationMs,
       });
     },
-    [userTracking, resolvedConfig.smoothFlyDurationMs],
+    [resolvedConfig.smoothFlyDurationMs],
   );
 
   const handleMachineEffect = useCallback(
     (effect: MapShellMachineEffect) => {
-      switch (effect.type) {
-        case "flyToItem":
-          flyToItem(effect.location, {
-            enterFly: effect.enterFly,
-            zoom: effect.zoom,
-          });
-          break;
-        case "flyToUser":
-          userTracking.recenterOnUser(
-            effect.zoom !== undefined ? { zoom: effect.zoom } : undefined,
-          );
-          break;
-        case "flyToPosition":
-          userTracking.navigateTo(effect.position, {
-            duration: effect.duration,
-            preserveTracking: effect.preserveTracking,
-          });
-          break;
-        case "syncCameraSheetPhase":
-          userTracking.dispatch({
-            type: "sheetPhaseChanged",
-            phase: effect.phase,
-          });
-          break;
-      }
+      runMapShellMachineEffect(effect, {
+        flyToItem,
+        userTrackingRef,
+      });
     },
-    [flyToItem, userTracking],
+    [flyToItem],
   );
 
   const { state: machine, dispatch } = useMapShellMachine(handleMachineEffect);
@@ -162,14 +138,7 @@ export function useMapShell({
       type: "cameraSnapshotSynced",
       snapshot: buildCameraSnapshot(),
     });
-  }, [
-    dispatch,
-    buildCameraSnapshot,
-    userTracking.session,
-    userTracking.mapPaddingReady,
-    userTracking.hasUserLocation,
-    userTracking.anchor?.zoom,
-  ]);
+  }, [dispatch, buildCameraSnapshot]);
 
   const clearSelection = useCallback(() => {
     dispatch({ type: "clearSelection", dismissRouteEntry: true });

@@ -1,14 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 
-import {
-  type MapShellMachineEffect,
-  type MapShellMachineEvent,
-  reduceMapShellMachine,
-} from "./machine";
+import { reduceMapShellMachine } from "./reduce";
 import {
   createInitialMapShellMachineState,
   type MapShellMachineState,
 } from "./state";
+import type { MapShellMachineEffect, MapShellMachineEvent } from "./types";
 
 export type MapShellMachineDispatch = (event: MapShellMachineEvent) => void;
 

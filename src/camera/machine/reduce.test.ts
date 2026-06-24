@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { reduceMapCameraMachine } from "./machine";
+import { reduceMapCameraMachine } from "./reduce";
 import {
   createInitialMapCameraMachineState,
   type MapCameraState,

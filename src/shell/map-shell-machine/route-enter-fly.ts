@@ -1,7 +1,7 @@
-import type { MapShellMachineResult } from "./machine";
-import { reduceMapShellMachine } from "./machine";
+import { reduceMapShellMachine } from "./reduce";
 import type { MapShellMachineState, RouteEntryVisit } from "./state";
 import { sheetAndPaddingReady } from "./state";
+import type { MapShellMachineResult } from "./types";
 
 /** Where the map should fly when a route becomes active. */
 export type RouteEnterFly =

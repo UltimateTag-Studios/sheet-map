@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { reduceMapShellMachine } from "./machine";
+import { reduceMapShellMachine } from "./reduce";
 import {
   createInitialMapShellMachineState,
   type MapShellCameraSnapshot,

@@ -1,9 +1,4 @@
-export type {
-  MapShellMachineEffect,
-  MapShellMachineEvent,
-  MapShellMachineResult,
-} from "./machine";
-export { reduceMapShellMachine } from "./machine";
+export { reduceMapShellMachine } from "./reduce";
 export type { RouteEnterFly } from "./route-enter-fly";
 export {
   routeEnterFliesEqual,
@@ -22,5 +17,10 @@ export {
   sheetAndPaddingReady,
   sheetMotionIdle,
 } from "./state";
+export type {
+  MapShellMachineEffect,
+  MapShellMachineEvent,
+  MapShellMachineResult,
+} from "./types";
 export type { MapShellMachineDispatch } from "./use-map-shell-machine";
 export { useMapShellMachine } from "./use-map-shell-machine";

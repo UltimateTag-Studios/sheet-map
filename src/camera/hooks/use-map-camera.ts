@@ -18,10 +18,8 @@ import {
   useMapCameraMachine,
 } from "../machine";
 import type { MapCameraState } from "../machine/state";
-import { moveCameraProgrammatic } from "../movement";
-import { setMapPaddingIfChanged } from "../padding/sync";
-import { canNavigateMap } from "../shared/can-navigate-map";
 import type { MapPosition } from "../shared/map-position";
+import { runMapCameraMachineEffect } from "./run-map-camera-effect";
 import type {
   MapCameraBootRequest,
   NavigateToMapCameraOptions,
@@ -68,55 +66,12 @@ export function useMapCamera({
 
   const runEffect = useCallback(
     (effect: MapCameraMachineEffect) => {
-      const stateRef = machineStateRef.current;
-      if (!mapRef || !stateRef) {
-        return;
-      }
-
-      switch (effect.type) {
-        case "moveCamera": {
-          if (!canNavigateMap(mapRef)) {
-            return;
-          }
-
-          moveCameraProgrammatic({
-            mapRef,
-            position: effect.position,
-            duration: effect.duration,
-            currentAnchor: stateRef.current.anchor,
-          });
-          break;
-        }
-
-        case "applyPadding": {
-          const map = mapRef.getMap();
-          setMapPaddingIfChanged(map, effect.options);
-
-          if (
-            effect.realign &&
-            stateRef.current.anchor &&
-            stateRef.current.session !== "userGesture"
-          ) {
-            moveCameraProgrammatic({
-              mapRef,
-              position: stateRef.current.anchor,
-              duration: 0,
-              stopUserMotion: false,
-              currentAnchor: stateRef.current.anchor,
-            });
-          }
-
-          if (mapPaddingDebug) {
-            console.info("[map-padding] applyPadding", effect);
-          }
-          break;
-        }
-
-        case "releaseTracking": {
-          onReleaseTrackingRef.current?.();
-          break;
-        }
-      }
+      runMapCameraMachineEffect(effect, {
+        mapRef,
+        machineStateRef: machineStateRef,
+        mapPaddingDebug,
+        onReleaseTrackingRef,
+      });
     },
     [mapRef, mapPaddingDebug],
   );
