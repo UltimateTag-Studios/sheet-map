@@ -1,11 +1,5 @@
 import type { SheetSnap } from "@siegetag/sheet";
-import {
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 import { type NavigateToMapAnchorOptions, useMapUserTracking } from "../camera";
 import type { MapPosition } from "../camera/shared/map-position";
@@ -20,11 +14,7 @@ import {
   type MapUserLocationCoords,
 } from "./config";
 import type { MapInstanceStore } from "./map-instance-store";
-import {
-  createInitialMapShellSelectionState,
-  isFlyingToItem,
-  reduceMapShellSelection,
-} from "./map-shell-machine";
+import { useMapShellMachine } from "./map-shell-machine";
 
 export type UseMapShellOptions = {
   mapInstanceStore: MapInstanceStore;
@@ -41,12 +31,6 @@ export function useMapShell({
 }: UseMapShellOptions) {
   const resolvedConfig = { ...defaultMapShellConfig, ...config };
   const debug = config.debug === true;
-
-  const [selection, dispatch] = useReducer(
-    reduceMapShellSelection,
-    undefined,
-    createInitialMapShellSelectionState,
-  );
 
   const mapRef = useSyncExternalStore(
     mapInstanceStore.subscribe,
@@ -87,7 +71,7 @@ export function useMapShell({
     mapPaddingDebug: debug,
   });
 
-  const flyToSelectedItem = useCallback(
+  const flyToItem = useCallback(
     (location: MapItemLocation) => {
       userTracking.navigateTo(
         { lat: location.lat, lng: location.lng },
@@ -100,14 +84,19 @@ export function useMapShell({
     [userTracking, resolvedConfig.smoothFlyDurationMs],
   );
 
-  const flyToSelectedItemRef = useRef(flyToSelectedItem);
-  flyToSelectedItemRef.current = flyToSelectedItem;
+  const { state: machine, dispatch } = useMapShellMachine(flyToItem);
 
-  const itemSelectFlyStartedRef = useRef(false);
+  useEffect(() => {
+    dispatch({ type: "cameraSessionChanged", session: userTracking.session });
+  }, [dispatch, userTracking.session]);
+
+  useEffect(() => {
+    dispatch({ type: "sheetMotionPhaseChanged", phase: sheetPhase });
+  }, [dispatch, sheetPhase]);
 
   const clearSelection = useCallback(() => {
     dispatch({ type: "clearSelection" });
-  }, []);
+  }, [dispatch]);
 
   const navigateTo = useCallback(
     (position: MapPosition, options?: NavigateToMapAnchorOptions) => {
@@ -126,70 +115,35 @@ export function useMapShell({
 
   const selectItem = useCallback(
     (id: string, location: MapItemLocation | null) => {
-      const sheetWasOpenAtHalf = selection.sheetSnap === "half";
-      const flyImmediately =
-        location !== null && sheetWasOpenAtHalf && sheetPhase === "idle";
-      const deferSheetOpen =
-        location !== null && !sheetWasOpenAtHalf && sheetPhase === "idle";
-
-      dispatch({
-        type: "selectItem",
-        id,
-        location,
-        flyImmediately,
-        deferSheetOpen,
-      });
-
-      if (flyImmediately && location) {
-        flyToSelectedItem(location);
-      }
+      dispatch({ type: "selectItem", id, location });
     },
-    [flyToSelectedItem, selection.sheetSnap, sheetPhase],
+    [dispatch],
   );
-
-  useEffect(() => {
-    if (!isFlyingToItem(selection.itemSelectCamera)) {
-      itemSelectFlyStartedRef.current = false;
-      return;
-    }
-
-    itemSelectFlyStartedRef.current = false;
-    flyToSelectedItemRef.current(selection.itemSelectCamera.location);
-  }, [selection.itemSelectCamera]);
-
-  useEffect(() => {
-    if (!isFlyingToItem(selection.itemSelectCamera)) {
-      return;
-    }
-
-    if (userTracking.session === "flying") {
-      itemSelectFlyStartedRef.current = true;
-      return;
-    }
-
-    if (userTracking.session === "idle" && itemSelectFlyStartedRef.current) {
-      dispatch({ type: "flyCompletedOpenSheet" });
-    }
-  }, [userTracking.session, selection.itemSelectCamera]);
 
   const closeSheet = useCallback(() => {
     dispatch({ type: "closeSheet" });
-  }, []);
+  }, [dispatch]);
 
-  const handleSheetSnapChange = useCallback((snap: SheetSnap) => {
-    dispatch({ type: "sheetSnapChange", snap });
-  }, []);
+  const handleSheetSnapChange = useCallback(
+    (snap: SheetSnap) => {
+      dispatch({ type: "sheetSnapChange", snap });
+    },
+    [dispatch],
+  );
 
-  const handleSheetSnapSettled = useCallback((snap: SheetSnap) => {
-    if (snap === "collapsed") {
-      dispatch({ type: "closeSheet" });
-      return;
-    }
-    dispatch({ type: "sheetSnapSettled", snap });
-  }, []);
+  const handleSheetSnapSettled = useCallback(
+    (snap: SheetSnap) => {
+      if (snap === "collapsed") {
+        dispatch({ type: "closeSheet" });
+        return;
+      }
+      dispatch({ type: "sheetSnapSettled", snap });
+    },
+    [dispatch],
+  );
 
   return {
-    sheetSnap: selection.sheetSnap,
+    sheetSnap: machine.sheetSnap,
     handleSheetSnapChange,
     handleSheetSnapSettled,
     onSheetLayoutFrameChange,
@@ -197,7 +151,7 @@ export function useMapShell({
     publishMapInstance,
     userLocation,
     viewport,
-    selectedItemId: selection.selectedItemId,
+    selectedItemId: machine.selectedItemId,
     selectItem,
     clearSelection,
     closeSheet,
