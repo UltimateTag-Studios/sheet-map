@@ -24,11 +24,10 @@ import type {
   MapShellSlots,
   MapUserLocationCoords,
 } from "./config";
+import { MapFrame } from "./map-frame";
 import { buildMapLogoHostStyle } from "./map-logo-host-style";
 import { resolveMapboxStyleUrl } from "./map-theme";
 import { resolveMapSheetLayout } from "./resolve-map-sheet-layout";
-import { shouldSkipMapboxCanvasClickRepair } from "./skip-mapbox-canvas-click-repair";
-import { MapFrame } from "./map-frame";
 
 type UserTrackingValue = ReturnType<typeof useMapUserTracking>;
 
@@ -165,7 +164,6 @@ export function MapShellContent({
         onSnapHeightsChange={handleSnapHeightsChange}
         halfSnapFraction={config.halfSnapFraction}
         layout={sheetLayout}
-        shouldSkipPostDragOutsideClickTarget={shouldSkipMapboxCanvasClickRepair}
       >
         <SheetLayout header={header} body={body} />
       </Sheet>
