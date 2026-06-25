@@ -180,4 +180,67 @@ describe("padding + camera integration", () => {
 
     harness.unmount();
   });
+
+  it("does not re-apply padding at rest when obscured height is unchanged", () => {
+    const harness = mountCameraWithLiveSheetPadding(400);
+
+    expect(harness.map.setPadding).toHaveBeenCalledWith(
+      expect.objectContaining({ bottom: 400 }),
+    );
+
+    vi.mocked(harness.map.setPadding).mockClear();
+    vi.mocked(harness.map.jumpTo).mockClear();
+
+    harness.setSheetPhase("idle");
+    harness.setObscuredBottomPx(400);
+
+    expect(harness.map.setPadding).not.toHaveBeenCalled();
+    expect(harness.map.jumpTo).not.toHaveBeenCalled();
+
+    harness.setObscuredBottomPx(401);
+
+    expect(harness.map.setPadding).toHaveBeenCalledTimes(1);
+    expect(harness.map.setPadding).toHaveBeenCalledWith(
+      expect.objectContaining({ bottom: 401 }),
+    );
+
+    vi.mocked(harness.map.setPadding).mockClear();
+
+    harness.setObscuredBottomPx(401);
+
+    expect(harness.map.setPadding).not.toHaveBeenCalled();
+
+    harness.unmount();
+  });
+
+  it("does not storm padding apply after sheet settle simulation", () => {
+    const harness = mountCameraWithLiveSheetPadding(350);
+
+    vi.mocked(harness.map.setPadding).mockClear();
+
+    act(() => {
+      harness.setSheetPhase("settling");
+      harness.setObscuredBottomPx(400);
+    });
+
+    expect(harness.map.setPadding).toHaveBeenCalledWith(
+      expect.objectContaining({ bottom: 400 }),
+    );
+
+    vi.mocked(harness.map.setPadding).mockClear();
+    vi.mocked(harness.map.jumpTo).mockClear();
+
+    act(() => {
+      harness.setSheetPhase("idle");
+    });
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      harness.setObscuredBottomPx(400);
+    }
+
+    expect(harness.map.setPadding).not.toHaveBeenCalled();
+    expect(harness.map.jumpTo).not.toHaveBeenCalled();
+
+    harness.unmount();
+  });
 });

@@ -252,10 +252,31 @@ describe("reduceMapCameraMachine", () => {
       changed: true,
     });
 
-    expect(result.state.padding.pendingApply).toBeNull();
     expect(productEffects(result.effects)).toEqual([
       { type: "applyPadding", options: nextPadding, realign: true },
     ]);
+  });
+
+  it("ignores duplicate paddingMeasured when padding is already ready", () => {
+    const state = baseState({
+      session: "idle",
+      sheetPhase: "idle",
+      padding: {
+        phase: "ready",
+        options: samplePadding,
+        suppressNextMoveEnd: false,
+        pendingApply: null,
+      },
+    });
+
+    const result = reduceMapCameraMachine(state, {
+      type: "paddingMeasured",
+      options: samplePadding,
+      changed: false,
+    });
+
+    expect(result.state).toEqual(state);
+    expect(result.effects).toEqual([]);
   });
 
   it("flushes deferred padding when flying settles", () => {

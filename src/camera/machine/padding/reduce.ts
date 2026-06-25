@@ -20,23 +20,6 @@ function withPaddingAppliedNotify(
   return withNotifyShell(result, { kind: "paddingApplied" });
 }
 
-function notifyPaddingStableAtRest(
-  state: MapCameraState,
-  result: MapCameraMachineResult,
-  changed: boolean,
-): MapCameraMachineResult {
-  if (
-    changed ||
-    state.padding.phase !== "ready" ||
-    !isSheetMotionIdle(state.sheetPhase) ||
-    state.session !== "idle"
-  ) {
-    return result;
-  }
-
-  return withNotifyShell(result, { kind: "paddingApplied" });
-}
-
 export function reducePaddingMeasured(
   state: MapCameraState,
   event: Extract<MapCameraMachineEvent, { type: "paddingMeasured" }>,
@@ -105,6 +88,5 @@ export function reducePaddingMeasured(
     });
   }
   result = withPaddingAppliedNotify(result);
-  result = notifyPaddingStableAtRest(state, result, event.changed);
   return result;
 }

@@ -519,7 +519,7 @@ Track until fixed:
 
 | Gap                     | Spec                                 | Status       |
 | ----------------------- | ------------------------------------ | ------------ |
-| Post-rest padding storm | Coalesce / investigate feedback loop | Follow-up PR |
+| Post-rest padding storm | Coalesce at measure boundary; skip duplicate dispatch when ready | Fixed        |
 
 
 ### Implementation notes

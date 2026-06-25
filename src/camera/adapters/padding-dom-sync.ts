@@ -60,6 +60,10 @@ export function usePaddingDomSync({
     const changed =
       previous === null || !areMapPaddingOptionsEqual(previous, nextPadding);
 
+    if (wasPaddingReady && !changed) {
+      return;
+    }
+
     if (mapPaddingDebug && changed) {
       console.info("[map-padding-from-canvas] measured", nextPadding);
     }
@@ -107,8 +111,8 @@ export function usePaddingDomSync({
       return;
     }
 
-    measureAndDispatch();
-  }, [measureAndDispatch, mapPaddingFromCanvasEnabled]);
+    measureRef.current();
+  }, [mapPaddingFromCanvasEnabled]);
 
   useEffect(() => {
     if (

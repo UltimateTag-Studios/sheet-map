@@ -23,8 +23,8 @@ export function useLiveSheetObscuredBottomPx(
     }
 
     const canvas = mapRef.getMap().getCanvas();
-    const next = readLiveSheetObscuredBottomPx(canvas);
-    setSheetObscuredBottomPx(next ?? 0);
+    const next = readLiveSheetObscuredBottomPx(canvas) ?? 0;
+    setSheetObscuredBottomPx((current) => (current === next ? current : next));
   }, [mapRef]);
 
   const onSheetLayoutFrameChange = useCallback(
