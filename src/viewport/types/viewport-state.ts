@@ -6,7 +6,7 @@ export type MapVisibleViewport = {
   clientRect: PixelRect;
   /** Offset from canvas center to `clientRect` center — for Mapbox `offset`. */
   centerOffset: PixelPoint;
-  hasVisibleArea: boolean;
+  hasMinimumArea: boolean;
 };
 
 export type MapViewportSyncState = Omit<MapVisibleViewport, "clientRect"> & {

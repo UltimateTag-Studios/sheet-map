@@ -1,7 +1,7 @@
 import { readLiveSheetObscuredBottomPx } from "../dom";
 import type {
-  MapObscuredInsets,
   MapVisibleViewport,
+  MapVisibleViewportOptions,
   PixelRect,
 } from "../types";
 import { mergeObscuredInsets } from "./merge-obscured-insets";
@@ -14,7 +14,7 @@ import { visibleClientRectFromLiveSheetObscured } from "./visible-client-rect-fr
  */
 export function resolveMapVisibleViewport(
   canvas: HTMLCanvasElement,
-  extraObscuredInsets: Partial<MapObscuredInsets> = {},
+  options: MapVisibleViewportOptions = {},
 ): MapVisibleViewport | null {
   if (canvas.clientWidth === 0 || canvas.clientHeight === 0) {
     return null;
@@ -25,8 +25,9 @@ export function resolveMapVisibleViewport(
     return null;
   }
 
+  const overlayMinVisibleHeightPx = options.overlayMinVisibleHeightPx ?? 0;
   const geometry = readMapCanvasScreenGeometry(canvas);
-  const chrome = mergeObscuredInsets(extraObscuredInsets);
+  const chrome = mergeObscuredInsets(options.fixedChromeInsets);
   const baseRect = visibleClientRectFromLiveSheetObscured(
     geometry,
     sheetObscuredBottomPx,
@@ -38,7 +39,8 @@ export function resolveMapVisibleViewport(
     width: Math.max(0, baseRect.width - chrome.left - chrome.right),
     height: Math.max(0, baseRect.height - chrome.top - chrome.bottom),
   };
-  const hasVisibleArea = clientRect.height > 0 && clientRect.width > 0;
+  const hasMinimumArea =
+    clientRect.height >= overlayMinVisibleHeightPx && clientRect.width > 0;
 
   const canvasRect = canvas.getBoundingClientRect();
   const targetX = clientRect.x + clientRect.width / 2 - canvasRect.left;
@@ -50,6 +52,6 @@ export function resolveMapVisibleViewport(
       x: targetX - canvas.clientWidth / 2,
       y: targetY - canvas.clientHeight / 2,
     },
-    hasVisibleArea,
+    hasMinimumArea,
   };
 }

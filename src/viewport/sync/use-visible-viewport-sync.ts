@@ -1,7 +1,7 @@
 import { type RefObject, useEffect, useState } from "react";
 
 import { readSheetHost } from "../dom";
-import type { MapObscuredInsets, MapViewportSyncState } from "../types";
+import type { MapViewportSyncState, MapVisibleViewportOptions } from "../types";
 import { areMapViewportsEqual } from "./are-map-viewports-equal";
 import { attachViewportObservers } from "./attach-viewport-observers";
 import { readSyncViewport } from "./read-sync-viewport";
@@ -9,12 +9,11 @@ import { readSyncViewport } from "./read-sync-viewport";
 const EMPTY_VIEWPORT: MapViewportSyncState = {
   clientRect: null,
   centerOffset: { x: 0, y: 0 },
-  hasVisibleArea: false,
+  hasMinimumArea: false,
 };
 
-export type UseVisibleViewportSyncOptions = {
+export type UseVisibleViewportSyncOptions = MapVisibleViewportOptions & {
   canvasRef: RefObject<HTMLCanvasElement | null>;
-  fixedChromeInsets?: Partial<MapObscuredInsets>;
   debug?: boolean;
 };
 
@@ -22,6 +21,7 @@ export type UseVisibleViewportSyncOptions = {
 export function useVisibleViewportSync({
   canvasRef,
   fixedChromeInsets,
+  overlayMinVisibleHeightPx,
   debug = false,
 }: UseVisibleViewportSyncOptions): MapViewportSyncState {
   const [viewport, setViewport] =
@@ -35,10 +35,13 @@ export function useVisibleViewportSync({
     }
 
     const sync = () => {
-      const next = readSyncViewport(canvas, fixedChromeInsets);
+      const next = readSyncViewport(canvas, {
+        fixedChromeInsets,
+        overlayMinVisibleHeightPx,
+      });
       if (debug) {
         console.info("[visible-viewport-sync]", {
-          hasVisibleArea: next.hasVisibleArea,
+          hasMinimumArea: next.hasMinimumArea,
           clientRect: next.clientRect,
           centerOffset: next.centerOffset,
           canvasWidth: canvas.clientWidth,
@@ -53,7 +56,7 @@ export function useVisibleViewportSync({
 
     sync();
     return attachViewportObservers(canvas, readSheetHost(canvas), sync);
-  }, [canvasRef, fixedChromeInsets, debug]);
+  }, [canvasRef, fixedChromeInsets, overlayMinVisibleHeightPx, debug]);
 
   return viewport;
 }

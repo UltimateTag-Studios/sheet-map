@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
 import { readSheetHost } from "../dom";
-import type { MapObscuredInsets, MapViewportSyncState } from "../types";
+import type { MapViewportSyncState, MapVisibleViewportOptions } from "../types";
 import { areMapViewportsEqual } from "./are-map-viewports-equal";
 import { attachViewportObservers } from "./attach-viewport-observers";
 import { readSyncViewport } from "./read-sync-viewport";
@@ -10,12 +10,11 @@ import { readSyncViewport } from "./read-sync-viewport";
 const EMPTY_VIEWPORT: MapViewportSyncState = {
   clientRect: null,
   centerOffset: { x: 0, y: 0 },
-  hasVisibleArea: false,
+  hasMinimumArea: false,
 };
 
-export type UseMapVisibleViewportSyncOptions = {
+export type UseMapVisibleViewportSyncOptions = MapVisibleViewportOptions & {
   mapRef: MapRef | null;
-  fixedChromeInsets?: Partial<MapObscuredInsets>;
   /** Re-sync when live sheet obscured height changes (e.g. during sheet drag). */
   liveSheetObscuredBottomPx?: number;
   debug?: boolean;
@@ -25,6 +24,7 @@ export type UseMapVisibleViewportSyncOptions = {
 export function useMapVisibleViewportSync({
   mapRef,
   fixedChromeInsets,
+  overlayMinVisibleHeightPx,
   liveSheetObscuredBottomPx,
   debug = false,
 }: UseMapVisibleViewportSyncOptions): MapViewportSyncState {
@@ -42,10 +42,13 @@ export function useMapVisibleViewportSync({
     const canvas = map.getCanvas();
 
     const sync = () => {
-      const next = readSyncViewport(canvas, fixedChromeInsets);
+      const next = readSyncViewport(canvas, {
+        fixedChromeInsets,
+        overlayMinVisibleHeightPx,
+      });
       if (debug) {
         console.info("[map-visible-viewport-sync]", {
-          hasVisibleArea: next.hasVisibleArea,
+          hasMinimumArea: next.hasMinimumArea,
           clientRect: next.clientRect,
           centerOffset: next.centerOffset,
         });
@@ -69,7 +72,7 @@ export function useMapVisibleViewportSync({
       cleanupObservers();
       map.off("resize", sync);
     };
-  }, [mapRef, fixedChromeInsets, debug]);
+  }, [mapRef, fixedChromeInsets, overlayMinVisibleHeightPx, debug]);
 
   useEffect(() => {
     if (liveSheetObscuredBottomPx === undefined) {

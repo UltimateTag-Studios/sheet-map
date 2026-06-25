@@ -112,7 +112,7 @@ describe("useMapVisibleViewportSync", () => {
       }),
     );
 
-    expect(result.current.hasVisibleArea).toBe(false);
+    expect(result.current.hasMinimumArea).toBe(false);
     expect(result.current.clientRect).toBeNull();
   });
 
@@ -128,7 +128,7 @@ describe("useMapVisibleViewportSync", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.hasVisibleArea).toBe(true);
+      expect(result.current.hasMinimumArea).toBe(true);
     });
 
     expect(result.current.clientRect?.height).toBe(844 - obscuredBottomPx);

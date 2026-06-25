@@ -70,6 +70,7 @@ export function useMapShell({
     mapRef,
     liveSheetObscuredBottomPx: sheetObscuredBottomPx,
     fixedChromeInsets: config.fixedChromeInsets,
+    overlayMinVisibleHeightPx: resolvedConfig.overlayMinVisibleHeightPx,
     debug,
   });
 

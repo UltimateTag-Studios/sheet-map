@@ -7,7 +7,7 @@ describe("areMapViewportsEqual", () => {
   const base: MapViewportSyncState = {
     clientRect: { x: 0, y: 0, width: 400, height: 600 },
     centerOffset: { x: 0, y: -100 },
-    hasVisibleArea: true,
+    hasMinimumArea: true,
   };
 
   it("treats identical viewports as equal", () => {
@@ -18,7 +18,7 @@ describe("areMapViewportsEqual", () => {
     const empty: MapViewportSyncState = {
       clientRect: null,
       centerOffset: { x: 0, y: 0 },
-      hasVisibleArea: false,
+      hasMinimumArea: false,
     };
     expect(areMapViewportsEqual(empty, { ...empty })).toBe(true);
     expect(areMapViewportsEqual(base, empty)).toBe(false);

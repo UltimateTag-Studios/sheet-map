@@ -24,6 +24,8 @@ export type MapShellConfig = {
   /** Map overlay geometry — action button slot, my location control. */
   layout?: MapShellLayout;
   fixedChromeInsets?: MapChromeInsets;
+  /** Min visible map height (px) before overlay chrome is shown. Default `0`. */
+  overlayMinVisibleHeightPx?: number;
   halfSnapFraction?: number;
   initialZoom?: number;
   smoothFlyDurationMs?: number;
@@ -74,6 +76,7 @@ export const defaultMapShellConfig: Required<
     | "myLocationAriaLabel"
     | "closeSheetAriaLabel"
     | "halfSnapFraction"
+    | "overlayMinVisibleHeightPx"
   >
 > = {
   theme: DEFAULT_THEME,
@@ -83,4 +86,5 @@ export const defaultMapShellConfig: Required<
   myLocationAriaLabel: "Focus my location",
   closeSheetAriaLabel: "Close sheet",
   halfSnapFraction: DEFAULT_HALF_SNAP_FRACTION,
+  overlayMinVisibleHeightPx: 132,
 };

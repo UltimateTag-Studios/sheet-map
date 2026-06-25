@@ -5,7 +5,7 @@ export function areMapViewportsEqual(
   b: MapViewportSyncState,
 ): boolean {
   if (
-    a.hasVisibleArea !== b.hasVisibleArea ||
+    a.hasMinimumArea !== b.hasMinimumArea ||
     a.centerOffset.x !== b.centerOffset.x ||
     a.centerOffset.y !== b.centerOffset.y
   ) {

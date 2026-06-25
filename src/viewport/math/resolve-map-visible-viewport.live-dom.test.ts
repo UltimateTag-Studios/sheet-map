@@ -27,7 +27,7 @@ describe("resolveMapVisibleViewport live sheet DOM", () => {
     expect(resolveMapVisibleViewport(canvas)).toEqual({
       clientRect: { x: 0, y: 50, width: 400, height: 375 },
       centerOffset: { x: 0, y: -212.5 },
-      hasVisibleArea: true,
+      hasMinimumArea: true,
     });
 
     remove();
@@ -54,7 +54,7 @@ describe("resolveMapVisibleViewport live sheet DOM", () => {
     expect(resolveMapVisibleViewport(canvas)).toEqual({
       clientRect: { x: 0, y: 0, width: 400, height: 614 },
       centerOffset: { x: 0, y: -76 },
-      hasVisibleArea: true,
+      hasMinimumArea: true,
     });
 
     remove();

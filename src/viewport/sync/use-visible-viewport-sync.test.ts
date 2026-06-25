@@ -50,7 +50,7 @@ describe("useVisibleViewportSync", () => {
     const { result } = renderHook(() => useVisibleViewportSync({ canvasRef }));
 
     await waitFor(() => {
-      expect(result.current.hasVisibleArea).toBe(true);
+      expect(result.current.hasMinimumArea).toBe(true);
     });
     expect(result.current.clientRect?.height).toBe(648);
 

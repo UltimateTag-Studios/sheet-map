@@ -22,10 +22,12 @@ describe("resolveMapVisibleViewport fixed chrome", () => {
 
     const withoutTabBar = resolveMapVisibleViewport(canvas);
     const withTabBar = resolveMapVisibleViewport(canvas, {
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 56,
+      fixedChromeInsets: {
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 56,
+      },
     });
 
     expect(withoutTabBar).toBeDefined();
@@ -64,10 +66,12 @@ describe("resolveMapVisibleViewport fixed chrome", () => {
 
     const viewportOnly = resolveMapVisibleViewport(canvas);
     const withChrome = resolveMapVisibleViewport(canvas, {
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 56,
+      fixedChromeInsets: {
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 56,
+      },
     });
 
     expect(viewportOnly?.clientRect.height).toBe(614);

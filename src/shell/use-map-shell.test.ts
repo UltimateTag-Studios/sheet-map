@@ -21,7 +21,7 @@ vi.mock("../viewport", () => ({
   useMapVisibleViewportSync: () => ({
     clientRect: null,
     centerOffset: { x: 0, y: 0 },
-    hasVisibleArea: false,
+    hasMinimumArea: false,
   }),
 }));
 
