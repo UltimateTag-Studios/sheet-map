@@ -8,7 +8,6 @@ export function sheetClosedState(
     ...state,
     selectedItemId: null,
     intent: null,
-    halfOpenAfterFlyPending: false,
   };
 }
 

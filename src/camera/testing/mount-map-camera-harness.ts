@@ -68,7 +68,6 @@ function useMapCameraHarness(
   const camera = useMapCamera({
     mapRef,
     liveSheetObscuredBottomPx: options.liveSheetObscuredBottomPx,
-    sheetPhase: options.sheetPhase,
     bootRequest: buildBootRequest(options.bootTarget, options.follow),
     bootDurationMs: options.bootDurationMs,
     smoothFlyDurationMs: options.smoothFlyDurationMs,
@@ -85,6 +84,17 @@ function useMapCameraHarness(
 
     dispatchRef.current({ type: "startTracking", follow: options.follow });
   }, [options.follow]);
+
+  useEffect(() => {
+    if (!options.sheetPhase || options.sheetPhase === "idle") {
+      return;
+    }
+
+    dispatchRef.current({
+      type: "sheetPhaseChanged",
+      phase: options.sheetPhase,
+    });
+  }, [options.sheetPhase]);
 
   return camera;
 }
@@ -172,7 +182,7 @@ export function mountCameraWithLiveSheetPadding(
   const root: Root = createRoot(container);
   const latestRef: { current: MapCameraHookResult | null } = { current: null };
   let setLivePx: ((next: number) => void) | null = null;
-  let setSheetPhase: ((next: SheetMotionPhase) => void) | null = null;
+  let setSheetPhaseDispatch: ((next: SheetMotionPhase) => void) | null = null;
 
   const updateSheetRect = (obscuredBottomPx: number) => {
     fixture.sheet.getBoundingClientRect = () =>
@@ -195,15 +205,17 @@ export function mountCameraWithLiveSheetPadding(
         createElement(function Harness() {
           const [liveSheetObscuredBottomPx, setLiveSheetObscuredBottomPx] =
             useState(initialPx);
-          const [sheetPhase, setSheetPhaseState] =
-            useState<SheetMotionPhase>("idle");
           setLivePx = setLiveSheetObscuredBottomPx;
-          setSheetPhase = setSheetPhaseState;
           latestRef.current = useMapCameraHarness(harness.mapRef, {
             liveSheetObscuredBottomPx,
-            sheetPhase,
             ...options,
           });
+          setSheetPhaseDispatch = (next) => {
+            latestRef.current?.dispatch({
+              type: "sheetPhaseChanged",
+              phase: next,
+            });
+          };
           return null;
         }),
       ),
@@ -226,7 +238,7 @@ export function mountCameraWithLiveSheetPadding(
     },
     setSheetPhase(next: SheetMotionPhase) {
       act(() => {
-        setSheetPhase?.(next);
+        setSheetPhaseDispatch?.(next);
       });
     },
     async unmount() {

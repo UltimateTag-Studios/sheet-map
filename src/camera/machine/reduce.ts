@@ -1,5 +1,6 @@
 import { tryIssueBootFly } from "./boot/try-issue-boot-fly";
 import { reduceGestureSettleResolved } from "./gesture/reduce";
+import { withSessionNotifyIfChanged } from "./helpers/notify-shell";
 import { withTrackingOff } from "./helpers/session";
 import { reduceMapIdle, reduceMapMoveEnd } from "./move-end/reduce";
 import { reduceMapCameraNavigate } from "./navigate/reduce";
@@ -28,7 +29,8 @@ export function reduceMapCameraMachine(
     }
 
     case "mapGestureBegan": {
-      return {
+      const previousSession = state.session;
+      const result: MapCameraMachineResult = {
         state: {
           ...state,
           session: "userGesture",
@@ -36,6 +38,7 @@ export function reduceMapCameraMachine(
         },
         effects: [],
       };
+      return withSessionNotifyIfChanged(result, previousSession);
     }
 
     case "mapFollowThresholdExceeded": {

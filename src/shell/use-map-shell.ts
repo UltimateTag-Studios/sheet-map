@@ -1,7 +1,14 @@
 import type { SheetLayoutFrameChange, SheetSnap } from "@siegetag/sheet";
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 
 import { type NavigateToMapCameraOptions, useMapUserTracking } from "../camera";
+import type { CameraShellSignal } from "../camera/shared/camera-shell-signal";
 import type { MapPosition } from "../camera/shared/map-position";
 import type { MapItemLocation } from "../items/types";
 import {
@@ -15,7 +22,6 @@ import {
 } from "./config";
 import type { MapInstanceStore } from "./map-instance-store";
 import type {
-  MapShellCameraSnapshot,
   MapShellMachineEffect,
   MapShellMachineEvent,
 } from "./map-shell-machine";
@@ -55,13 +61,10 @@ export function useMapShell({
     [mapInstanceStore, debug],
   );
 
-  const { sheetObscuredBottomPx, sheetPhase, onSheetLayoutFrameChange } =
+  const { sheetObscuredBottomPx, onSheetLayoutFrameChange } =
     useLiveSheetObscuredBottomPx(mapRef);
 
   const dispatchRef = useRef<(event: MapShellMachineEvent) => void>(() => {});
-  const userTrackingRef = useRef<
-    ReturnType<typeof useMapUserTracking> | undefined
-  >(undefined);
 
   const viewport = useMapVisibleViewportSync({
     mapRef,
@@ -70,55 +73,21 @@ export function useMapShell({
     debug,
   });
 
+  const handleCameraSignal = useCallback((signal: CameraShellSignal) => {
+    dispatchRef.current({ type: "cameraSignal", signal });
+  }, []);
+
   const userTracking = useMapUserTracking({
     mapRef,
     userLocation,
     liveSheetObscuredBottomPx: sheetObscuredBottomPx,
-    sheetPhase,
     centerOffset: viewport.centerOffset,
     fixedChromeInsets: config.fixedChromeInsets,
     trackingReleaseThresholdPx: resolvedConfig.trackingReleaseThresholdPx,
     smoothFlyDurationMs: resolvedConfig.smoothFlyDurationMs,
     mapPaddingDebug: debug,
+    onNotifyShell: handleCameraSignal,
   });
-
-  userTrackingRef.current = userTracking;
-
-  const buildCameraSnapshot = useCallback((): MapShellCameraSnapshot => {
-    return {
-      cameraSession: userTracking.session,
-      mapPaddingReady: userTracking.mapPaddingReady,
-      hasUserLocation: userTracking.hasUserLocation,
-      anchorZoom: userTracking.anchor?.zoom ?? null,
-      defaultEnterFlyZoom: resolvedConfig.initialZoom,
-    };
-  }, [
-    userTracking.session,
-    userTracking.mapPaddingReady,
-    userTracking.hasUserLocation,
-    userTracking.anchor?.zoom,
-    resolvedConfig.initialZoom,
-  ]);
-
-  const flyToItem = useCallback(
-    (
-      location: MapItemLocation,
-      options?: { enterFly?: boolean; zoom?: number },
-    ) => {
-      userTrackingRef.current?.dispatch({
-        type: "navigateRequested",
-        position: {
-          lat: location.lat,
-          lng: location.lng,
-          ...(options?.zoom !== undefined ? { zoom: options.zoom } : {}),
-        },
-        mode: "fly",
-        preserveTracking: false,
-        durationMs: resolvedConfig.smoothFlyDurationMs,
-      });
-    },
-    [resolvedConfig.smoothFlyDurationMs],
-  );
 
   const handleMachineEffect = useCallback(
     (effect: MapShellMachineEffect) => {
@@ -126,11 +95,17 @@ export function useMapShell({
         console.info("[map-shell] effect", effect);
       }
       runMapShellMachineEffect(effect, {
-        flyToItem,
-        userTrackingRef,
+        userTracking: {
+          recenterOnUser: userTracking.recenterOnUser,
+          navigateTo: userTracking.navigateTo,
+          dispatch: userTracking.dispatch,
+          navigateRequested: userTracking.dispatch,
+        },
+        smoothFlyDurationMs: resolvedConfig.smoothFlyDurationMs,
+        debug,
       });
     },
-    [flyToItem, debug],
+    [userTracking, resolvedConfig.smoothFlyDurationMs, debug],
   );
 
   const { state: machine, dispatch: machineDispatch } =
@@ -147,12 +122,40 @@ export function useMapShell({
   );
   dispatchRef.current = dispatch;
 
+  const userLocationLng = userLocation?.lng;
+  const userLocationLat = userLocation?.lat;
+  const hasUserLocation =
+    userLocationLng !== undefined && userLocationLat !== undefined;
+
+  useLayoutEffect(() => {
+    dispatch({
+      type: "cameraSignal",
+      signal: {
+        kind: "paddingReadyChanged",
+        ready: userTracking.mapPaddingReady,
+      },
+    });
+  }, [dispatch, userTracking.mapPaddingReady]);
+
   useEffect(() => {
     dispatch({
-      type: "cameraSnapshotSynced",
-      snapshot: buildCameraSnapshot(),
+      type: "cameraSignal",
+      signal: {
+        kind: "hasUserLocationChanged",
+        hasUserLocation,
+      },
     });
-  }, [dispatch, buildCameraSnapshot]);
+  }, [dispatch, hasUserLocation]);
+
+  useEffect(() => {
+    dispatch({
+      type: "cameraSignal",
+      signal: {
+        kind: "anchorZoomChanged",
+        anchorZoom: userTracking.anchor?.zoom ?? null,
+      },
+    });
+  }, [dispatch, userTracking.anchor?.zoom]);
 
   const clearSelection = useCallback(() => {
     dispatch({ type: "clearSelection", dismissRouteEntry: true });

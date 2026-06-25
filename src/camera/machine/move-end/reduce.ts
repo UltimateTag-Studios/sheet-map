@@ -1,5 +1,10 @@
 import { resolveMoveEnd } from "../../lib/resolve-move-end";
+import {
+  withNavigateSettledNotify,
+  withSessionNotifyIfChanged,
+} from "../helpers/notify-shell";
 import { canSettleFlying, settleFlyingSession } from "../helpers/session";
+import { appendFlushPendingPadding } from "../padding/pending-apply";
 import type { MapCameraState } from "../state";
 import type { MapCameraMachineEvent, MapCameraMachineResult } from "../types";
 
@@ -7,6 +12,7 @@ export function reduceMapMoveEnd(
   state: MapCameraState,
   event: Extract<MapCameraMachineEvent, { type: "mapMoveEnd" }>,
 ): MapCameraMachineResult {
+  const previousSession = state.session;
   let nextState = state;
 
   if (event.paddingMoveEnd && state.padding.suppressNextMoveEnd) {
@@ -38,7 +44,7 @@ export function reduceMapMoveEnd(
       };
     }
 
-    return {
+    const result: MapCameraMachineResult = {
       state: {
         ...nextState,
         anchor: resolution.position,
@@ -46,13 +52,16 @@ export function reduceMapMoveEnd(
       },
       effects: [],
     };
+    return withSessionNotifyIfChanged(result, previousSession);
   }
 
   if (canSettleFlying(nextState, event)) {
-    return {
+    let result: MapCameraMachineResult = appendFlushPendingPadding({
       state: settleFlyingSession(nextState),
       effects: [],
-    };
+    });
+    result = withSessionNotifyIfChanged(result, previousSession);
+    return withNavigateSettledNotify(result);
   }
 
   return { state: nextState, effects: [] };
@@ -62,12 +71,16 @@ export function reduceMapIdle(
   state: MapCameraState,
   event: Extract<MapCameraMachineEvent, { type: "mapIdle" }>,
 ): MapCameraMachineResult {
+  const previousSession = state.session;
+
   if (!canSettleFlying(state, event)) {
     return { state, effects: [] };
   }
 
-  return {
+  let result: MapCameraMachineResult = appendFlushPendingPadding({
     state: settleFlyingSession(state),
     effects: [],
-  };
+  });
+  result = withSessionNotifyIfChanged(result, previousSession);
+  return withNavigateSettledNotify(result);
 }

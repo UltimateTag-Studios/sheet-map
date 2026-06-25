@@ -1,3 +1,8 @@
+export type { ShellNavigateGate } from "./intent/shell-navigate-gate";
+export {
+  shellNavigateGate,
+  shellNavigateGateAllowsEmit,
+} from "./intent/shell-navigate-gate";
 export { reduceMapShellMachine } from "./reduce";
 export type { RouteEnterFly } from "./route-enter-fly";
 export {
@@ -13,12 +18,10 @@ export type {
 } from "./state";
 export {
   createInitialMapShellMachineState,
-  intentReadyForCameraFly,
   mapShellPhaseFromSheet,
-  sheetAndPaddingReady,
   sheetPhaseResting,
   sheetPropSnap,
-  sheetSnapMatchesIntent,
+  sheetSnapMatchesRequiredSnap,
   snapForPlanning,
 } from "./state";
 export type {

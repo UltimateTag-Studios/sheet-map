@@ -6,12 +6,8 @@ import { attachViewportObservers } from "../sync/attach-viewport-observers";
 import { readLiveSheetObscuredBottomPx } from "./read-live-sheet-obscured-bottom-px";
 import { readSheetHost } from "./read-sheet-host";
 
-export type SheetMotionPhase = SheetLayoutFrameChange["phase"];
-
 export type UseLiveSheetObscuredBottomPxResult = {
   sheetObscuredBottomPx: number;
-  /** Sheet gesture machine phase — idle once drag and settle animation finish. */
-  sheetPhase: SheetMotionPhase;
   onSheetLayoutFrameChange: (frame: SheetLayoutFrameChange) => void;
 };
 
@@ -20,7 +16,6 @@ export function useLiveSheetObscuredBottomPx(
   mapRef: MapRef | null,
 ): UseLiveSheetObscuredBottomPxResult {
   const [sheetObscuredBottomPx, setSheetObscuredBottomPx] = useState(0);
-  const [sheetPhase, setSheetPhase] = useState<SheetMotionPhase>("idle");
 
   const syncFromDom = useCallback(() => {
     if (!mapRef) {
@@ -33,8 +28,7 @@ export function useLiveSheetObscuredBottomPx(
   }, [mapRef]);
 
   const onSheetLayoutFrameChange = useCallback(
-    (frame: SheetLayoutFrameChange) => {
-      setSheetPhase(frame.phase);
+    (_frame: SheetLayoutFrameChange) => {
       syncFromDom();
     },
     [syncFromDom],
@@ -43,7 +37,6 @@ export function useLiveSheetObscuredBottomPx(
   useEffect(() => {
     if (!mapRef) {
       setSheetObscuredBottomPx(0);
-      setSheetPhase("idle");
       return;
     }
 
@@ -67,7 +60,6 @@ export function useLiveSheetObscuredBottomPx(
 
   return {
     sheetObscuredBottomPx,
-    sheetPhase,
     onSheetLayoutFrameChange,
   };
 }

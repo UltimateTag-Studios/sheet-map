@@ -1,11 +1,12 @@
 import type { SheetLayoutFrameChange, SheetSnap } from "@siegetag/sheet";
 
 import type { NavigateToMapCameraOptions } from "../../camera";
+import type { CameraShellSignal } from "../../camera/shared/camera-shell-signal";
 import type { MapPosition } from "../../camera/shared/map-position";
 import type { MapItemLocation } from "../../items/types";
 import type { SheetMotionPhase } from "../../viewport";
 import type { RouteEnterFly } from "./route-enter-fly";
-import type { MapShellCameraSnapshot, MapShellMachineState } from "./state";
+import type { MapShellMachineState } from "./state";
 
 type SheetPhase = SheetLayoutFrameChange["phase"];
 
@@ -37,7 +38,7 @@ export type MapShellMachineEvent =
   | { type: "sheetSettled"; snap: SheetSnap }
   /** Sheet `onSnapChange` — settle start; destination before CSS arrival. */
   | { type: "sheetSnapChangeStarted"; snap: SheetSnap }
-  | { type: "cameraSnapshotSynced"; snapshot: MapShellCameraSnapshot }
+  | { type: "cameraSignal"; signal: CameraShellSignal }
   | {
       type: "navigateTo";
       position: MapPosition;
@@ -55,8 +56,9 @@ export type MapShellMachineEffect =
       location: MapItemLocation;
       enterFly?: boolean;
       zoom?: number;
+      mode: "fly" | "jump";
     }
-  | { type: "flyToUser"; zoom?: number }
+  | { type: "flyToUser"; zoom?: number; mode: "fly" | "jump" }
   | {
       type: "flyToPosition";
       position: MapPosition;

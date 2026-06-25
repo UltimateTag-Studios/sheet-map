@@ -2,17 +2,22 @@ import type { MapShellMachineState } from "../state";
 import type { MapShellMachineEffect, MapShellMachineResult } from "../types";
 import { emitCameraFlyIfReady } from "./emit-camera-fly-if-ready";
 
-function syncIdleWhenResting(
+function syncCameraSheetPhaseBeforeNavigate(
   state: MapShellMachineState,
 ): MapShellMachineEffect[] {
-  if (state.sheetPhase !== "resting") {
-    return [];
+  switch (state.sheetPhase) {
+    case "dragging":
+      return [{ type: "syncCameraSheetPhase", phase: "dragging" }];
+    case "settling":
+      return [{ type: "syncCameraSheetPhase", phase: "settling" }];
+    case "resting":
+      return [{ type: "syncCameraSheetPhase", phase: "idle" }];
+    default:
+      return [];
   }
-
-  return [{ type: "syncCameraSheetPhase", phase: "idle" }];
 }
 
-/** Truth-table fly row: sync camera sheet idle when resting, then try fly. */
+/** Truth-table fly row: sync camera sheet phase, then try fly/jump. */
 export function emitCameraFlyWithSync(
   state: MapShellMachineState,
 ): MapShellMachineResult {
@@ -24,6 +29,6 @@ export function emitCameraFlyWithSync(
 
   return {
     state: emitted.state,
-    effects: [...syncIdleWhenResting(state), ...emitted.effects],
+    effects: [...syncCameraSheetPhaseBeforeNavigate(state), ...emitted.effects],
   };
 }

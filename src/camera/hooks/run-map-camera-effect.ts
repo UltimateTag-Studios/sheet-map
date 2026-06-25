@@ -4,6 +4,7 @@ import type { MapCameraState } from "../machine/state";
 import type { MapCameraMachineEffect } from "../machine/types";
 import { moveCameraProgrammatic } from "../movement";
 import { setMapPaddingIfChanged } from "../padding/sync";
+import type { CameraShellSignal } from "../shared/camera-shell-signal";
 import { canNavigateMap } from "../shared/can-navigate-map";
 import type { UseMapCameraOptions } from "./types";
 
@@ -12,6 +13,9 @@ export type MapCameraEffectRunnerDeps = {
   machineStateRef: RefObject<RefObject<MapCameraState> | null>;
   mapPaddingDebug: boolean;
   onReleaseTrackingRef: RefObject<(() => void) | undefined>;
+  onNotifyShellRef: RefObject<
+    ((signal: CameraShellSignal) => void) | undefined
+  >;
 };
 
 export function runMapCameraMachineEffect(
@@ -62,6 +66,11 @@ export function runMapCameraMachineEffect(
 
     case "releaseTracking": {
       deps.onReleaseTrackingRef.current?.();
+      break;
+    }
+
+    case "notifyShell": {
+      deps.onNotifyShellRef.current?.(effect.signal);
       break;
     }
   }

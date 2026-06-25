@@ -5,6 +5,7 @@ import {
   createInitialMapCameraMachineState,
   type MapCameraState,
 } from "./state";
+import { productEffects } from "./test-helpers/product-effects";
 
 const samplePosition = { lat: 1, lng: 2, zoom: 15 };
 const samplePadding = { top: 0, left: 0, right: 0, bottom: 120 };
@@ -63,6 +64,7 @@ describe("reduceMapCameraMachine", () => {
         phase: "ready",
         options: samplePadding,
         suppressNextMoveEnd: false,
+        pendingApply: null,
       },
     });
 
@@ -76,7 +78,7 @@ describe("reduceMapCameraMachine", () => {
     expect(result.state.anchor).toEqual(samplePosition);
     expect(result.state.session).toBe("flying");
     expect(result.state.tracking).toBe("off");
-    expect(result.effects).toEqual([
+    expect(productEffects(result.effects)).toEqual([
       { type: "releaseTracking" },
       { type: "applyPadding", options: samplePadding, realign: false },
       { type: "moveCamera", position: samplePosition, duration: 600 },
@@ -132,7 +134,7 @@ describe("reduceMapCameraMachine", () => {
     });
 
     expect(result.state.session).toBe("idle");
-    expect(result.effects).toEqual([
+    expect(productEffects(result.effects)).toEqual([
       { type: "moveCamera", position: samplePosition, duration: 0 },
     ]);
   });
@@ -201,8 +203,144 @@ describe("reduceMapCameraMachine", () => {
 
     expect(result.state.session).toBe("flying");
     expect(result.state.anchor).toEqual({ lat: 3, lng: 4 });
-    expect(result.effects).toEqual([
+    expect(productEffects(result.effects)).toEqual([
       { type: "moveCamera", position: { lat: 3, lng: 4 }, duration: 600 },
+    ]);
+  });
+
+  it("defers padding apply while flying and sheet idle at rest", () => {
+    const nextPadding = { ...samplePadding, bottom: 200 };
+    const state = baseState({
+      session: "flying",
+      sheetPhase: "idle",
+      anchor: samplePosition,
+      padding: {
+        phase: "ready",
+        options: samplePadding,
+        suppressNextMoveEnd: false,
+        pendingApply: null,
+      },
+    });
+
+    const result = reduceMapCameraMachine(state, {
+      type: "paddingMeasured",
+      options: nextPadding,
+      changed: true,
+    });
+
+    expect(result.state.padding.pendingApply).toEqual(nextPadding);
+    expect(productEffects(result.effects)).toEqual([]);
+  });
+
+  it("realigns to anchor when padding changes during fly and sheet moves", () => {
+    const nextPadding = { ...samplePadding, bottom: 200 };
+    const state = baseState({
+      session: "flying",
+      sheetPhase: "settling",
+      anchor: samplePosition,
+      padding: {
+        phase: "ready",
+        options: samplePadding,
+        suppressNextMoveEnd: false,
+        pendingApply: null,
+      },
+    });
+
+    const result = reduceMapCameraMachine(state, {
+      type: "paddingMeasured",
+      options: nextPadding,
+      changed: true,
+    });
+
+    expect(result.state.padding.pendingApply).toBeNull();
+    expect(productEffects(result.effects)).toEqual([
+      { type: "applyPadding", options: nextPadding, realign: true },
+    ]);
+  });
+
+  it("flushes deferred padding when flying settles", () => {
+    const pendingPadding = { ...samplePadding, bottom: 200 };
+    const state = baseState({
+      session: "flying",
+      sheetPhase: "idle",
+      anchor: samplePosition,
+      padding: {
+        phase: "ready",
+        options: samplePadding,
+        suppressNextMoveEnd: false,
+        pendingApply: pendingPadding,
+      },
+    });
+
+    const result = reduceMapCameraMachine(state, {
+      type: "mapMoveEnd",
+      paddingMoveEnd: false,
+      isMoving: false,
+      position: samplePosition,
+      atAnchor: true,
+    });
+
+    expect(result.state.session).toBe("idle");
+    expect(result.state.padding.pendingApply).toBeNull();
+    expect(productEffects(result.effects)).toEqual([
+      { type: "applyPadding", options: pendingPadding, realign: true },
+    ]);
+  });
+
+  it("does not notify shell when padding applies during sheet settling", () => {
+    const nextPadding = { ...samplePadding, bottom: 200 };
+    const state = baseState({
+      session: "idle",
+      sheetPhase: "settling",
+      anchor: samplePosition,
+      padding: {
+        phase: "ready",
+        options: samplePadding,
+        suppressNextMoveEnd: false,
+        pendingApply: null,
+      },
+    });
+
+    const result = reduceMapCameraMachine(state, {
+      type: "paddingMeasured",
+      options: nextPadding,
+      changed: true,
+    });
+
+    expect(
+      result.effects.some(
+        (effect) =>
+          effect.type === "notifyShell" &&
+          effect.signal.kind === "paddingApplied",
+      ),
+    ).toBe(false);
+    expect(productEffects(result.effects)).toEqual([
+      { type: "applyPadding", options: nextPadding, realign: true },
+    ]);
+  });
+
+  it("does not realign padding changes during userGesture", () => {
+    const nextPadding = { ...samplePadding, bottom: 200 };
+    const state = baseState({
+      session: "userGesture",
+      sheetPhase: "settling",
+      anchor: samplePosition,
+      padding: {
+        phase: "ready",
+        options: samplePadding,
+        suppressNextMoveEnd: false,
+        pendingApply: null,
+      },
+    });
+
+    const result = reduceMapCameraMachine(state, {
+      type: "paddingMeasured",
+      options: nextPadding,
+      changed: true,
+    });
+
+    expect(productEffects(result.effects)).toEqual([
+      { type: "applyPadding", options: nextPadding, realign: false },
     ]);
   });
 
@@ -217,7 +355,12 @@ describe("reduceMapCameraMachine", () => {
       bootTarget: samplePosition,
       bootFollow: follow,
       bootPositionKey: "2:1:15",
-      padding: { phase: "pending", options: null, suppressNextMoveEnd: false },
+      padding: {
+        phase: "pending",
+        options: null,
+        suppressNextMoveEnd: false,
+        pendingApply: null,
+      },
     });
 
     const result = reduceMapCameraMachine(state, {
@@ -231,7 +374,7 @@ describe("reduceMapCameraMachine", () => {
     expect(result.state.follow).toEqual(follow);
     expect(result.state.lastAppliedGpsKey).toBe("2:1:15");
     expect(result.state.session).toBe("flying");
-    expect(result.effects).toEqual([
+    expect(productEffects(result.effects)).toEqual([
       { type: "applyPadding", options: samplePadding, realign: false },
       { type: "applyPadding", options: samplePadding, realign: false },
       { type: "moveCamera", position: samplePosition, duration: 600 },
@@ -252,7 +395,7 @@ describe("reduceMapCameraMachine", () => {
     });
 
     expect(result.state.lastAppliedGpsKey).toBe("6:5:preserve");
-    expect(result.effects).toEqual([
+    expect(productEffects(result.effects)).toEqual([
       { type: "moveCamera", position: nextPosition, duration: 0 },
     ]);
   });
@@ -298,6 +441,7 @@ describe("reduceMapCameraMachine", () => {
         phase: "ready",
         options: samplePadding,
         suppressNextMoveEnd: true,
+        pendingApply: null,
       },
     });
 
@@ -319,6 +463,7 @@ describe("reduceMapCameraMachine", () => {
         phase: "ready",
         options: samplePadding,
         suppressNextMoveEnd: true,
+        pendingApply: null,
       },
     });
 

@@ -136,7 +136,7 @@ GeoJSON sprite markers use `markerImageId` / `createMarkerImageCanvas`. Shell hi
 
 ## Camera behavior
 
-See [`docs/camera.md`](docs/camera.md) for padding, boot, `navigateTo`, follow-user, and gesture settle rules.
+See [`docs/truth-tables.md`](docs/truth-tables.md) for the full behavior spec (selection, fly gates, padding, sheet × camera). [`docs/camera.md`](docs/camera.md) covers architecture, padding pipeline, and APIs.
 
 **Geolocation is app-owned** — pass `userLocation` from your hook; the package never requests GPS itself.
 

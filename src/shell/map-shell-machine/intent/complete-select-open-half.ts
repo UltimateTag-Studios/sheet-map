@@ -1,24 +1,20 @@
+import type { MapAnchorSession } from "../../../camera";
 import type { MapShellMachineState } from "../state";
 
 export function completeSelectOpenHalf(
   state: MapShellMachineState,
-  previousCameraSession: MapShellMachineState["cameraSnapshot"]["cameraSession"],
-  nextCameraSession: MapShellMachineState["cameraSnapshot"]["cameraSession"],
+  previousCameraSession: MapAnchorSession,
+  nextCameraSession: MapAnchorSession,
 ): MapShellMachineState {
   const intent = state.intent;
-  if (
-    intent?.phase !== "awaitCameraIdleForHalf" ||
-    !state.halfOpenAfterFlyPending
-  ) {
+  if (intent?.phase !== "awaitCameraIdleForHalf") {
     return state;
   }
 
   const flewThenIdle =
     previousCameraSession === "flying" && nextCameraSession === "idle";
-  const jumpFlyIdle =
-    previousCameraSession === "idle" && nextCameraSession === "idle";
 
-  if (!flewThenIdle && !jumpFlyIdle) {
+  if (!flewThenIdle) {
     return state;
   }
 
@@ -26,6 +22,20 @@ export function completeSelectOpenHalf(
     ...state,
     sheetTarget: "half",
     intent: null,
-    halfOpenAfterFlyPending: false,
+  };
+}
+
+export function completeSelectOpenHalfOnNavigateSettled(
+  state: MapShellMachineState,
+): MapShellMachineState {
+  const intent = state.intent;
+  if (intent?.phase !== "awaitCameraIdleForHalf") {
+    return state;
+  }
+
+  return {
+    ...state,
+    sheetTarget: "half",
+    intent: null,
   };
 }

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 
-import type { MapObscuredInsets, SheetMotionPhase } from "../../viewport";
+import type { MapObscuredInsets } from "../../viewport";
 import type { PixelPoint } from "../../viewport/types/pixel";
+import type { CameraShellSignal } from "../shared/camera-shell-signal";
 import { type MapPosition, positionKey } from "../shared/map-position";
 import { useMapCamera } from "./use-map-camera";
 
@@ -28,13 +29,13 @@ export type UseMapUserTrackingOptions = {
   liveSheetObscuredBottomPx?: number;
   fixedChromeInsets?: Partial<MapObscuredInsets>;
   mapPaddingDebug?: boolean;
-  sheetPhase?: SheetMotionPhase;
   /** Visible-area center offset for tracking threshold. */
   centerOffset?: PixelPoint;
   smoothFlyDurationMs?: number;
   /** Screen pixels before tracking releases on user pan (demo default 40). */
   trackingReleaseThresholdPx?: number;
   onMapInstanceReleased?: () => void;
+  onNotifyShell?: (signal: CameraShellSignal) => void;
 };
 
 /**
@@ -50,11 +51,11 @@ export function useMapUserTracking({
   liveSheetObscuredBottomPx,
   fixedChromeInsets,
   mapPaddingDebug = false,
-  sheetPhase = "idle",
   centerOffset = { x: 0, y: 0 },
   smoothFlyDurationMs = 600,
   trackingReleaseThresholdPx = DEFAULT_TRACKING_RELEASE_THRESHOLD_PX,
   onMapInstanceReleased,
+  onNotifyShell,
 }: UseMapUserTrackingOptions) {
   const userLocationLng = userLocation?.lng;
   const userLocationLat = userLocation?.lat;
@@ -104,9 +105,9 @@ export function useMapUserTracking({
     liveSheetObscuredBottomPx,
     fixedChromeInsets,
     mapPaddingDebug,
-    sheetPhase,
     smoothFlyDurationMs,
     onMapInstanceReleased,
+    onNotifyShell,
   });
 
   const gpsPosition = buildUserPosition();

@@ -4,9 +4,9 @@ export { readSheetHost } from "./read-sheet-host";
 export {
   isSheetMotionActive,
   isSheetMotionIdle,
+  type SheetMotionPhase,
 } from "./sheet-motion";
 export {
-  type SheetMotionPhase,
   type UseLiveSheetObscuredBottomPxResult,
   useLiveSheetObscuredBottomPx,
 } from "./use-live-sheet-obscured-bottom-px";

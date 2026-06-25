@@ -304,7 +304,12 @@ describe("useMapCamera", () => {
   });
 
   it("navigateTo jumps when sheet is dragging", () => {
-    const harness = mountCamera({ sheetPhase: "dragging" });
+    const harness = mountCamera();
+
+    act(() => {
+      harness.latest.dispatch({ type: "sheetPhaseChanged", phase: "dragging" });
+    });
+
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
     act(() => {
@@ -319,7 +324,12 @@ describe("useMapCamera", () => {
   });
 
   it("navigateTo jumps while sheet is settling", () => {
-    const harness = mountCamera({ sheetPhase: "settling" });
+    const harness = mountCamera();
+
+    act(() => {
+      harness.latest.dispatch({ type: "sheetPhaseChanged", phase: "settling" });
+    });
+
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
     act(() => {
@@ -332,7 +342,7 @@ describe("useMapCamera", () => {
     harness.unmount();
   });
 
-  it("jumps to anchor when map padding changes during navigation", () => {
+  it("jumps to anchor when map padding changes during navigation and sheet moves", () => {
     const harness = mountCameraWithLiveSheetPadding(152);
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
@@ -348,6 +358,44 @@ describe("useMapCamera", () => {
     });
 
     expect(harness.latest.session).toBe("flying");
+    expect(harness.map.jumpTo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        center: [destination.lng, destination.lat],
+        zoom: destination.zoom,
+      }),
+    );
+
+    harness.unmount();
+  });
+
+  it("defers padding apply while flying and sheet idle at rest", () => {
+    const harness = mountCameraWithLiveSheetPadding(400);
+    const destination = { lat: 3, lng: 4, zoom: 16 };
+
+    act(() => {
+      harness.latest.navigateTo(destination, { duration: 1000 });
+    });
+
+    vi.mocked(harness.map.setPadding).mockClear();
+    vi.mocked(harness.map.jumpTo).mockClear();
+
+    harness.setObscuredBottomPx(450);
+
+    expect(harness.map.setPadding).not.toHaveBeenCalled();
+    expect(harness.map.jumpTo).not.toHaveBeenCalled();
+
+    act(() => {
+      harness.map.setCenter({ lat: destination.lat, lng: destination.lng });
+      harness.map.setZoom(destination.zoom);
+      harness.map.emit("moveend");
+    });
+
+    expect(harness.map.setPadding).toHaveBeenCalledWith({
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 450,
+    });
     expect(harness.map.jumpTo).toHaveBeenCalledWith(
       expect.objectContaining({
         center: [destination.lng, destination.lat],

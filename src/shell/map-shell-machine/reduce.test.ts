@@ -6,6 +6,11 @@ import {
   type MapShellCameraSnapshot,
   type MapShellMachineState,
 } from "./state";
+import {
+  cameraHasUserLocationChanged,
+  cameraPaddingReadyChanged,
+  cameraSessionChanged,
+} from "./test-fixtures/camera-signals";
 
 const defaultSnapshot = createInitialMapShellMachineState().cameraSnapshot;
 
@@ -47,10 +52,9 @@ describe("reduceMapShellMachine", () => {
       phase: "awaitCameraIdleForHalf",
       itemId: "a",
     });
-    expect(result.state.halfOpenAfterFlyPending).toBe(true);
     expect(result.effects).toEqual([
       { type: "syncCameraSheetPhase", phase: "idle" },
-      { type: "flyToItem", location: { lat: 1, lng: 2 } },
+      { type: "flyToItem", location: { lat: 1, lng: 2 }, mode: "fly" },
     ]);
   });
 
@@ -61,13 +65,12 @@ describe("reduceMapShellMachine", () => {
         phase: "awaitCameraIdleForHalf",
         itemId: "a",
       },
-      halfOpenAfterFlyPending: true,
     });
 
-    const result = reduceMapShellMachine(state, {
-      type: "cameraSnapshotSynced",
-      snapshot: snapshot({ ...readySnapshot, cameraSession: "idle" }),
-    });
+    const result = reduceMapShellMachine(
+      state,
+      cameraSessionChanged("idle", "flying"),
+    );
 
     expect(result.state.sheetTarget).toBe("half");
     expect(result.state.intent).toBeNull();
@@ -89,7 +92,7 @@ describe("reduceMapShellMachine", () => {
     expect(result.state.sheetTarget).toBe("half");
     expect(result.effects).toEqual([
       { type: "syncCameraSheetPhase", phase: "idle" },
-      { type: "flyToItem", location: { lat: 1, lng: 2 } },
+      { type: "flyToItem", location: { lat: 1, lng: 2 }, mode: "fly" },
     ]);
   });
 
@@ -125,14 +128,14 @@ describe("reduceMapShellMachine", () => {
       cameraSnapshot: readySnapshot,
     });
 
-    const panned = reduceMapShellMachine(afterPan, {
-      type: "cameraSnapshotSynced",
-      snapshot: snapshot({ ...readySnapshot, cameraSession: "userGesture" }),
-    });
-    const panDone = reduceMapShellMachine(panned.state, {
-      type: "cameraSnapshotSynced",
-      snapshot: readySnapshot,
-    });
+    const panned = reduceMapShellMachine(
+      afterPan,
+      cameraSessionChanged("userGesture", "idle"),
+    );
+    const panDone = reduceMapShellMachine(
+      panned.state,
+      cameraSessionChanged("idle", "userGesture"),
+    );
 
     const select = reduceMapShellMachine(panDone.state, {
       type: "selectItem",
@@ -161,7 +164,7 @@ describe("reduceMapShellMachine", () => {
 
     expect(afterHalf.effects).toEqual([
       { type: "syncCameraSheetPhase", phase: "idle" },
-      { type: "flyToItem", location: { lat: 3, lng: 4 } },
+      { type: "flyToItem", location: { lat: 3, lng: 4 }, mode: "fly" },
     ]);
   });
 
@@ -200,7 +203,7 @@ describe("reduceMapShellMachine", () => {
 
     expect(afterHalf.effects).toEqual([
       { type: "syncCameraSheetPhase", phase: "idle" },
-      { type: "flyToItem", location: { lat: 3, lng: 4 } },
+      { type: "flyToItem", location: { lat: 3, lng: 4 }, mode: "fly" },
     ]);
   });
 
@@ -220,7 +223,7 @@ describe("reduceMapShellMachine", () => {
     expect(result.state.sheetSnap).toBe("half");
   });
 
-  it("defers fly while sheet is dragging", () => {
+  it("emits jump while sheet is dragging (I11)", () => {
     const state = baseState({
       sheetPhase: "dragging",
       sheetSnap: "half",
@@ -233,7 +236,10 @@ describe("reduceMapShellMachine", () => {
       location: { lat: 1, lng: 2 },
     });
 
-    expect(result.effects).toEqual([]);
+    expect(result.effects).toEqual([
+      { type: "syncCameraSheetPhase", phase: "dragging" },
+      { type: "flyToItem", location: { lat: 1, lng: 2 }, mode: "jump" },
+    ]);
     expect(result.state.intent?.phase).toBe("awaitGates");
   });
 
@@ -270,11 +276,11 @@ describe("reduceMapShellMachine", () => {
     expect(result.state.sheetTarget).toBeNull();
     expect(result.effects).toEqual([
       { type: "syncCameraSheetPhase", phase: "idle" },
-      { type: "flyToUser", zoom: 14 },
+      { type: "flyToUser", zoom: 14, mode: "fly" },
     ]);
   });
 
-  it("recenterUser during drag defers fly", () => {
+  it("recenterUser during drag emits jump immediately", () => {
     const state = baseState({
       sheetSnap: "full",
       sheetTarget: null,
@@ -284,7 +290,10 @@ describe("reduceMapShellMachine", () => {
 
     const result = reduceMapShellMachine(state, { type: "recenterUser" });
 
-    expect(result.effects).toEqual([]);
+    expect(result.effects).toEqual([
+      { type: "syncCameraSheetPhase", phase: "dragging" },
+      { type: "flyToUser", zoom: 14, mode: "jump" },
+    ]);
     if (result.state.intent?.phase === "awaitGates") {
       expect(result.state.intent.camera).toEqual({ kind: "flyToUser" });
     }
@@ -302,7 +311,9 @@ describe("reduceMapShellMachine", () => {
         phase: "awaitGates",
         itemId: "a",
         camera: { kind: "flyToItem", location: { lat: 1, lng: 2 } },
-        sheetTarget: "half",
+        requiredSnap: "half",
+        deferFlyUntilResting: false,
+        navigateEmitted: false,
       },
     });
 
@@ -313,7 +324,7 @@ describe("reduceMapShellMachine", () => {
     expect(result.state.selectedItemId).toBeNull();
     expect(result.effects).toEqual([
       { type: "syncCameraSheetPhase", phase: "idle" },
-      { type: "flyToUser", zoom: 14 },
+      { type: "flyToUser", zoom: 14, mode: "fly" },
     ]);
   });
 
@@ -349,7 +360,7 @@ describe("reduceMapShellMachine", () => {
     expect(result.effects).toEqual([]);
   });
 
-  it("latest intent wins when selecting during an in-flight camera move", () => {
+  it("I2: latest intent wins — pivot fly immediately during in-flight camera move", () => {
     const state = baseState({
       cameraSnapshot: snapshot({ ...readySnapshot, cameraSession: "flying" }),
       intent: {
@@ -367,7 +378,7 @@ describe("reduceMapShellMachine", () => {
     expect(result.state.selectedItemId).toBe("b");
     expect(result.effects).toEqual([
       { type: "syncCameraSheetPhase", phase: "idle" },
-      { type: "flyToItem", location: { lat: 9, lng: 8 } },
+      { type: "flyToItem", location: { lat: 9, lng: 8 }, mode: "fly" },
     ]);
   });
 
@@ -379,7 +390,9 @@ describe("reduceMapShellMachine", () => {
         phase: "awaitGates",
         itemId: "a",
         camera: { kind: "flyToItem", location: { lat: 1, lng: 2 } },
-        sheetTarget: "half",
+        requiredSnap: "half",
+        deferFlyUntilResting: false,
+        navigateEmitted: false,
       },
     });
 
@@ -412,7 +425,7 @@ describe("reduceMapShellMachine", () => {
     }
   });
 
-  it("select during dismiss flys after collapsed settle", () => {
+  it("select during dismiss flys after collapsed layout idle", () => {
     const state = baseState({
       sheetSnap: "half",
       sheetTarget: "collapsed",
@@ -423,7 +436,9 @@ describe("reduceMapShellMachine", () => {
         phase: "awaitGates",
         itemId: "b",
         camera: { kind: "flyToItem", location: { lat: 3, lng: 4 } },
-        sheetTarget: "collapsed",
+        requiredSnap: null,
+        deferFlyUntilResting: true,
+        navigateEmitted: false,
         openHalfAfterFly: true,
       },
     });
@@ -433,17 +448,25 @@ describe("reduceMapShellMachine", () => {
       snap: "collapsed",
     });
 
-    expect(settled.effects).toEqual([
+    expect(settled.effects).toEqual([]);
+
+    const idle = reduceMapShellMachine(settled.state, {
+      type: "sheetLayoutFrameChanged",
+      phase: "idle",
+      restingSnap: "collapsed",
+    });
+
+    expect(idle.effects).toEqual([
       { type: "syncCameraSheetPhase", phase: "idle" },
-      { type: "flyToItem", location: { lat: 3, lng: 4 } },
+      { type: "flyToItem", location: { lat: 3, lng: 4 }, mode: "fly" },
     ]);
-    expect(settled.state.intent).toEqual({
+    expect(idle.state.intent).toEqual({
       phase: "awaitCameraIdleForHalf",
       itemId: "b",
     });
   });
 
-  it("select during dismiss preserves intent when padding not ready at settle", () => {
+  it("select during dismiss preserves intent when padding not ready at layout idle", () => {
     const notReady = snapshot({
       mapPaddingReady: false,
       hasUserLocation: true,
@@ -458,7 +481,9 @@ describe("reduceMapShellMachine", () => {
         phase: "awaitGates",
         itemId: "b",
         camera: { kind: "flyToItem", location: { lat: 3, lng: 4 } },
-        sheetTarget: "collapsed",
+        requiredSnap: null,
+        deferFlyUntilResting: true,
+        navigateEmitted: false,
         openHalfAfterFly: true,
       },
     });
@@ -468,20 +493,28 @@ describe("reduceMapShellMachine", () => {
       snap: "collapsed",
     });
 
-    expect(settled.effects).toEqual([
-      { type: "syncCameraSheetPhase", phase: "idle" },
-    ]);
+    expect(settled.effects).toEqual([]);
     expect(settled.state.selectedItemId).toBe("b");
     expect(settled.state.intent?.phase).toBe("awaitGates");
 
-    const synced = reduceMapShellMachine(settled.state, {
-      type: "cameraSnapshotSynced",
-      snapshot: readySnapshot,
+    const idle = reduceMapShellMachine(settled.state, {
+      type: "sheetLayoutFrameChanged",
+      phase: "idle",
+      restingSnap: "collapsed",
     });
+
+    expect(idle.effects).toEqual([
+      { type: "syncCameraSheetPhase", phase: "idle" },
+    ]);
+
+    const synced = reduceMapShellMachine(
+      idle.state,
+      cameraPaddingReadyChanged(true),
+    );
 
     expect(synced.effects).toEqual([
       { type: "syncCameraSheetPhase", phase: "idle" },
-      { type: "flyToItem", location: { lat: 3, lng: 4 } },
+      { type: "flyToItem", location: { lat: 3, lng: 4 }, mode: "fly" },
     ]);
   });
 
@@ -612,6 +645,60 @@ describe("reduceMapShellMachine", () => {
       position,
       preserveTracking: true,
     });
+  });
+
+  it("does not re-emit navigate on repeated dragging layout frames", () => {
+    const state = baseState({
+      sheetPhase: "dragging",
+      sheetSnap: "half",
+      sheetTarget: "collapsed",
+      cameraSnapshot: readySnapshot,
+      outstandingShellNavigates: 1,
+      intent: {
+        phase: "awaitGates",
+        itemId: "b",
+        camera: { kind: "flyToItem", location: { lat: 3, lng: 4 } },
+        requiredSnap: null,
+        deferFlyUntilResting: false,
+        navigateEmitted: true,
+        openHalfAfterFly: true,
+      },
+    });
+
+    const result = reduceMapShellMachine(state, {
+      type: "sheetLayoutFrameChanged",
+      phase: "dragging",
+      restingSnap: "collapsed",
+    });
+
+    expect(result.effects).toEqual([]);
+  });
+
+  it("retries flyToUser when hasUserLocation becomes available", () => {
+    const state = baseState({
+      cameraSnapshot: snapshot({
+        mapPaddingReady: true,
+        hasUserLocation: false,
+      }),
+      intent: {
+        phase: "awaitGates",
+        itemId: null,
+        camera: { kind: "flyToUser" },
+        requiredSnap: null,
+        deferFlyUntilResting: false,
+        navigateEmitted: false,
+      },
+    });
+
+    const result = reduceMapShellMachine(
+      state,
+      cameraHasUserLocationChanged(true),
+    );
+
+    expect(result.effects).toEqual([
+      { type: "syncCameraSheetPhase", phase: "idle" },
+      { type: "flyToUser", zoom: 14, mode: "fly" },
+    ]);
   });
 
   it("sheetLayoutFrameChanged updates sheetPhase only, not sheetSnap", () => {

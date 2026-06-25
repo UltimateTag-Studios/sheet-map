@@ -6,8 +6,8 @@ import { sheetClosedState } from "./selection-state";
 export function isSelectDuringDismissIntent(intent: ShellIntent): boolean {
   return (
     intent.phase === "awaitGates" &&
-    intent.sheetTarget === "collapsed" &&
-    intent.openHalfAfterFly === true
+    intent.openHalfAfterFly === true &&
+    intent.requiredSnap === null
   );
 }
 
@@ -39,5 +39,5 @@ export function cancelIntentOnGestureClose(
 export function shouldPreserveIntentOnCollapsedSettle(
   intent: ShellIntent | null,
 ): intent is Extract<ShellIntent, { phase: "awaitGates" }> {
-  return intent?.phase === "awaitGates" && intent.sheetTarget === "collapsed";
+  return intent?.phase === "awaitGates" && intent.openHalfAfterFly === true;
 }

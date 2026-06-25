@@ -1,5 +1,28 @@
 import type { MapShellMachineState, ShellIntent } from "../state";
 
+function sheetTargetFromIntent(
+  state: MapShellMachineState,
+  intent: Extract<ShellIntent, { phase: "awaitGates" }>,
+): MapShellMachineState["sheetTarget"] {
+  if (intent.openHalfAfterFly) {
+    return "collapsed";
+  }
+
+  if (intent.requiredSnap === "half" && state.sheetSnap !== "half") {
+    return "half";
+  }
+
+  if (intent.requiredSnap === "half") {
+    return "half";
+  }
+
+  if (state.sheetSnap === "half") {
+    return "half";
+  }
+
+  return state.sheetTarget;
+}
+
 export function applyShellIntent(
   state: MapShellMachineState,
   intent: ShellIntent,
@@ -10,8 +33,8 @@ export function applyShellIntent(
     selectedItemId: intent.itemId,
   };
 
-  if (intent.phase === "awaitGates" && intent.sheetTarget !== null) {
-    next.sheetTarget = intent.sheetTarget;
+  if (intent.phase === "awaitGates") {
+    next.sheetTarget = sheetTargetFromIntent(state, intent);
   }
 
   return next;

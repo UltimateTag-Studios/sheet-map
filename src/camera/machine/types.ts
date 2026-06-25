@@ -1,6 +1,7 @@
 import type { SheetMotionPhase } from "../../viewport";
 import type { GestureSettleOutcome } from "../lib/evaluate-gesture-settle";
 import type { MapPaddingOptions } from "../padding/compute";
+import type { CameraShellSignal } from "../shared/camera-shell-signal";
 import type { MapPosition } from "../shared/map-position";
 import type { MapCameraState } from "./state";
 
@@ -50,7 +51,8 @@ export type MapCameraMachineEvent =
 export type MapCameraMachineEffect =
   | { type: "moveCamera"; position: MapPosition; duration: number }
   | { type: "applyPadding"; options: MapPaddingOptions; realign: boolean }
-  | { type: "releaseTracking" };
+  | { type: "releaseTracking" }
+  | { type: "notifyShell"; signal: CameraShellSignal };
 
 export type MapCameraMachineResult = {
   state: MapCameraState;

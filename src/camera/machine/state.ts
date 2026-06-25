@@ -35,6 +35,8 @@ export type MapCameraState = {
     phase: MapCameraPaddingPhase;
     options: MapPaddingOptions | null;
     suppressNextMoveEnd: boolean;
+    /** DOM padding measured while flying — flushed after fly settles. */
+    pendingApply: MapPaddingOptions | null;
   };
   /** When false, padding is not measured from canvas and boot may proceed immediately. */
   paddingFromCanvasEnabled: boolean;
@@ -79,6 +81,7 @@ export function createInitialMapCameraMachineState(
       phase: paddingFromCanvasEnabled ? "pending" : "ready",
       options: null,
       suppressNextMoveEnd: false,
+      pendingApply: null,
     },
     paddingFromCanvasEnabled,
     sheetPhase: input.sheetPhase ?? "idle",

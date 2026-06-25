@@ -1,4 +1,4 @@
-import { applyCameraSnapshot } from "./camera-snapshot/apply";
+import { reduceCameraSignal } from "./camera-signal/reduce";
 import { mergeResults } from "./helpers/merge-results";
 import {
   clearSelectionState,
@@ -26,10 +26,10 @@ export function reduceMapShellMachine(
   event: MapShellMachineEvent,
 ): MapShellMachineResult {
   switch (event.type) {
-    case "cameraSnapshotSynced": {
-      const snapshotResult = applyCameraSnapshot(state, event.snapshot);
-      const advanced = advanceRouteEntry(snapshotResult.state);
-      return mergeResults(snapshotResult, tryApplyRouteEntry(advanced));
+    case "cameraSignal": {
+      const signalResult = reduceCameraSignal(state, event.signal);
+      const advanced = advanceRouteEntry(signalResult.state);
+      return mergeResults(signalResult, tryApplyRouteEntry(advanced));
     }
 
     case "routeEnterFlyChanged": {

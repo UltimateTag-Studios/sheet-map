@@ -3,6 +3,12 @@ import {
   buildNavigateEffects,
   resolveNavigateMode,
 } from "../helpers/navigate-mode";
+import {
+  anchorZoomFromPosition,
+  withAnchorZoomNotifyIfChanged,
+  withNavigateSettledNotify,
+  withSessionNotifyIfChanged,
+} from "../helpers/notify-shell";
 import { withTrackingOff } from "../helpers/session";
 import type { MapCameraState } from "../state";
 import type {
@@ -15,6 +21,8 @@ export function reduceMapCameraNavigate(
   state: MapCameraState,
   event: Extract<MapCameraMachineEvent, { type: "navigateRequested" }>,
 ): MapCameraMachineResult {
+  const previousSession = state.session;
+  const previousAnchorZoom = anchorZoomFromPosition(state.anchor);
   const mode = resolveNavigateMode(state, event.mode);
   const durationMs = event.durationMs ?? state.flyDurationMs;
   const anchor = mergeMapAnchorPosition(state.anchor, event.position);
@@ -41,5 +49,13 @@ export function reduceMapCameraNavigate(
     ...buildNavigateEffects(nextState, event.position, mode, durationMs),
   );
 
-  return { state: nextState, effects };
+  let result: MapCameraMachineResult = { state: nextState, effects };
+  result = withSessionNotifyIfChanged(result, previousSession);
+  result = withAnchorZoomNotifyIfChanged(result, previousAnchorZoom);
+
+  if (mode === "jump") {
+    result = withNavigateSettledNotify(result);
+  }
+
+  return result;
 }

@@ -18,7 +18,12 @@ export type ShellIntent =
       phase: "awaitGates";
       itemId: string | null;
       camera: ShellCameraIntent;
-      sheetTarget: SheetSnap | null;
+      /** Smooth-fly snap wait; null when already at target snap. */
+      requiredSnap: SheetSnap | null;
+      /** I12 — set on select while settling; cleared on I13 or layout idle. */
+      deferFlyUntilResting: boolean;
+      /** True after shell emits navigate for this intent; reset on new plan (pivot). */
+      navigateEmitted: boolean;
       openHalfAfterFly?: boolean;
     }
   | {
@@ -59,8 +64,8 @@ export type MapShellMachineState = {
   cameraSnapshot: MapShellCameraSnapshot;
   intent: ShellIntent | null;
   routeVisit: RouteEntryVisit | null;
-  /** Collapsed fly-first select: set when fly dispatches, cleared when half opens. */
-  halfOpenAfterFlyPending: boolean;
+  /** In-flight shell navigates; awaitGates intent clears when this reaches 0 after settle. */
+  outstandingShellNavigates: number;
 };
 
 export function createInitialMapShellMachineState(): MapShellMachineState {
@@ -78,7 +83,7 @@ export function createInitialMapShellMachineState(): MapShellMachineState {
     },
     intent: null,
     routeVisit: null,
-    halfOpenAfterFlyPending: false,
+    outstandingShellNavigates: 0,
   };
 }
 
@@ -111,37 +116,14 @@ export function sheetPhaseResting(state: MapShellMachineState): boolean {
   return state.sheetPhase === "resting";
 }
 
-export function sheetAndPaddingReady(state: MapShellMachineState): boolean {
-  return state.sheetPhase === "resting" && state.cameraSnapshot.mapPaddingReady;
-}
-
-export function sheetSnapMatchesIntent(
+export function sheetSnapMatchesRequiredSnap(
   state: MapShellMachineState,
-  sheetTarget: SheetSnap | null,
+  requiredSnap: SheetSnap | null,
 ): boolean {
-  if (sheetTarget === null) {
+  if (requiredSnap === null) {
     return true;
   }
-  return state.sheetSnap === sheetTarget;
-}
-
-export function intentReadyForCameraFly(state: MapShellMachineState): boolean {
-  const intent = state.intent;
-  if (!intent || intent.phase !== "awaitGates") {
-    return false;
-  }
-
-  if (
-    intent.camera.kind === "flyToUser" &&
-    !state.cameraSnapshot.hasUserLocation
-  ) {
-    return false;
-  }
-
-  return (
-    sheetAndPaddingReady(state) &&
-    sheetSnapMatchesIntent(state, intent.sheetTarget)
-  );
+  return state.sheetSnap === requiredSnap;
 }
 
 export function cameraSnapshotsEqual(

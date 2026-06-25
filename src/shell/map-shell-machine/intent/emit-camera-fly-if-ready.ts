@@ -1,7 +1,8 @@
 import { resolveEnterFlyZoomFromState } from "../../resolve-enter-fly-zoom-from-state";
 import type { MapShellMachineState } from "../state";
-import { intentReadyForCameraFly } from "../state";
 import type { MapShellMachineEffect, MapShellMachineResult } from "../types";
+import { shellNavigateGate } from "./shell-navigate-gate";
+import { shellNavigateMode } from "./shell-navigate-mode";
 
 function cameraIntentToEffect(
   state: MapShellMachineState,
@@ -10,11 +11,13 @@ function cameraIntentToEffect(
     { phase: "awaitGates" }
   >["camera"],
 ): MapShellMachineEffect {
+  const mode = shellNavigateMode(state);
+
   if (camera.kind === "flyToUser") {
     const zoom = resolveEnterFlyZoomFromState(state, camera.zoom);
     return zoom !== undefined
-      ? { type: "flyToUser", zoom }
-      : { type: "flyToUser" };
+      ? { type: "flyToUser", zoom, mode }
+      : { type: "flyToUser", mode };
   }
 
   const resolvedZoom =
@@ -29,15 +32,17 @@ function cameraIntentToEffect(
           location: camera.location,
           enterFly: true,
           zoom: resolvedZoom,
+          mode,
         }
       : {
           type: "flyToItem",
           location: camera.location,
           enterFly: true,
+          mode,
         };
   }
 
-  return { type: "flyToItem", location: camera.location };
+  return { type: "flyToItem", location: camera.location, mode };
 }
 
 export function emitCameraFlyIfReady(
@@ -48,7 +53,7 @@ export function emitCameraFlyIfReady(
     return { state, effects: [] };
   }
 
-  if (!intentReadyForCameraFly(state)) {
+  if (shellNavigateGate(state).kind !== "emit") {
     return { state, effects: [] };
   }
 
@@ -58,13 +63,16 @@ export function emitCameraFlyIfReady(
   return {
     state: {
       ...state,
+      outstandingShellNavigates: state.outstandingShellNavigates + 1,
       intent: openHalfAfterFly
         ? {
             phase: "awaitCameraIdleForHalf",
             itemId: intent.itemId ?? "",
           }
-        : null,
-      halfOpenAfterFlyPending: openHalfAfterFly,
+        : {
+            ...intent,
+            navigateEmitted: true,
+          },
     },
     effects: [effect],
   };

@@ -90,7 +90,7 @@ describe("padding + camera integration", () => {
     harness.unmount();
   });
 
-  it("jumps to nav target when padding changes during navigation and sheet moves", () => {
+  it("jumps to nav target when padding changes during navigation and sheet moves (I11)", () => {
     const harness = mountCameraWithLiveSheetPadding(152);
     const destination = { lat: 3, lng: 4, zoom: 16 };
 
@@ -115,6 +115,45 @@ describe("padding + camera integration", () => {
     );
     expect(harness.latest.session).toBe("flying");
     expect(harness.latest.anchor).toEqual(destination);
+
+    harness.unmount();
+  });
+
+  it("defers padding apply while flying and sheet idle at rest", () => {
+    const harness = mountCameraWithLiveSheetPadding(152);
+    const destination = { lat: 3, lng: 4, zoom: 16 };
+
+    act(() => {
+      harness.latest.navigateTo(destination, { duration: 1000 });
+    });
+
+    vi.mocked(harness.map.setPadding).mockClear();
+    vi.mocked(harness.map.jumpTo).mockClear();
+
+    harness.setObscuredBottomPx(200);
+
+    expect(harness.map.setPadding).not.toHaveBeenCalled();
+    expect(harness.map.jumpTo).not.toHaveBeenCalled();
+
+    act(() => {
+      harness.map.setCenter({ lat: destination.lat, lng: destination.lng });
+      harness.map.setZoom(destination.zoom);
+      harness.map.emit("moveend");
+    });
+
+    expect(harness.map.setPadding).toHaveBeenCalledWith({
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 200,
+    });
+    expect(harness.map.jumpTo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        center: [destination.lng, destination.lat],
+        zoom: destination.zoom,
+      }),
+    );
+    expect(harness.latest.session).toBe("idle");
 
     harness.unmount();
   });

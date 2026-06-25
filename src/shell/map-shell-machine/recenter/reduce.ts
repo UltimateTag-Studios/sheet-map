@@ -13,7 +13,10 @@ export function reduceRecenterUser(
   event: Extract<MapShellMachineEvent, { type: "recenterUser" }>,
 ): MapShellMachineResult {
   const cleared = clearSelectionState(state, true);
-  const applied = applyShellIntent(cleared, planUserRecenterIntent(event.zoom));
+  const applied = applyShellIntent(
+    cleared,
+    planUserRecenterIntent(state, event.zoom),
+  );
   const result = emitCameraFlyWithSync(applied);
 
   if (event.source === "route" && result.effects.length > 0) {

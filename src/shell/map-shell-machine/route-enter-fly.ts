@@ -1,6 +1,12 @@
-import { reduceMapShellMachine } from "./reduce";
+import { clearSelectionState } from "./helpers/selection-state";
+import {
+  applyShellIntent,
+  emitCameraFlyWithSync,
+  planItemSelectIntent,
+  planUserRecenterIntent,
+} from "./intent";
+import { shellNavigateGate } from "./intent/shell-navigate-gate";
 import type { MapShellMachineState, RouteEntryVisit } from "./state";
-import { sheetAndPaddingReady } from "./state";
 import type { MapShellMachineResult } from "./types";
 
 /** Where the map should fly when a route becomes active. */
@@ -52,6 +58,24 @@ export function routeEnterFlyKey(
   }
   const zoomSuffix = entry.zoom !== undefined ? `:z${entry.zoom}` : "";
   return `item:${entry.id}:${entry.location.lat},${entry.location.lng}${zoomSuffix}`;
+}
+
+function routeEntryCanTryApply(state: MapShellMachineState): boolean {
+  if (!state.cameraSnapshot.mapPaddingReady) {
+    return false;
+  }
+
+  if (state.sheetPhase === "settling") {
+    return false;
+  }
+
+  return true;
+}
+
+function routeEntryFlyEmitted(result: MapShellMachineResult): boolean {
+  return result.effects.some(
+    (effect) => effect.type === "flyToItem" || effect.type === "flyToUser",
+  );
 }
 
 function withRouteVisit(
@@ -138,7 +162,7 @@ export function tryApplyRouteEntry(
     return { state, effects: [] };
   }
 
-  if (!sheetAndPaddingReady(state)) {
+  if (!routeEntryCanTryApply(state)) {
     return { state, effects: [] };
   }
 
@@ -149,21 +173,45 @@ export function tryApplyRouteEntry(
       return { state, effects: [] };
     }
 
-    return reduceMapShellMachine(state, {
-      type: "recenterUser",
-      zoom: entry.zoom,
-      source: "route",
-    });
+    const cleared = clearSelectionState(state, true);
+    const applied = applyShellIntent(
+      cleared,
+      planUserRecenterIntent(cleared, entry.zoom),
+    );
+    const result = emitCameraFlyWithSync(applied);
+
+    if (!routeEntryFlyEmitted(result)) {
+      return { state: applied, effects: [] };
+    }
+
+    return {
+      state: markRouteEntryDispatched(result.state),
+      effects: result.effects,
+    };
   }
 
-  return reduceMapShellMachine(state, {
-    type: "selectItem",
-    id: entry.id,
-    location: entry.location,
-    enterFly: true,
-    zoom: entry.zoom,
-    source: "route",
-  });
+  const applied = applyShellIntent(
+    state,
+    planItemSelectIntent(state, entry.id, entry.location, {
+      enterFly: true,
+      zoom: entry.zoom,
+    }),
+  );
+
+  if (shellNavigateGate(applied).kind === "defer") {
+    return { state: applied, effects: [] };
+  }
+
+  const result = emitCameraFlyWithSync(applied);
+
+  if (!routeEntryFlyEmitted(result)) {
+    return { state: applied, effects: [] };
+  }
+
+  return {
+    state: markRouteEntryDispatched(result.state),
+    effects: result.effects,
+  };
 }
 
 export function resetRouteEntryToWaiting(

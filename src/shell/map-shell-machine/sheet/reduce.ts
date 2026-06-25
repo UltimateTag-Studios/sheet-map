@@ -4,27 +4,40 @@ import {
   cancelIntentOnGestureClose,
   shouldPreserveIntentOnCollapsedSettle,
 } from "../helpers/cancel-intent-on-gesture-close";
+import { clearDeferFlyUntilResting } from "../helpers/clear-defer-fly-until-resting";
 import {
   commitSheetArrival,
   pendingArrivalFromLayoutFrame,
 } from "../helpers/commit-sheet-arrival";
+import { mergeResults } from "../helpers/merge-results";
 import {
   routeEntryInterruptedOnCollapse,
   sheetClosedState,
 } from "../helpers/selection-state";
 import { syncGestureSheetTarget } from "../helpers/sync-gesture-sheet-target";
+import { emitCameraFlyWithSync } from "../intent";
 import {
   dismissRouteEntry,
   resetRouteEntryToWaiting,
+  tryApplyRouteEntry,
 } from "../route-enter-fly";
 import { type MapShellMachineState, mapShellPhaseFromSheet } from "../state";
 import type { MapShellMachineEffect, MapShellMachineResult } from "../types";
-import {
-  commitSheetArrivalFromSettle,
-  tryEmitFlyWhileResting,
-} from "./try-emit-fly-after-arrival";
+import { commitSheetArrivalFromSettle } from "./try-emit-fly-after-arrival";
 
 type SheetPhase = SheetLayoutFrameChange["phase"];
+
+function phaseSyncEffect(
+  previousPhase: MapShellMachineState["sheetPhase"],
+  sheetPhase: MapShellMachineState["sheetPhase"],
+  phase: SheetPhase,
+): MapShellMachineEffect[] {
+  if (previousPhase === sheetPhase) {
+    return [];
+  }
+
+  return [{ type: "syncCameraSheetPhase", phase }];
+}
 
 export function reduceSheetLayoutFrameChanged(
   state: MapShellMachineState,
@@ -48,16 +61,39 @@ export function reduceSheetLayoutFrameChanged(
     nextState = commitSheetArrival(nextState, pendingArrival);
   }
 
-  const effects: MapShellMachineEffect[] = [];
-  if (previousPhase !== sheetPhase) {
-    effects.push({ type: "syncCameraSheetPhase", phase });
+  if (sheetPhase === "dragging") {
+    nextState = clearDeferFlyUntilResting(nextState);
+    const flyResult = emitCameraFlyWithSync(nextState);
+    if (flyResult.effects.length > 0) {
+      return { state: flyResult.state, effects: flyResult.effects };
+    }
+
+    return {
+      state: nextState,
+      effects: phaseSyncEffect(previousPhase, sheetPhase, phase),
+    };
   }
 
   if (sheetPhase === "resting") {
-    return tryEmitFlyWhileResting(nextState, effects);
+    nextState = clearDeferFlyUntilResting(nextState);
+    const flyResult = emitCameraFlyWithSync(nextState);
+    if (flyResult.effects.length > 0) {
+      return mergeResults(flyResult, tryApplyRouteEntry(flyResult.state));
+    }
+
+    return mergeResults(
+      {
+        state: nextState,
+        effects: phaseSyncEffect(previousPhase, sheetPhase, phase),
+      },
+      tryApplyRouteEntry(nextState),
+    );
   }
 
-  return { state: nextState, effects };
+  return {
+    state: nextState,
+    effects: phaseSyncEffect(previousPhase, sheetPhase, phase),
+  };
 }
 
 export function reduceSheetSnapChangeStarted(
@@ -86,9 +122,7 @@ export function reduceSheetSettled(
     }
 
     if (shouldPreserveIntentOnCollapsedSettle(withSnap.intent)) {
-      return tryEmitFlyWhileResting({ ...withSnap, sheetPhase: "resting" }, [
-        { type: "syncCameraSheetPhase", phase: "idle" },
-      ]);
+      return { state: withSnap, effects: [] };
     }
 
     const closed = cancelIntentOnGestureClose(

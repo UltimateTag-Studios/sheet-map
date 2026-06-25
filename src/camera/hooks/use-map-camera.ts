@@ -1,17 +1,10 @@
-import {
-  type RefObject,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-} from "react";
+import { type RefObject, useCallback, useLayoutEffect, useRef } from "react";
 
 import {
   useMapboxListeners,
   useMapInstanceLifecycle,
   usePaddingDomSync,
 } from "../adapters";
-import { isAtMapAnchorPosition } from "../lib";
 import {
   type MapCameraMachineDispatch,
   type MapCameraMachineEffect,
@@ -20,11 +13,7 @@ import {
 import type { MapCameraState } from "../machine/state";
 import type { MapPosition } from "../shared/map-position";
 import { runMapCameraMachineEffect } from "./run-map-camera-effect";
-import type {
-  MapCameraBootRequest,
-  NavigateToMapCameraOptions,
-  UseMapCameraOptions,
-} from "./types";
+import type { NavigateToMapCameraOptions, UseMapCameraOptions } from "./types";
 
 export type {
   MapCameraBootRequest,
@@ -32,35 +21,27 @@ export type {
   UseMapCameraOptions,
 } from "./types";
 
-function areBootFlyGatesReady(input: {
-  enabled: boolean;
-  mapRef: UseMapCameraOptions["mapRef"];
-  bootRequest: MapCameraBootRequest | null | undefined;
-  mapPaddingReady: boolean;
-}): boolean {
-  return Boolean(
-    input.enabled && input.mapRef && input.bootRequest && input.mapPaddingReady,
-  );
-}
-
 export function useMapCamera({
   mapRef,
   enabled = true,
   liveSheetObscuredBottomPx,
   fixedChromeInsets,
   mapPaddingDebug = false,
-  sheetPhase = "idle",
   bootRequest = null,
   bootDurationMs,
   smoothFlyDurationMs = 600,
   onReleaseTracking,
   onMapInstanceReleased,
+  onNotifyShell,
 }: UseMapCameraOptions) {
   const mapPaddingFromCanvasEnabled = liveSheetObscuredBottomPx !== undefined;
   const bootFlyDurationMs = bootDurationMs ?? smoothFlyDurationMs;
 
   const onReleaseTrackingRef = useRef(onReleaseTracking);
   onReleaseTrackingRef.current = onReleaseTracking;
+
+  const onNotifyShellRef = useRef(onNotifyShell);
+  onNotifyShellRef.current = onNotifyShell;
 
   const machineStateRef = useRef<RefObject<MapCameraState> | null>(null);
 
@@ -71,6 +52,7 @@ export function useMapCamera({
         machineStateRef: machineStateRef,
         mapPaddingDebug,
         onReleaseTrackingRef,
+        onNotifyShellRef,
       });
     },
     [mapRef, mapPaddingDebug],
@@ -78,7 +60,6 @@ export function useMapCamera({
 
   const { state, stateRef, dispatch } = useMapCameraMachine(runEffect, {
     enabled,
-    sheetPhase,
     flyDurationMs: smoothFlyDurationMs,
     bootFlyDurationMs,
     paddingFromCanvasEnabled: mapPaddingFromCanvasEnabled,
@@ -89,30 +70,13 @@ export function useMapCamera({
   const mapPaddingReady =
     !mapPaddingFromCanvasEnabled || state.padding.phase === "ready";
 
-  const attemptBoot = useCallback(() => {
-    if (!bootRequest) {
+  useLayoutEffect(() => {
+    if (!bootRequest || !enabled || !mapRef) {
       return;
     }
 
-    if (
-      !areBootFlyGatesReady({
-        enabled,
-        mapRef,
-        bootRequest,
-        mapPaddingReady:
-          !mapPaddingFromCanvasEnabled ||
-          stateRef.current.padding.phase === "ready",
-      })
-    ) {
+    if (stateRef.current.boot !== "none") {
       return;
-    }
-
-    if (stateRef.current.boot === "done") {
-      return;
-    }
-
-    if (mapPaddingDebug) {
-      console.info("[boot-fly] attempt", { target: bootRequest.position });
     }
 
     dispatch({
@@ -121,45 +85,7 @@ export function useMapCamera({
       follow: bootRequest.follow,
       positionKey: bootRequest.positionKey,
     });
-  }, [
-    bootRequest,
-    enabled,
-    mapRef,
-    mapPaddingFromCanvasEnabled,
-    mapPaddingDebug,
-    dispatch,
-    stateRef,
-  ]);
-
-  const attemptBootRef = useRef(attemptBoot);
-  attemptBootRef.current = attemptBoot;
-
-  useLayoutEffect(() => {
-    attemptBoot();
-  }, [attemptBoot]);
-
-  const prevSheetPhaseRef = useRef(sheetPhase);
-
-  useEffect(() => {
-    const previous = prevSheetPhaseRef.current;
-    if (previous === sheetPhase) {
-      return;
-    }
-
-    dispatch({ type: "sheetPhaseChanged", phase: sheetPhase });
-
-    if (sheetPhase === "idle" && previous !== "idle" && mapRef) {
-      const map = mapRef.getMap();
-      const anchor = stateRef.current.anchor;
-      dispatch({
-        type: "mapIdle",
-        isMoving: map.isMoving(),
-        atAnchor: anchor !== null && isAtMapAnchorPosition(map, anchor),
-      });
-    }
-
-    prevSheetPhaseRef.current = sheetPhase;
-  }, [sheetPhase, mapRef, dispatch, stateRef]);
+  }, [bootRequest, enabled, mapRef, dispatch, stateRef]);
 
   useMapboxListeners({
     mapRef,
@@ -177,7 +103,6 @@ export function useMapCamera({
     mapPaddingDebug,
     dispatch,
     stateRef,
-    onPaddingReady: () => attemptBootRef.current(),
   });
 
   useMapInstanceLifecycle({

@@ -2,6 +2,8 @@
 
 How `@siegetag/sheet-map` drives the Mapbox camera, padding, and follow-user behavior.
 
+**Product behavior (authority):** [truth-tables.md](./truth-tables.md) — every interaction, gate, and invariant. This file covers architecture and APIs.
+
 ## Architecture
 
 Two pure machines with thin adapters:
@@ -55,7 +57,11 @@ Low-level camera `navigateTo` translates to `navigateRequested` on the camera ma
 | `duration` | `0` | Fly ms when sheet idle; machine forces jump while sheet moves |
 | `preserveTracking` | `false` | Keep follow-user on after the move |
 
-While **`flying`** or **`idle`** and sheet geometry changes: machine emits `applyPadding` with `realign: true` → jump to stored **anchor** (unless `userGesture`).
+While the sheet is **settling** and padding changes: machine emits `applyPadding` with `realign: true` → jump to stored **anchor** (unless `userGesture`). This applies **during a fly** when the user drags the sheet — the fly is replaced by an instant jump to anchor.
+
+While **`flying`** and the sheet is **at rest** (`sheetPhase` idle): padding DOM updates are **deferred** (`padding.pendingApply`) — Mapbox aborts an in-flight `flyTo` when `setPadding` runs. Deferred padding flushes after fly settles.
+
+**Shell fly gate:** pure `shellNavigateGate` — see [truth-tables.md](./truth-tables.md). Emits when padding ready, sheet phase allows (dragging → jump, resting → smooth fly, settling → defer). **No** `cameraSession === idle` gate. Retries on `paddingReadyChanged → true`, `hasUserLocationChanged → true` (for `flyToUser`), layout idle at rest, and `sessionChanged → idle` from **`userGesture`** only — not from `flying`, not on `navigateSettled`.
 
 During **`userGesture`**: padding changes apply **`setPadding` only** — no camera realign from padding effects.
 
@@ -93,11 +99,15 @@ Shell **`MapShellMachine`** owns sheet geometry and a single **`ShellIntent`**:
 
 **Gesture destination:** during `dragging` / `settling`, `sheetLayoutFrameChanged` mirrors Sheet `restingSnap` into `sheetTarget`. **Drag-close cancels** stale `awaitGates` intents unless `sheetTarget === "collapsed"` with `openHalfAfterFly` (select-during-dismiss). **`clearSelection` / `recenterUser` / `navigateTo`** cancel in-flight `sheetTarget` without moving `sheetSnap`.
 
-**Arrival commit:** `sheetSettled` commits `sheetSnap` only (no camera effects). **Fly on layout-frame idle** (`sheetPhase` → `resting`): `syncCameraSheetPhase(idle)` then fly when gates pass — so the camera leaves settling and padding realign before navigate. Resting layout frames also commit missed arrivals (`restingSnap !== sheetSnap`) and retry fly.
+**Arrival commit:** `sheetSettled` commits `sheetSnap` only (no camera effects). **Fly when gates pass** on `selectItem` / `recenterUser`, layout-frame idle (`sheetPhase` → `resting`), or camera-signal retries above. Deferred padding during fly-at-rest prevents `setPadding` from aborting Mapbox `flyTo`. Resting layout frames also commit missed arrivals (`restingSnap !== sheetSnap`).
 
 **Snap-close cancel:** `sheetSnapChangeStarted("collapsed")` cancels stale `awaitGates` intents (same as drag-close) unless select-during-dismiss.
 
-**Collapsed settle (S2):** only preserves `awaitGates` when `intent.sheetTarget === "collapsed"`; otherwise deselect and clear intent. **`halfOpenAfterFlyPending`** tracks collapsed fly-first until half opens (`flying → idle` or jump-fly idle snapshot).
+**Collapsed settle (S2):** only preserves `awaitGates` when `openHalfAfterFly` (select-during-dismiss). Collapsed fly-first uses **`awaitCameraIdleForHalf`** until `cameraSignal` reports `sessionChanged(flying→idle)` or `navigateSettled`, then sets `sheetTarget: "half"`.
+
+**Camera bridge:** the camera machine emits synchronous **`notifyShell`** effects (`sessionChanged`, `paddingReadyChanged`, `paddingApplied`, `navigateSettled`, `anchorZoomChanged`). The shell reducer handles them as **`cameraSignal`** events — no React polling of camera state. External props (`userLocation`) still dispatch `hasUserLocationChanged` from `useMapShell`.
+
+**Sheet phase authority:** only **`syncCameraSheetPhase`** shell effects update camera `sheetPhase` — not a parallel viewport hook path.
 
 **Items:** every `MapItem` and `selectItem` call requires `{ lat, lng }` — omit unlocated rows from `items` at the app layer.
 
@@ -108,18 +118,18 @@ Shell **`MapShellMachine`** owns sheet geometry and a single **`ShellIntent`**:
 | `sheetLayoutFrameChanged` | Sheet `onLayoutFrameChange` |
 | `sheetSettled` | Sheet `onSnapSettled` |
 | `sheetSnapChangeStarted` | Sheet `onSnapChange` (settle start) |
-| `cameraSnapshotSynced` | Hook `useEffect` when camera session / padding / GPS / anchor zoom change |
+| `cameraSignal` | Camera machine `notifyShell` effects (+ external GPS/padding bootstrap) |
 
-Sheet phase changes emit **`syncCameraSheetPhase`** effect → camera `sheetPhaseChanged`.
+Sheet phase changes emit **`syncCameraSheetPhase`** effect → camera `sheetPhaseChanged` (sole authority).
 
 ### Intent phases
 
 `ShellIntent` is a discriminated union:
 
-- **`awaitGates`** — pending camera fly; waits for `sheetPhase === resting`, padding, and `sheetSnap === intent.sheetTarget`
+- **`awaitGates`** — pending camera fly; `requiredSnap` waits for snap at rest; `deferFlyUntilResting` for I12; gate in `shell-navigate-gate.ts`
 - **`awaitCameraIdleForHalf`** — collapsed select: open half after `cameraSession: flying → idle`
 
-**`emitCameraFlyIfReady`** emits `flyToItem` / `flyToUser` when gates pass.
+**`emitCameraFlyIfReady`** emits `flyToItem` / `flyToUser` with `mode` from `shellNavigateMode` when gates pass.
 
 Padding-before-fly on each navigate is enforced by the **camera machine** (`applyPadding` then `moveCamera` in one effect batch).
 

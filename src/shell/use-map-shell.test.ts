@@ -1,26 +1,21 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { MapAnchorSession } from "../camera";
+import type { CameraShellSignal } from "../camera/shared/camera-shell-signal";
 import type { MapPosition } from "../camera/shared/map-position";
-import type { SheetMotionPhase } from "../viewport";
 import { createMapInstanceStore } from "./map-instance-store";
 import { useMapShell } from "./use-map-shell";
 
 const navigateToMock = vi.fn();
 const recenterOnUserMock = vi.fn();
 
-let mockSheetPhase: SheetMotionPhase = "idle";
-let mockCameraSession: MapAnchorSession = "idle";
 let mockMapPaddingReady = true;
 let mockHasUserLocation = true;
+let notifyShellMock: ((signal: CameraShellSignal) => void) | undefined;
 
 vi.mock("../viewport", () => ({
   useLiveSheetObscuredBottomPx: () => ({
     sheetObscuredBottomPx: 0,
-    get sheetPhase() {
-      return mockSheetPhase;
-    },
     onSheetLayoutFrameChange: vi.fn(),
   }),
   useMapVisibleViewportSync: () => ({
@@ -33,24 +28,36 @@ vi.mock("../viewport", () => ({
 const dispatchMock = vi.fn();
 
 vi.mock("../camera", () => ({
-  useMapUserTracking: () => ({
-    tracking: false,
-    get mapPaddingReady() {
-      return mockMapPaddingReady;
-    },
-    boot: "done",
-    get hasUserLocation() {
-      return mockHasUserLocation;
-    },
-    anchor: null,
-    get session() {
-      return mockCameraSession;
-    },
-    readCameraSession: () => mockCameraSession,
-    navigateTo: navigateToMock,
-    recenterOnUser: recenterOnUserMock,
-    dispatch: dispatchMock,
-  }),
+  useMapUserTracking: (options: {
+    onNotifyShell?: (signal: CameraShellSignal) => void;
+  }) => {
+    notifyShellMock = options.onNotifyShell;
+    return {
+      tracking: false,
+      get mapPaddingReady() {
+        return mockMapPaddingReady;
+      },
+      boot: "done",
+      get hasUserLocation() {
+        return mockHasUserLocation;
+      },
+      anchor: null,
+      session: "idle",
+      readCameraSession: () => "idle",
+      navigateTo: navigateToMock,
+      recenterOnUser: recenterOnUserMock,
+      dispatch: (event: { type: string }) => {
+        dispatchMock(event);
+        if (event.type === "navigateRequested") {
+          options.onNotifyShell?.({
+            kind: "sessionChanged",
+            previousSession: "idle",
+            session: "flying",
+          });
+        }
+      },
+    };
+  },
 }));
 
 describe("useMapShell", () => {
@@ -58,20 +65,15 @@ describe("useMapShell", () => {
     navigateToMock.mockClear();
     recenterOnUserMock.mockClear();
     dispatchMock.mockClear();
-    mockSheetPhase = "idle";
-    mockCameraSession = "idle";
     mockMapPaddingReady = true;
     mockHasUserLocation = true;
+    notifyShellMock = undefined;
     navigateToMock.mockReturnValue(true);
   });
 
   it("flies first and opens half after camera settles", async () => {
-    dispatchMock.mockImplementation(() => {
-      mockCameraSession = "flying";
-    });
-
     const mapInstanceStore = createMapInstanceStore();
-    const { result, rerender } = renderHook(() =>
+    const { result } = renderHook(() =>
       useMapShell({
         mapInstanceStore,
         accessToken: "token",
@@ -93,15 +95,14 @@ describe("useMapShell", () => {
       durationMs: 600,
     });
 
-    mockCameraSession = "flying";
     await act(async () => {
-      rerender();
+      notifyShellMock?.({
+        kind: "sessionChanged",
+        previousSession: "flying",
+        session: "idle",
+      });
     });
 
-    mockCameraSession = "idle";
-    await act(async () => {
-      rerender();
-    });
     expect(result.current.sheetSnap).toBe("half");
   });
 
@@ -146,6 +147,7 @@ describe("useMapShell", () => {
       useMapShell({
         mapInstanceStore,
         accessToken: "token",
+        userLocation: { lat: 1, lng: 2 },
       }),
     );
 
@@ -244,21 +246,19 @@ describe("useMapShell", () => {
       result.current.selectItem("a", { lat: 1, lng: 2 });
     });
 
-    mockCameraSession = "userGesture";
     await act(async () => {
-      result.current.handleSheetLayoutFrameChange({
-        visibleHeightPx: 600,
-        phase: "idle",
-        restingSnap: "full",
+      notifyShellMock?.({
+        kind: "sessionChanged",
+        previousSession: "idle",
+        session: "userGesture",
       });
     });
 
-    mockCameraSession = "idle";
     await act(async () => {
-      result.current.handleSheetLayoutFrameChange({
-        visibleHeightPx: 600,
-        phase: "idle",
-        restingSnap: "full",
+      notifyShellMock?.({
+        kind: "sessionChanged",
+        previousSession: "userGesture",
+        session: "idle",
       });
     });
 
@@ -302,7 +302,7 @@ describe("useMapShell", () => {
 
   it("clears selection when dragging the sheet closed", async () => {
     const mapInstanceStore = createMapInstanceStore();
-    const { result, rerender } = renderHook(() =>
+    const { result } = renderHook(() =>
       useMapShell({
         mapInstanceStore,
         accessToken: "token",
@@ -315,8 +315,6 @@ describe("useMapShell", () => {
     });
 
     await act(async () => {
-      mockSheetPhase = "dragging";
-      rerender();
       result.current.handleSheetLayoutFrameChange({
         visibleHeightPx: 200,
         phase: "dragging",
@@ -382,7 +380,7 @@ describe("useMapShell", () => {
 
   it("select during dismiss animation uses collapsed plan and flies after settle", async () => {
     const mapInstanceStore = createMapInstanceStore();
-    const { result, rerender } = renderHook(() =>
+    const { result } = renderHook(() =>
       useMapShell({
         mapInstanceStore,
         accessToken: "token",
@@ -425,6 +423,11 @@ describe("useMapShell", () => {
 
     await act(async () => {
       result.current.handleSheetSnapSettled("collapsed");
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 200,
+        phase: "idle",
+        restingSnap: "collapsed",
+      });
     });
 
     expect(dispatchMock).toHaveBeenCalledWith({
@@ -435,14 +438,12 @@ describe("useMapShell", () => {
       durationMs: 600,
     });
 
-    mockCameraSession = "flying";
     await act(async () => {
-      rerender();
-    });
-
-    mockCameraSession = "idle";
-    await act(async () => {
-      rerender();
+      notifyShellMock?.({
+        kind: "sessionChanged",
+        previousSession: "flying",
+        session: "idle",
+      });
     });
 
     expect(result.current.sheetSnap).toBe("half");
@@ -450,7 +451,7 @@ describe("useMapShell", () => {
 
   it("select during drag-close uses collapsed plan and flies after settle", async () => {
     const mapInstanceStore = createMapInstanceStore();
-    const { result, rerender } = renderHook(() =>
+    const { result } = renderHook(() =>
       useMapShell({
         mapInstanceStore,
         accessToken: "token",
@@ -467,8 +468,6 @@ describe("useMapShell", () => {
     });
 
     await act(async () => {
-      mockSheetPhase = "dragging";
-      rerender();
       result.current.handleSheetLayoutFrameChange({
         visibleHeightPx: 200,
         phase: "dragging",
@@ -485,19 +484,34 @@ describe("useMapShell", () => {
     });
 
     expect(result.current.selectedItemId).toBe("b");
-    expect(dispatchMock).not.toHaveBeenCalled();
+    expect(dispatchMock).toHaveBeenNthCalledWith(1, {
+      type: "sheetPhaseChanged",
+      phase: "dragging",
+    });
+    expect(dispatchMock).toHaveBeenNthCalledWith(2, {
+      type: "navigateRequested",
+      position: { lat: 3, lng: 4 },
+      mode: "jump",
+      preserveTracking: false,
+      durationMs: undefined,
+    });
+
+    dispatchMock.mockClear();
 
     await act(async () => {
       result.current.handleSheetSnapSettled("collapsed");
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 200,
+        phase: "idle",
+        restingSnap: "collapsed",
+      });
     });
 
-    expect(dispatchMock).toHaveBeenCalledWith({
-      type: "navigateRequested",
-      position: { lat: 3, lng: 4 },
-      mode: "fly",
-      preserveTracking: false,
-      durationMs: 600,
-    });
+    expect(
+      dispatchMock.mock.calls.some(
+        ([call]) => call.type === "navigateRequested",
+      ),
+    ).toBe(false);
   });
 
   it("exposes mapPaddingReady for location button disabled state", async () => {

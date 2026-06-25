@@ -1,3 +1,5 @@
+import type { SheetSnap } from "@siegetag/sheet";
+
 import type { MapItemLocation } from "../../../items/types";
 import type {
   MapShellMachineState,
@@ -8,6 +10,21 @@ import { snapForPlanning } from "../state";
 
 type ItemSelectOptions = { zoom?: number; enterFly?: boolean };
 
+function requiredSnapForSelect(
+  state: MapShellMachineState,
+  effectiveSnap: ReturnType<typeof snapForPlanning>,
+): SheetSnap | null {
+  if (effectiveSnap === "full") {
+    return "half";
+  }
+  if (effectiveSnap === "half") {
+    return state.sheetPhase === "resting" && state.sheetSnap === "half"
+      ? null
+      : "half";
+  }
+  return null;
+}
+
 export function planItemSelectIntent(
   state: MapShellMachineState,
   id: string,
@@ -15,6 +32,7 @@ export function planItemSelectIntent(
   options?: ItemSelectOptions,
 ): ShellIntent {
   const effectiveSnap = snapForPlanning(state);
+  const deferFlyUntilResting = state.sheetPhase === "settling";
   const camera: ShellCameraIntent = options?.enterFly
     ? options.zoom !== undefined
       ? {
@@ -31,17 +49,10 @@ export function planItemSelectIntent(
       phase: "awaitGates",
       itemId: id,
       camera,
-      sheetTarget: "collapsed",
+      requiredSnap: null,
+      deferFlyUntilResting,
+      navigateEmitted: false,
       openHalfAfterFly: true,
-    };
-  }
-
-  if (effectiveSnap === "half") {
-    return {
-      phase: "awaitGates",
-      itemId: id,
-      camera,
-      sheetTarget: "half",
     };
   }
 
@@ -49,16 +60,23 @@ export function planItemSelectIntent(
     phase: "awaitGates",
     itemId: id,
     camera,
-    sheetTarget: "half",
+    requiredSnap: requiredSnapForSelect(state, effectiveSnap),
+    deferFlyUntilResting,
+    navigateEmitted: false,
   };
 }
 
-export function planUserRecenterIntent(zoom?: number): ShellIntent {
+export function planUserRecenterIntent(
+  state: MapShellMachineState,
+  zoom?: number,
+): ShellIntent {
   return {
     phase: "awaitGates",
     itemId: null,
     camera:
       zoom !== undefined ? { kind: "flyToUser", zoom } : { kind: "flyToUser" },
-    sheetTarget: null,
+    requiredSnap: null,
+    deferFlyUntilResting: state.sheetPhase === "settling",
+    navigateEmitted: false,
   };
 }
