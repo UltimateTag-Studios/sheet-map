@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MapShellState } from "../shell/map-route-context";
 import { MapRouteProvider } from "../shell/map-route-context";
@@ -24,7 +24,8 @@ const items: MapItem[] = [
 ];
 
 function mountList(
-  shell: Pick<MapShellState, "selectedItemId" | "selectItem">,
+  shell: Pick<MapShellState, "selectedItemId" | "selectItem" | "sheetSnap">,
+  slots: Parameters<typeof MapShellSlotsProvider>[0]["slots"] = {},
 ) {
   const { routeContentStore } = createTestMapRouteStores();
 
@@ -33,7 +34,7 @@ function mountList(
       shell={shell as unknown as MapShellState}
       routeContentStore={routeContentStore}
     >
-      <MapShellSlotsProvider slots={{}}>
+      <MapShellSlotsProvider slots={slots}>
         <MapSheetList items={items} />
       </MapShellSlotsProvider>
     </MapRouteProvider>,
@@ -45,12 +46,17 @@ describe("MapSheetList", () => {
     cleanup();
   });
 
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
   it("renders default rows and calls selectItem on press", () => {
     const selectItem = vi.fn();
 
     mountList({
       selectedItemId: null,
       selectItem,
+      sheetSnap: "full",
     });
 
     expect(screen.getByText("Alpha")).toBeDefined();
@@ -65,40 +71,58 @@ describe("MapSheetList", () => {
     mountList({
       selectedItemId: "b",
       selectItem: vi.fn(),
+      sheetSnap: "full",
     });
 
     const betaButton = screen.getByRole("button", { name: "Beta" });
     expect(betaButton.getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("uses renderSheetListItem slot when provided", () => {
-    const { routeContentStore } = createTestMapRouteStores();
+  it("uses renderSheetListItem slot with extended context", () => {
+    const selectItem = vi.fn();
 
-    render(
-      <MapRouteProvider
-        shell={
-          {
-            selectedItemId: null,
-            selectItem: vi.fn(),
-          } as unknown as MapShellState
-        }
-        routeContentStore={routeContentStore}
-      >
-        <MapShellSlotsProvider
-          slots={{
-            renderSheetListItem: (item, selected) => (
-              <span data-testid={`slot-${item.id}`}>
-                {selected ? "on" : "off"}
-              </span>
-            ),
-          }}
-        >
-          <MapSheetList items={items} />
-        </MapShellSlotsProvider>
-      </MapRouteProvider>,
+    mountList(
+      {
+        selectedItemId: "b",
+        selectItem,
+        sheetSnap: "half",
+      },
+      {
+        renderSheetListItem: (item, ctx) => (
+          <button
+            type="button"
+            data-testid={`slot-${item.id}`}
+            onClick={ctx.onPress}
+          >
+            {ctx.selected ? "on" : "off"}:{ctx.sheetSnap}
+          </button>
+        ),
+      },
     );
 
-    expect(screen.getByTestId("slot-a").textContent).toBe("off");
-    expect(screen.getByTestId("slot-b").textContent).toBe("off");
+    expect(screen.getByTestId("slot-b").textContent).toBe("on:half");
+    expect(screen.getByTestId("slot-a").textContent).toBe("off:half");
+
+    fireEvent.click(screen.getByTestId("slot-a"));
+    expect(selectItem).toHaveBeenCalledWith("a", { lat: 1, lng: 2 });
+  });
+
+  it("promotes selected item to the front at half snap", () => {
+    mountList(
+      {
+        selectedItemId: "b",
+        selectItem: vi.fn(),
+        sheetSnap: "half",
+      },
+      {
+        renderSheetListItem: (item) => (
+          <span data-testid={`slot-${item.id}`}>{item.title}</span>
+        ),
+      },
+    );
+
+    const rows = screen.getAllByTestId(/slot-/);
+    expect(rows[0]?.textContent).toBe("Beta");
+    expect(rows[1]?.textContent).toBe("Alpha");
   });
 });

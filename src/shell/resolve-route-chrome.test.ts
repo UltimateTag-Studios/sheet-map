@@ -20,13 +20,21 @@ describe("resolveRouteChrome", () => {
     expect(resolveRouteHeader(content, {})).toBe("custom-header");
   });
 
-  it("renders default header from header data", () => {
+  it("renders header from slot when header data is provided", () => {
     const node = resolveRouteHeader(
-      { header: { title: "Inventory", countLabel: "3 tags" } },
-      {},
+      { header: { title: "Inventory", subtitle: "3 tags" } },
+      {
+        renderSheetHeader: (header) => `header:${header.title}`,
+      },
     );
 
-    expect(node).toBeTruthy();
+    expect(node).toBe("header:Inventory");
+  });
+
+  it("returns null when header data exists but no slot is configured", () => {
+    const node = resolveRouteHeader({ header: { title: "Inventory" } }, {});
+
+    expect(node).toBeNull();
   });
 
   it("route overlay null suppresses layout overlay", () => {
@@ -99,7 +107,7 @@ describe("resolveRouteChrome", () => {
     expect(node).toBe("custom-action");
   });
 
-  it("auto-renders MapSheetList when body is omitted and items exist", () => {
+  it("auto-renders MapSheetList when listStatus is ready and items exist", () => {
     const items: MapItem[] = [
       {
         id: "a",
@@ -109,8 +117,42 @@ describe("resolveRouteChrome", () => {
     ];
 
     const body = resolveRouteBody(
-      { items, header: { title: "Test" } },
+      { listStatus: "ready", items, header: { title: "Test" } },
       {},
+      null,
+    );
+
+    expect(body).toBeTruthy();
+  });
+
+  it("infers ready listStatus when items are provided", () => {
+    const items: MapItem[] = [
+      {
+        id: "a",
+        location: { lat: 1, lng: 2 },
+        title: "Alpha",
+      },
+    ];
+
+    const body = resolveRouteBody({ items }, {}, null);
+
+    expect(body).toBeTruthy();
+  });
+
+  it("renders loading slot when listStatus is loading", () => {
+    const body = resolveRouteBody(
+      { listStatus: "loading" },
+      { renderSheetListLoading: () => "loading-copy" },
+      null,
+    );
+
+    expect(body).toBeTruthy();
+  });
+
+  it("renders empty slot when listStatus is empty", () => {
+    const body = resolveRouteBody(
+      { listStatus: "empty" },
+      { renderSheetListEmpty: () => "empty-copy" },
       null,
     );
 

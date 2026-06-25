@@ -2,14 +2,16 @@ import type { GeoJsonProperties } from "geojson";
 import type { ReactNode } from "react";
 import { createContext, useContext } from "react";
 
-import type { MapItem } from "../items/types";
-import type { MapSheetHeaderProps, MapShellSlots } from "./config";
+import type { MapItem, MapSheetListStatus } from "../items/types";
+import type { MapShellSlots } from "./config";
 import type { MapRouteContentStore } from "./map-route-content-store";
+import type { MapRouteHeaderRegistration } from "./map-route-header";
 import type { useMapShell } from "./use-map-shell";
 
 export type MapRouteContent = {
+  listStatus?: MapSheetListStatus;
   items?: MapItem[];
-  header?: MapSheetHeaderProps;
+  header?: MapRouteHeaderRegistration;
   /** Bypass header data + slot chain entirely. */
   headerContent?: ReactNode;
   /** Bypass body data + slot chain entirely. */
@@ -71,5 +73,6 @@ export function useMapShellContext() {
     navigateTo: shell.navigateTo,
     recenterUser: shell.recenterUser,
     tracking: shell.tracking,
+    sheetSnap: shell.sheetSnap,
   };
 }

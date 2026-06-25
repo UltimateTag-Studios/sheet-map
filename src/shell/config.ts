@@ -8,8 +8,9 @@ import type { ReactNode } from "react";
 
 import type { MapUserLocationCoords } from "../camera/hooks/use-map-user-tracking";
 import type { MapUserLocationStyleOverrides } from "../canvas/user-location/style-overrides";
-import type { MapItem } from "../items/types";
+import type { MapItem, MapSheetListItemContext } from "../items/types";
 import type { MapObscuredInsets } from "../viewport";
+import type { MapRouteHeaderRegistration } from "./map-route-header";
 import type { MapShellLayout } from "./map-shell-layout-vars";
 
 export type { MapUserLocationCoords, SheetLayoutConfig, Theme };
@@ -35,12 +36,6 @@ export type MapShellConfig = {
   closeSheetAriaLabel?: string;
 };
 
-export type MapSheetHeaderProps = {
-  eyebrow?: string;
-  title: string;
-  countLabel?: string;
-};
-
 export type MapOverlayContext = {
   clientRect: { x: number; y: number; width: number; height: number } | null;
   tracking: boolean;
@@ -59,10 +54,15 @@ export type MapShellSlots = {
     accuracyMeters?: number,
   ) => MapUserLocationStyleOverrides | null;
   renderMapItem?: (item: MapItem, selected: boolean) => ReactNode;
-  renderSheetListItem?: (item: MapItem, selected: boolean) => ReactNode;
+  renderSheetListItem?: (
+    item: MapItem,
+    ctx: MapSheetListItemContext,
+  ) => ReactNode;
+  renderSheetListLoading?: () => ReactNode;
+  renderSheetListEmpty?: () => ReactNode;
   renderTokenMissing?: (message: string) => ReactNode;
   renderOverlay?: (ctx: MapOverlayContext) => ReactNode;
-  renderSheetHeader?: (props: MapSheetHeaderProps) => ReactNode;
+  renderSheetHeader?: (header: MapRouteHeaderRegistration) => ReactNode;
   renderSheetBody?: (children: ReactNode) => ReactNode;
 };
 

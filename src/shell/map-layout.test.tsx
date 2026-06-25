@@ -86,7 +86,12 @@ describe("MapLayout", () => {
             path="/map"
             element={
               <div style={{ height: 480 }}>
-                <MapLayout accessToken="test-token">
+                <MapLayout
+                  accessToken="test-token"
+                  slots={{
+                    renderSheetHeader: (header) => <h1>{header.title}</h1>,
+                  }}
+                >
                   <TestRoute />
                 </MapLayout>
               </div>
@@ -127,7 +132,12 @@ describe("MapLayout", () => {
             path="/map"
             element={
               <div style={{ height: 480 }}>
-                <MapLayout accessToken="test-token">
+                <MapLayout
+                  accessToken="test-token"
+                  slots={{
+                    renderSheetHeader: (header) => <h1>{header.title}</h1>,
+                  }}
+                >
                   <TestRoute />
                 </MapLayout>
               </div>

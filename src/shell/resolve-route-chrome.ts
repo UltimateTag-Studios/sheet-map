@@ -3,9 +3,9 @@ import { createElement, type ReactNode } from "react";
 
 import { MapItemsLayer } from "../items/map-items-layer";
 import { MapSheetBody } from "../items/map-sheet-body";
-import { MapSheetHeader } from "../items/map-sheet-header";
 import { MapSheetList } from "../items/map-sheet-list";
-import type { MapSheetHeaderProps, MapShellSlots } from "./config";
+import type { MapSheetListStatus } from "../items/types";
+import type { MapShellSlots } from "./config";
 import { MapActionButton } from "./map-action-button";
 import type { MapRouteContent } from "./map-route-context";
 
@@ -13,9 +13,28 @@ function isSheetOpen(snap: SheetSnap): boolean {
   return snap !== "collapsed";
 }
 
+function resolveListStatus(
+  routeContent: MapRouteContent | null,
+): MapSheetListStatus | null {
+  if (!routeContent) {
+    return null;
+  }
+
+  if (routeContent.listStatus) {
+    return routeContent.listStatus;
+  }
+
+  if (routeContent.items) {
+    return "ready";
+  }
+
+  return null;
+}
+
 export function resolveRouteHeader(
   routeContent: MapRouteContent | null,
   layoutSlots: MapShellSlots,
+  options?: { debug?: boolean },
 ): ReactNode {
   if (routeContent?.headerContent) {
     return routeContent.headerContent;
@@ -26,9 +45,16 @@ export function resolveRouteHeader(
   }
 
   const renderHeader =
-    routeContent.slots?.renderSheetHeader ??
-    layoutSlots.renderSheetHeader ??
-    MapSheetHeader;
+    routeContent.slots?.renderSheetHeader ?? layoutSlots.renderSheetHeader;
+
+  if (!renderHeader) {
+    if (options?.debug) {
+      console.warn(
+        "[sheet-map] Route registered header data but no renderSheetHeader slot is configured.",
+      );
+    }
+    return null;
+  }
 
   return renderHeader(routeContent.header);
 }
@@ -42,14 +68,30 @@ export function resolveRouteBody(
 
   if (routeContent?.bodyContent !== undefined) {
     body = routeContent.bodyContent;
-  } else if (routeContent?.items && routeContent.items.length > 0) {
-    body = createElement(
-      MapSheetBody,
-      null,
-      createElement(MapSheetList, { items: routeContent.items }),
-    );
   } else {
-    body = defaultBody;
+    const listStatus = resolveListStatus(routeContent);
+
+    if (listStatus === "loading") {
+      body = createElement(
+        MapSheetBody,
+        null,
+        layoutSlots.renderSheetListLoading?.() ?? null,
+      );
+    } else if (listStatus === "empty") {
+      body = createElement(
+        MapSheetBody,
+        null,
+        layoutSlots.renderSheetListEmpty?.() ?? null,
+      );
+    } else if (listStatus === "ready" && routeContent?.items) {
+      body = createElement(
+        MapSheetBody,
+        null,
+        createElement(MapSheetList, { items: routeContent.items }),
+      );
+    } else {
+      body = defaultBody;
+    }
   }
 
   const renderBody = layoutSlots.renderSheetBody;
@@ -115,4 +157,4 @@ export function resolveRouteActionChrome(
   return routeContent?.collapsedAction ?? null;
 }
 
-export type { MapSheetHeaderProps };
+export type { MapRouteHeader } from "./map-route-header";

@@ -27,7 +27,7 @@ import "@siegetag/sheet-map/styles.css";
 
 ## Quick start
 
-`MapLayout` owns the map, sheet, overlays, and shell state. Child routes register content with `useRegisterMapRoute`.
+`MapLayout` owns the map, sheet, overlays, and shell state. Child routes register content with `useRegisterMapRoute`. Wire sheet chrome once on `MapLayout` via `slots`.
 
 ```tsx
 // app map layout (once)
@@ -35,6 +35,12 @@ import "@siegetag/sheet-map/styles.css";
   accessToken={token}
   userLocation={userLocation}
   config={{ theme: "dark", sheetLayout: { bottomChromeReserve: { reserve: "…", gap: "…" } } }}
+  slots={{
+    renderSheetHeader: (header) => <MySheetHeader {...header} />,
+    renderSheetListLoading: () => <LoadingCopy />,
+    renderSheetListEmpty: () => <EmptyCopy />,
+    renderSheetBody: (children) => <MySheetBody>{children}</MySheetBody>,
+  }}
 >
   <Outlet />
 </MapLayout>
@@ -42,8 +48,14 @@ import "@siegetag/sheet-map/styles.css";
 // route screen
 function InventoryRoute() {
   useRegisterMapRoute({
+    listStatus: "ready",
     items: pins.map(toMapItem),
-    header: { eyebrow: "Map", title: "Inventory", countLabel: "12 tags" },
+    header: { title: "Inventory", subtitle: "12 tags" },
+    slots: {
+      renderSheetListItem: (item, ctx) => (
+        <MyListRow item={item} selected={ctx.selected} onPress={ctx.onPress} />
+      ),
+    },
     mapLayers: <MapMarkers id="pins" data={markerGeoJson} />,
     overlay: <MyMapChrome />,
   });
@@ -51,7 +63,7 @@ function InventoryRoute() {
 }
 ```
 
-Pass **data** (`items`, `header` props) and optional **`mapLayers`** / **`overlay`**. Use `headerContent` / `body` when a route needs fully custom sheet chrome. See [`apps/capacitor/src/screens/map`](../../apps/capacitor/src/screens/map) for production patterns.
+Pass **data** (`items`, `header`, `listStatus`) and optional **`mapLayers`** / **`overlay`**. Use `headerContent` / `bodyContent` when a route needs fully custom sheet chrome (escape hatches). See [`apps/capacitor/src/screens/map`](../../apps/capacitor/src/screens/map) for production patterns.
 
 ## Shell API
 
@@ -59,27 +71,72 @@ Pass **data** (`items`, `header` props) and optional **`mapLayers`** / **`overla
 | ------ | ---- |
 | `MapLayout` | App layout: map + sheet + route store |
 | `useRegisterMapRoute` | Publish route items, sheet chrome, map layers |
-| `useMapShellContext` | `selectItem`, `closeSheet`, `navigateTo`, `recenterUser`, `tracking` |
+| `useMapShellContext` | `selectItem`, `closeSheet`, `navigateTo`, `recenterUser`, `tracking`, `sheetSnap` |
 | `MapShellConfig` | `theme`, `sheetLayout`, `layout`, `debug`, … |
-| `MapShellSlots` | Override close button, list rows, markers, overlay |
+| `MapShellSlots` | Sheet header/body/list slots, close button, markers, overlay |
+
+### `MapItem<T>` and `MapRouteHeader<T>`
+
+Both use the same shape: common fields plus optional typed `data` for app-specific chrome.
+
+```ts
+type MapItem<T = undefined> = {
+  id: string;
+  location: { lat: number; lng: number };
+  title: string;
+  subtitle?: string;
+  meta?: string;
+} & (T extends undefined ? {} : { data: T });
+
+type MapRouteHeader<T = undefined> = {
+  title: string;
+  subtitle?: string;
+} & (T extends undefined ? {} : { data: T });
+```
+
+**`MapRouteHeader`** defaults to `title` + optional `subtitle`. Put route-specific header fields (eyebrow, count, badges, …) in `data` and read them in `renderSheetHeader`. See [`apps/capacitor/src/screens/map`](../../apps/capacitor/src/screens/map) for a typed `MapRouteHeader<YourHeaderData>` layout slot.
+
+### `MapItem<T>` list rows
+
+Every list row and map marker shares `items`. **Every item must include `location`** — filter unlocated pins before registering.
+
+### List ordering
+
+`MapSheetList` owns list policy:
+
+- **`half`** + selection → selected item promoted to top
+- **`full`** / **`collapsed`** → stable registration order; **`full`** scrolls selected row into view
+
+Route `slots.renderSheetListItem` receives `{ selected, onPress, sheetSnap }`.
 
 ### Selection
 
-- `selectItem(id, location)` — half sheet + fly to item (`location: { lat, lng }` required)
+- `selectItem(id, location)` — half sheet + fly to item
 - `closeSheet()` — collapse + deselect (also runs when the sheet drag-settles closed)
-- List rows and map markers share `items: MapItem[]` — **every item must include `location`**; filter unlocated rows before registering
 
 ### Route chrome
 
 | Field | When |
 | ----- | ---- |
-| `header` | Data for default / slotted `MapSheetHeader` |
-| `headerContent` | Full header replace |
-| `body` | Full body replace (default body is `MapSheetList` from `items`) |
+| `listStatus` | `"loading"` \| `"empty"` \| `"ready"` — drives body slot pipeline |
+| `header` | Data for `renderSheetHeader` (no package default component) |
+| `headerContent` | Full header replace (escape hatch) |
+| `bodyContent` | Full body replace (escape hatch) |
+| `items` | `MapItem[]` for list + default map layers |
 | `mapLayers` | GeoJSON layers, trails, custom markers |
 | `overlay` | Visible-map overlay (legend, HUD) |
 | `collapsedAction` | Top-right when sheet collapsed (e.g. trail back) |
 | `resolveFeatureId` + `extraInteractiveLayerIds` | GeoJSON layer press → `selectItem` |
+
+### Layout slots (`MapLayout.slots`)
+
+| Slot | Role |
+| ---- | ---- |
+| `renderSheetHeader` | `(header: MapRouteHeader) => ReactNode` |
+| `renderSheetListLoading` | Loading body content (wrapped in `MapSheetBody`) |
+| `renderSheetListEmpty` | Empty body content |
+| `renderSheetBody` | Wrap resolved body (e.g. app padding chrome) |
+| `renderSheetListItem` | Per-route override via `useRegisterMapRoute({ slots })` |
 
 ## Config
 
@@ -91,7 +148,7 @@ Pass **data** (`items`, `header` props) and optional **`mapLayers`** / **`overla
 | `sheetLayout` | `SheetLayoutConfig` — handle, panel, list, `bottomChromeReserve` |
 | `layout` | Overlay geometry — action button, location button, item markers, logo |
 | `fixedChromeInsets` | Extra obscured area (top nav, etc.) |
-| `debug` | Verbose padding / camera logs |
+| `debug` | Verbose padding / camera logs; warns when `header` is set without `renderSheetHeader` |
 
 ### Layout tokens (`config.layout`)
 
@@ -130,7 +187,7 @@ Use when not using the full shell:
 | Canvas | `MapCanvas`, `MapMarkers`, `MapDotMarkers`, `MapLineLayer`, `mapPointsToGeoJson` |
 | Camera | `useMapUserTracking`, `useMapAnchor` |
 | Viewport | `useLiveSheetObscuredBottomPx`, `MapVisibleAreaOverlay` |
-| Items | `MapItemMarker`, `MapSheetHeader`, `MapSheetList` |
+| Items | `MapItemMarker`, `MapSheetList`, `orderSheetListItems` |
 
 GeoJSON sprite markers use `markerImageId` / `createMarkerImageCanvas`. Shell hit layer for inventory-style markers: `MAP_MARKERS_HIT_LAYER_ID`.
 

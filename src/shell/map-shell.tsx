@@ -100,7 +100,9 @@ export function MapShell({
     tracking,
   });
 
-  const header = resolveRouteHeader(routeContent, mergedSlots);
+  const header = resolveRouteHeader(routeContent, mergedSlots, {
+    debug: config.debug,
+  });
   const defaultBody = <div className="sheet-map-sheet-body-placeholder" />;
   const body = resolveRouteBody(routeContent, mergedSlots, defaultBody);
   const mapChildren = resolveRouteMapLayers(routeContent);
