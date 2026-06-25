@@ -62,13 +62,3 @@ export function planUserRecenterIntent(zoom?: number): ShellIntent {
     sheetTarget: null,
   };
 }
-
-export function planSelectItemWithoutLocationIntent(
-  id: string,
-): Pick<MapShellMachineState, "sheetTarget" | "intent" | "selectedItemId"> {
-  return {
-    sheetTarget: "half",
-    intent: null,
-    selectedItemId: id,
-  };
-}

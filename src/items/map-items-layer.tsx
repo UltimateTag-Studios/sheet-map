@@ -17,10 +17,6 @@ export function MapItemsLayer({ items }: MapItemsLayerProps) {
   return (
     <>
       {items.map((item) => {
-        if (!item.location) {
-          return null;
-        }
-
         const selected = selectedItemId === item.id;
         const onPress = () => {
           selectItem(item.id, item.location);

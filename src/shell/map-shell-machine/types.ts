@@ -21,7 +21,7 @@ export type MapShellMachineEvent =
   | {
       type: "selectItem";
       id: string;
-      location: MapItemLocation | null;
+      location: MapItemLocation;
       enterFly?: boolean;
       zoom?: number;
       source?: "user" | "route";
@@ -35,6 +35,8 @@ export type MapShellMachineEvent =
       restingSnap: SheetSnap;
     }
   | { type: "sheetSettled"; snap: SheetSnap }
+  /** Sheet `onSnapChange` — settle start; destination before CSS arrival. */
+  | { type: "sheetSnapChangeStarted"; snap: SheetSnap }
   | { type: "cameraSnapshotSynced"; snapshot: MapShellCameraSnapshot }
   | {
       type: "navigateTo";

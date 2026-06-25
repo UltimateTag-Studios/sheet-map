@@ -1,29 +1,52 @@
 import type { SheetLayoutFrameChange, SheetSnap } from "@siegetag/sheet";
 
 import {
+  cancelIntentOnGestureClose,
+  shouldPreserveIntentOnCollapsedSettle,
+} from "../helpers/cancel-intent-on-gesture-close";
+import {
+  commitSheetArrival,
+  pendingArrivalFromLayoutFrame,
+} from "../helpers/commit-sheet-arrival";
+import {
   routeEntryInterruptedOnCollapse,
   sheetClosedState,
 } from "../helpers/selection-state";
-import { emitCameraFlyIfReady } from "../intent";
+import { syncGestureSheetTarget } from "../helpers/sync-gesture-sheet-target";
 import {
   dismissRouteEntry,
   resetRouteEntryToWaiting,
 } from "../route-enter-fly";
 import { type MapShellMachineState, mapShellPhaseFromSheet } from "../state";
 import type { MapShellMachineEffect, MapShellMachineResult } from "../types";
+import {
+  commitSheetArrivalFromSettle,
+  tryEmitFlyWhileResting,
+} from "./try-emit-fly-after-arrival";
 
 type SheetPhase = SheetLayoutFrameChange["phase"];
 
 export function reduceSheetLayoutFrameChanged(
   state: MapShellMachineState,
   phase: SheetPhase,
+  restingSnap: SheetSnap,
 ): MapShellMachineResult {
   const sheetPhase = mapShellPhaseFromSheet(phase);
   const previousPhase = state.sheetPhase;
-  const nextState: MapShellMachineState = {
-    ...state,
+  let nextState = syncGestureSheetTarget(
+    { ...state, sheetPhase },
     sheetPhase,
-  };
+    restingSnap,
+  );
+
+  const pendingArrival = pendingArrivalFromLayoutFrame(
+    nextState,
+    restingSnap,
+    sheetPhase,
+  );
+  if (pendingArrival !== null) {
+    nextState = commitSheetArrival(nextState, pendingArrival);
+  }
 
   const effects: MapShellMachineEffect[] = [];
   if (previousPhase !== sheetPhase) {
@@ -31,44 +54,53 @@ export function reduceSheetLayoutFrameChanged(
   }
 
   if (sheetPhase === "resting") {
-    const emitted = emitCameraFlyIfReady(nextState);
-    return {
-      state: emitted.state,
-      effects: [...effects, ...emitted.effects],
-    };
+    return tryEmitFlyWhileResting(nextState, effects);
   }
 
   return { state: nextState, effects };
+}
+
+export function reduceSheetSnapChangeStarted(
+  state: MapShellMachineState,
+  snap: SheetSnap,
+): MapShellMachineResult {
+  const withTarget: MapShellMachineState = { ...state, sheetTarget: snap };
+  return {
+    state: cancelIntentOnGestureClose(withTarget, snap),
+    effects: [],
+  };
 }
 
 export function reduceSheetSettled(
   state: MapShellMachineState,
   snap: SheetSnap,
 ): MapShellMachineResult {
-  const withLayout: MapShellMachineState = {
-    ...state,
-    sheetSnap: snap,
-    sheetTarget: null,
-    sheetPhase: "resting",
-  };
-
   if (snap === "collapsed") {
-    if (routeEntryInterruptedOnCollapse(withLayout)) {
+    const withSnap = commitSheetArrival(state, snap);
+
+    if (routeEntryInterruptedOnCollapse(withSnap)) {
       return {
-        state: resetRouteEntryToWaiting(sheetClosedState(withLayout)),
+        state: resetRouteEntryToWaiting(sheetClosedState(withSnap)),
         effects: [],
       };
     }
 
-    const flyReady = emitCameraFlyIfReady(withLayout);
-    if (flyReady.effects.length > 0) {
-      return flyReady;
+    if (shouldPreserveIntentOnCollapsedSettle(withSnap.intent)) {
+      return tryEmitFlyWhileResting({ ...withSnap, sheetPhase: "resting" }, [
+        { type: "syncCameraSheetPhase", phase: "idle" },
+      ]);
     }
 
-    const closed = sheetClosedState(withLayout);
+    const closed = cancelIntentOnGestureClose(
+      sheetClosedState(withSnap),
+      "collapsed",
+    );
     const next = closed.routeVisit ? dismissRouteEntry(closed) : closed;
     return { state: next, effects: [] };
   }
 
-  return emitCameraFlyIfReady(withLayout);
+  return {
+    state: commitSheetArrivalFromSettle(state, snap),
+    effects: [],
+  };
 }

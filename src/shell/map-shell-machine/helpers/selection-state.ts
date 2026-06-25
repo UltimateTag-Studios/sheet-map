@@ -8,6 +8,7 @@ export function sheetClosedState(
     ...state,
     selectedItemId: null,
     intent: null,
+    halfOpenAfterFlyPending: false,
   };
 }
 
@@ -26,6 +27,7 @@ export function clearSelectionState(
 ): MapShellMachineState {
   return {
     ...state,
+    sheetTarget: null,
     selectedItemId: null,
     intent: null,
     routeVisit:

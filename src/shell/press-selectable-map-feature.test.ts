@@ -27,16 +27,4 @@ describe("pressSelectableMapFeature", () => {
 
     expect(selectItem).not.toHaveBeenCalled();
   });
-
-  it("ignores items without a location", () => {
-    const selectItem = vi.fn();
-
-    pressSelectableMapFeature(
-      "no-loc",
-      [{ id: "no-loc", location: null, title: "X" }],
-      selectItem,
-    );
-
-    expect(selectItem).not.toHaveBeenCalled();
-  });
 });

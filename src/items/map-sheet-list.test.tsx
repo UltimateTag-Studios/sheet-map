@@ -17,9 +17,9 @@ const items: MapItem[] = [
   },
   {
     id: "b",
-    location: null,
+    location: { lat: 3, lng: 4 },
     title: "Beta",
-    meta: "No location",
+    meta: "Second",
   },
 ];
 

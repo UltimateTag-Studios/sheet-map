@@ -1,7 +1,7 @@
 import { clearSelectionState } from "../helpers/selection-state";
 import {
   applyShellIntent,
-  emitCameraFlyIfReady,
+  emitCameraFlyWithSync,
   planUserRecenterIntent,
 } from "../intent";
 import { markRouteEntryDispatched } from "../route-enter-fly";
@@ -14,7 +14,7 @@ export function reduceRecenterUser(
 ): MapShellMachineResult {
   const cleared = clearSelectionState(state, true);
   const applied = applyShellIntent(cleared, planUserRecenterIntent(event.zoom));
-  const result = emitCameraFlyIfReady(applied);
+  const result = emitCameraFlyWithSync(applied);
 
   if (event.source === "route" && result.effects.length > 0) {
     return {

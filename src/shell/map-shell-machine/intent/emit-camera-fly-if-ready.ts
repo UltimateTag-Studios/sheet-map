@@ -64,6 +64,7 @@ export function emitCameraFlyIfReady(
             itemId: intent.itemId ?? "",
           }
         : null,
+      halfOpenAfterFlyPending: openHalfAfterFly,
     },
     effects: [effect],
   };

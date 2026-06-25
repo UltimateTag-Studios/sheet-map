@@ -131,10 +131,8 @@ describe("resolveRouteChrome", () => {
     expect(layers).toBeTruthy();
   });
 
-  it("returns null map layers when items have no locations", () => {
-    const layers = resolveRouteMapLayers({
-      items: [{ id: "a", location: null, title: "Alpha" }],
-    });
+  it("returns null map layers when items list is empty", () => {
+    const layers = resolveRouteMapLayers({ items: [] });
 
     expect(layers).toBeNull();
   });

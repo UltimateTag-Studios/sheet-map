@@ -65,9 +65,9 @@ Pass **data** (`items`, `header` props) and optional **`mapLayers`** / **`overla
 
 ### Selection
 
-- `selectItem(id, location)` — half sheet + fly to item
+- `selectItem(id, location)` — half sheet + fly to item (`location: { lat, lng }` required)
 - `closeSheet()` — collapse + deselect (also runs when the sheet drag-settles closed)
-- List rows and map markers share `items: MapItem[]` for hit testing
+- List rows and map markers share `items: MapItem[]` — **every item must include `location`**; filter unlocated rows before registering
 
 ### Route chrome
 

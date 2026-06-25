@@ -170,7 +170,7 @@ export function useMapShell({
   }, [dispatch]);
 
   const selectItem = useCallback(
-    (id: string, location: MapItemLocation | null) => {
+    (id: string, location: MapItemLocation) => {
       dispatch({ type: "selectItem", id, location });
     },
     [dispatch],
@@ -183,6 +183,13 @@ export function useMapShell({
   const reportRouteEnterFly = useCallback(
     (routeKey: string, entry: RouteEnterFly | null) => {
       dispatch({ type: "routeEnterFlyChanged", routeKey, entry });
+    },
+    [dispatch],
+  );
+
+  const handleSheetSnapChangeStarted = useCallback(
+    (snap: SheetSnap) => {
+      dispatch({ type: "sheetSnapChangeStarted", snap });
     },
     [dispatch],
   );
@@ -208,6 +215,7 @@ export function useMapShell({
 
   return {
     sheetSnap: sheetPropSnap(machine),
+    handleSheetSnapChangeStarted,
     handleSheetSnapSettled,
     handleSheetLayoutFrameChange,
     mapRef,

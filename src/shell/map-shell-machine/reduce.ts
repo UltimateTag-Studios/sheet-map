@@ -15,6 +15,7 @@ import { reduceSelectItem } from "./select/reduce";
 import {
   reduceSheetLayoutFrameChanged,
   reduceSheetSettled,
+  reduceSheetSnapChangeStarted,
 } from "./sheet/reduce";
 import type { MapShellMachineState } from "./state";
 import type { MapShellMachineEvent, MapShellMachineResult } from "./types";
@@ -36,11 +37,19 @@ export function reduceMapShellMachine(
     }
 
     case "sheetLayoutFrameChanged": {
-      return reduceSheetLayoutFrameChanged(state, event.phase);
+      return reduceSheetLayoutFrameChanged(
+        state,
+        event.phase,
+        event.restingSnap,
+      );
     }
 
     case "sheetSettled": {
       return reduceSheetSettled(state, event.snap);
+    }
+
+    case "sheetSnapChangeStarted": {
+      return reduceSheetSnapChangeStarted(state, event.snap);
     }
 
     case "selectItem": {

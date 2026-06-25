@@ -169,6 +169,137 @@ describe("useMapShell", () => {
     expect(recenterOnUserMock).toHaveBeenCalled();
   });
 
+  it("reselect at full slides to half then flies after sheet rests", async () => {
+    const mapInstanceStore = createMapInstanceStore();
+    const { result } = renderHook(() =>
+      useMapShell({
+        mapInstanceStore,
+        accessToken: "token",
+      }),
+    );
+
+    await act(async () => {
+      result.current.handleSheetSnapSettled("full");
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 600,
+        phase: "idle",
+        restingSnap: "full",
+      });
+      result.current.selectItem("a", { lat: 1, lng: 2 });
+    });
+
+    dispatchMock.mockClear();
+
+    await act(async () => {
+      result.current.selectItem("b", { lat: 3, lng: 4 });
+    });
+
+    expect(result.current.sheetSnap).toBe("half");
+    expect(result.current.selectedItemId).toBe("b");
+    expect(dispatchMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 400,
+        phase: "settling",
+        restingSnap: "half",
+      });
+      result.current.handleSheetSnapSettled("half");
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 400,
+        phase: "idle",
+        restingSnap: "half",
+      });
+    });
+
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: "sheetPhaseChanged",
+      phase: "idle",
+    });
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: "navigateRequested",
+      position: { lat: 3, lng: 4 },
+      mode: "fly",
+      preserveTracking: false,
+      durationMs: 600,
+    });
+  });
+
+  it("reselect at full after pan flies when half snap settles", async () => {
+    const mapInstanceStore = createMapInstanceStore();
+    const { result } = renderHook(() =>
+      useMapShell({
+        mapInstanceStore,
+        accessToken: "token",
+      }),
+    );
+
+    await act(async () => {
+      result.current.handleSheetSnapSettled("full");
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 600,
+        phase: "idle",
+        restingSnap: "full",
+      });
+      result.current.selectItem("a", { lat: 1, lng: 2 });
+    });
+
+    mockCameraSession = "userGesture";
+    await act(async () => {
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 600,
+        phase: "idle",
+        restingSnap: "full",
+      });
+    });
+
+    mockCameraSession = "idle";
+    await act(async () => {
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 600,
+        phase: "idle",
+        restingSnap: "full",
+      });
+    });
+
+    dispatchMock.mockClear();
+
+    await act(async () => {
+      result.current.selectItem("b", { lat: 3, lng: 4 });
+    });
+
+    expect(result.current.sheetSnap).toBe("half");
+    expect(dispatchMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "navigateRequested" }),
+    );
+
+    await act(async () => {
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 400,
+        phase: "settling",
+        restingSnap: "half",
+      });
+      result.current.handleSheetSnapSettled("half");
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 400,
+        phase: "idle",
+        restingSnap: "half",
+      });
+    });
+
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: "sheetPhaseChanged",
+      phase: "idle",
+    });
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: "navigateRequested",
+      position: { lat: 3, lng: 4 },
+      mode: "fly",
+      preserveTracking: false,
+      durationMs: 600,
+    });
+  });
+
   it("clears selection when dragging the sheet closed", async () => {
     const mapInstanceStore = createMapInstanceStore();
     const { result, rerender } = renderHook(() =>
@@ -213,7 +344,7 @@ describe("useMapShell", () => {
     );
 
     await act(async () => {
-      result.current.selectItem("a", null);
+      result.current.selectItem("a", { lat: 1, lng: 2 });
     });
 
     await act(async () => {
@@ -234,7 +365,7 @@ describe("useMapShell", () => {
     );
 
     await act(async () => {
-      result.current.selectItem("a", null);
+      result.current.selectItem("a", { lat: 1, lng: 2 });
     });
 
     const position: MapPosition = { lat: 3, lng: 4, zoom: 12 };
@@ -315,6 +446,58 @@ describe("useMapShell", () => {
     });
 
     expect(result.current.sheetSnap).toBe("half");
+  });
+
+  it("select during drag-close uses collapsed plan and flies after settle", async () => {
+    const mapInstanceStore = createMapInstanceStore();
+    const { result, rerender } = renderHook(() =>
+      useMapShell({
+        mapInstanceStore,
+        accessToken: "token",
+      }),
+    );
+
+    await act(async () => {
+      result.current.handleSheetSnapSettled("half");
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 300,
+        phase: "idle",
+        restingSnap: "half",
+      });
+    });
+
+    await act(async () => {
+      mockSheetPhase = "dragging";
+      rerender();
+      result.current.handleSheetLayoutFrameChange({
+        visibleHeightPx: 200,
+        phase: "dragging",
+        restingSnap: "collapsed",
+      });
+    });
+
+    expect(result.current.sheetSnap).toBe("collapsed");
+
+    dispatchMock.mockClear();
+
+    await act(async () => {
+      result.current.selectItem("b", { lat: 3, lng: 4 });
+    });
+
+    expect(result.current.selectedItemId).toBe("b");
+    expect(dispatchMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      result.current.handleSheetSnapSettled("collapsed");
+    });
+
+    expect(dispatchMock).toHaveBeenCalledWith({
+      type: "navigateRequested",
+      position: { lat: 3, lng: 4 },
+      mode: "fly",
+      preserveTracking: false,
+      durationMs: 600,
+    });
   });
 
   it("exposes mapPaddingReady for location button disabled state", async () => {

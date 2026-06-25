@@ -8,9 +8,17 @@ export function completeSelectOpenHalf(
   const intent = state.intent;
   if (
     intent?.phase !== "awaitCameraIdleForHalf" ||
-    previousCameraSession !== "flying" ||
-    nextCameraSession !== "idle"
+    !state.halfOpenAfterFlyPending
   ) {
+    return state;
+  }
+
+  const flewThenIdle =
+    previousCameraSession === "flying" && nextCameraSession === "idle";
+  const jumpFlyIdle =
+    previousCameraSession === "idle" && nextCameraSession === "idle";
+
+  if (!flewThenIdle && !jumpFlyIdle) {
     return state;
   }
 
@@ -18,5 +26,6 @@ export function completeSelectOpenHalf(
     ...state,
     sheetTarget: "half",
     intent: null,
+    halfOpenAfterFlyPending: false,
   };
 }

@@ -1,8 +1,7 @@
 import {
   applyShellIntent,
-  emitCameraFlyIfReady,
+  emitCameraFlyWithSync,
   planItemSelectIntent,
-  planSelectItemWithoutLocationIntent,
 } from "../intent";
 import { markRouteEntryDispatched } from "../route-enter-fly";
 import type { MapShellMachineState } from "../state";
@@ -12,16 +11,6 @@ export function reduceSelectItem(
   state: MapShellMachineState,
   event: Extract<MapShellMachineEvent, { type: "selectItem" }>,
 ): MapShellMachineResult {
-  if (!event.location) {
-    return {
-      state: {
-        ...state,
-        ...planSelectItemWithoutLocationIntent(event.id),
-      },
-      effects: [],
-    };
-  }
-
   const applied = applyShellIntent(
     state,
     planItemSelectIntent(state, event.id, event.location, {
@@ -29,7 +18,7 @@ export function reduceSelectItem(
       zoom: event.zoom,
     }),
   );
-  const result = emitCameraFlyIfReady(applied);
+  const result = emitCameraFlyWithSync(applied);
 
   if (event.source === "route" && result.effects.length > 0) {
     return {

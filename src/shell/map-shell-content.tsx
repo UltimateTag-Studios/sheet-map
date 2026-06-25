@@ -35,6 +35,7 @@ export type MapShellContentProps = {
   mapToken: string;
   publishMapInstance: (map: MapRef | null) => void;
   sheetSnap: SheetSnap;
+  onSheetSnapChangeStarted?: (snap: SheetSnap) => void;
   onSheetSnapSettled?: (snap: SheetSnap) => void;
   onSheetLayoutFrameChange: (frame: SheetLayoutFrameChange) => void;
   userLocation?: MapUserLocationCoords | null;
@@ -62,6 +63,7 @@ export function MapShellContent({
   mapToken,
   publishMapInstance,
   sheetSnap,
+  onSheetSnapChangeStarted,
   onSheetSnapSettled,
   onSheetLayoutFrameChange,
   userLocation,
@@ -159,6 +161,7 @@ export function MapShellContent({
       <Sheet
         snap={sheetSnap}
         defaultSnap="collapsed"
+        onSnapChange={onSheetSnapChangeStarted}
         onSnapSettled={onSheetSnapSettled}
         onLayoutFrameChange={onSheetLayoutFrameChange}
         onSnapHeightsChange={handleSnapHeightsChange}

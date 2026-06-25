@@ -52,11 +52,6 @@ const items: MapItem[] = [
     location: { lat: 37.1, lng: -113.5 },
     title: "Located",
   },
-  {
-    id: "missing",
-    location: null,
-    title: "Missing",
-  },
 ];
 
 describe("MapItemsLayer", () => {

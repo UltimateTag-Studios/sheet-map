@@ -91,12 +91,23 @@ Shell **`MapShellMachine`** owns sheet geometry and a single **`ShellIntent`**:
 
 **Sheet prop:** `sheetTarget ?? sheetSnap`. **Planning:** `snapForPlanning` — in motion use destination, when resting use arrival.
 
+**Gesture destination:** during `dragging` / `settling`, `sheetLayoutFrameChanged` mirrors Sheet `restingSnap` into `sheetTarget`. **Drag-close cancels** stale `awaitGates` intents unless `sheetTarget === "collapsed"` with `openHalfAfterFly` (select-during-dismiss). **`clearSelection` / `recenterUser` / `navigateTo`** cancel in-flight `sheetTarget` without moving `sheetSnap`.
+
+**Arrival commit:** `sheetSettled` commits `sheetSnap` only (no camera effects). **Fly on layout-frame idle** (`sheetPhase` → `resting`): `syncCameraSheetPhase(idle)` then fly when gates pass — so the camera leaves settling and padding realign before navigate. Resting layout frames also commit missed arrivals (`restingSnap !== sheetSnap`) and retry fly.
+
+**Snap-close cancel:** `sheetSnapChangeStarted("collapsed")` cancels stale `awaitGates` intents (same as drag-close) unless select-during-dismiss.
+
+**Collapsed settle (S2):** only preserves `awaitGates` when `intent.sheetTarget === "collapsed"`; otherwise deselect and clear intent. **`halfOpenAfterFlyPending`** tracks collapsed fly-first until half opens (`flying → idle` or jump-fly idle snapshot).
+
+**Items:** every `MapItem` and `selectItem` call requires `{ lat, lng }` — omit unlocated rows from `items` at the app layer.
+
 ### Shell events (sheet + camera)
 
 | Event | Source |
 | ----- | ------ |
 | `sheetLayoutFrameChanged` | Sheet `onLayoutFrameChange` |
 | `sheetSettled` | Sheet `onSnapSettled` |
+| `sheetSnapChangeStarted` | Sheet `onSnapChange` (settle start) |
 | `cameraSnapshotSynced` | Hook `useEffect` when camera session / padding / GPS / anchor zoom change |
 
 Sheet phase changes emit **`syncCameraSheetPhase`** effect → camera `sheetPhaseChanged`.

@@ -13,10 +13,6 @@ export function DefaultMapItemMarker({
   selected,
   onPress,
 }: DefaultMapItemMarkerProps) {
-  if (!item.location) {
-    return null;
-  }
-
   return (
     <MapItemMarker
       latitude={item.location.lat}

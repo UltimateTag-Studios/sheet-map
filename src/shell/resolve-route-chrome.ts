@@ -71,11 +71,6 @@ export function resolveRouteMapLayers(
     return null;
   }
 
-  const hasLocatedItem = items.some((item) => item.location !== null);
-  if (!hasLocatedItem) {
-    return null;
-  }
-
   return createElement(MapItemsLayer, { items });
 }
 

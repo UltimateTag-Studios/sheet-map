@@ -5,7 +5,7 @@ export type MapItemLocation = {
 
 export type MapItem = {
   id: string;
-  location: MapItemLocation | null;
+  location: MapItemLocation;
   title: string;
   subtitle?: string;
   meta?: string;

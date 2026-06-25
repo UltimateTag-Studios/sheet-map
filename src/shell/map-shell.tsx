@@ -43,6 +43,7 @@ export function MapShell({
     mapToken,
     publishMapInstance,
     sheetSnap,
+    handleSheetSnapChangeStarted,
     handleSheetSnapSettled,
     handleSheetLayoutFrameChange,
     userLocation,
@@ -116,6 +117,7 @@ export function MapShell({
           mapToken={mapToken}
           publishMapInstance={publishMapInstance}
           sheetSnap={sheetSnap}
+          onSheetSnapChangeStarted={handleSheetSnapChangeStarted}
           onSheetSnapSettled={handleSheetSnapSettled}
           onSheetLayoutFrameChange={handleSheetLayoutFrameChange}
           userLocation={userLocation}

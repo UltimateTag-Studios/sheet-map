@@ -1,4 +1,4 @@
-import { completeSelectOpenHalf, emitCameraFlyIfReady } from "../intent";
+import { completeSelectOpenHalf, emitCameraFlyWithSync } from "../intent";
 import { completeRouteUserEnterFly } from "../route-enter-fly";
 import type { MapShellCameraSnapshot, MapShellMachineState } from "../state";
 import { cameraSnapshotsEqual } from "../state";
@@ -17,7 +17,7 @@ export function applyCameraSnapshot(
     snapshot.cameraSession,
   );
 
-  const emitted = emitCameraFlyIfReady(nextState);
+  const emitted = emitCameraFlyWithSync(nextState);
   nextState = emitted.state;
 
   if (

@@ -59,6 +59,8 @@ export type MapShellMachineState = {
   cameraSnapshot: MapShellCameraSnapshot;
   intent: ShellIntent | null;
   routeVisit: RouteEntryVisit | null;
+  /** Collapsed fly-first select: set when fly dispatches, cleared when half opens. */
+  halfOpenAfterFlyPending: boolean;
 };
 
 export function createInitialMapShellMachineState(): MapShellMachineState {
@@ -76,6 +78,7 @@ export function createInitialMapShellMachineState(): MapShellMachineState {
     },
     intent: null,
     routeVisit: null,
+    halfOpenAfterFlyPending: false,
   };
 }
 
