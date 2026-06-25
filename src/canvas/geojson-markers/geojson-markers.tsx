@@ -1,3 +1,4 @@
+import { mapTrailBadgeMapTextSize } from "@siegetag/ui";
 import type { FeatureCollection, Point } from "geojson";
 import { Layer, Source } from "react-map-gl/mapbox";
 
@@ -52,8 +53,8 @@ export function MapGeoJsonMarkers({
           filter={["!=", ["get", "badgeSymbol"], ""]}
           layout={{
             "text-field": ["get", "badgeSymbol"],
-            "text-size": 10,
-            "text-offset": [0.85, -0.85],
+            "text-size": mapTrailBadgeMapTextSize,
+            "text-offset": [0.3, -0.15],
             "text-anchor": "bottom-left",
             "text-allow-overlap": true,
             "text-ignore-placement": true,

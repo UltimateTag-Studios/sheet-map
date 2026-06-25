@@ -39,7 +39,10 @@ export {
   useMapRouteContext,
   useMapShellContext,
 } from "./map-route-context";
-export type { MapRouteHeader, MapRouteHeaderRegistration } from "./map-route-header";
+export type {
+  MapRouteHeader,
+  MapRouteHeaderRegistration,
+} from "./map-route-header";
 export { MapScreenErrorBoundary } from "./map-screen-error-boundary";
 export type { MapShellProps } from "./map-shell";
 export { MapShell } from "./map-shell";
