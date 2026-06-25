@@ -14,10 +14,12 @@ export function sheetClosedState(
 export function sheetDismissCommand(
   state: MapShellMachineState,
 ): MapShellMachineState {
-  return {
+  const closed: MapShellMachineState = {
     ...sheetClosedState(state),
     sheetTarget: "collapsed",
   };
+
+  return closed.routeVisit ? dismissRouteEntry(closed) : closed;
 }
 
 export function clearSelectionState(

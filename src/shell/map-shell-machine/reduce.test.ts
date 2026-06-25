@@ -558,6 +558,89 @@ describe("reduceMapShellMachine", () => {
     expect(result.state.routeVisit?.applyStatus).toBe("dismissed");
   });
 
+  it("dismissSheet dismisses route entry so close does not re-select on settle", () => {
+    const itemId = "capture-1";
+    const location = { lat: 1, lng: 2 };
+    const state = baseState({
+      sheetSnap: "half",
+      sheetPhase: "resting",
+      selectedItemId: itemId,
+      cameraSnapshot: readySnapshot,
+      routeVisit: {
+        routeKey: "trail-serial",
+        entry: { kind: "item", id: itemId, location },
+        applyStatus: "dispatched",
+      },
+      intent: {
+        phase: "awaitGates",
+        itemId,
+        camera: { kind: "flyToItem", location },
+        requiredSnap: "half",
+        deferFlyUntilResting: false,
+        navigateEmitted: true,
+      },
+    });
+
+    const dismissed = reduceMapShellMachine(state, { type: "dismissSheet" });
+
+    expect(dismissed.state.selectedItemId).toBeNull();
+    expect(dismissed.state.routeVisit?.applyStatus).toBe("dismissed");
+
+    const settled = reduceMapShellMachine(dismissed.state, {
+      type: "sheetSettled",
+      snap: "collapsed",
+    });
+
+    expect(settled.state.selectedItemId).toBeNull();
+    expect(settled.effects).toEqual([]);
+
+    const afterPadding = reduceMapShellMachine(
+      settled.state,
+      cameraPaddingReadyChanged(true),
+    );
+
+    expect(afterPadding.state.selectedItemId).toBeNull();
+    expect(afterPadding.effects).toEqual([]);
+  });
+
+  it("dismissSheet dismisses deferred route entry before padding is ready", () => {
+    const itemId = "capture-1";
+    const location = { lat: 1, lng: 2 };
+    const state = baseState({
+      sheetSnap: "half",
+      selectedItemId: itemId,
+      cameraSnapshot: snapshot({
+        mapPaddingReady: false,
+        hasUserLocation: true,
+      }),
+      routeVisit: {
+        routeKey: "trail-serial",
+        entry: { kind: "item", id: itemId, location },
+        applyStatus: "waiting",
+      },
+      intent: {
+        phase: "awaitGates",
+        itemId,
+        camera: { kind: "flyToItem", location },
+        requiredSnap: "half",
+        deferFlyUntilResting: false,
+        navigateEmitted: false,
+      },
+    });
+
+    const dismissed = reduceMapShellMachine(state, { type: "dismissSheet" });
+
+    expect(dismissed.state.routeVisit?.applyStatus).toBe("dismissed");
+
+    const afterPadding = reduceMapShellMachine(
+      dismissed.state,
+      cameraPaddingReadyChanged(true),
+    );
+
+    expect(afterPadding.state.selectedItemId).toBeNull();
+    expect(afterPadding.effects).toEqual([]);
+  });
+
   it("sheetLayoutFrameChanged syncs sheetTarget from restingSnap while dragging", () => {
     const state = baseState({
       sheetPhase: "resting",
