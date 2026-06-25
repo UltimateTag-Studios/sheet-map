@@ -16,7 +16,7 @@ export function completeSelectOpenHalf(
 
   return {
     ...state,
-    commandedSnap: "half",
+    sheetTarget: "half",
     intent: null,
   };
 }

@@ -263,6 +263,16 @@
   background: var(--sheet-map-color-location-button-active-background-hover);
 }
 
+.sheet-map-location-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.sheet-map-location-button:disabled:hover {
+  background: var(--sheet-map-color-location-button-background);
+}
+
 .sheet-map-item-marker {
   display: flex;
   align-items: center;

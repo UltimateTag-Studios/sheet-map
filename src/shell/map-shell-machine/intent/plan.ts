@@ -4,6 +4,7 @@ import type {
   ShellCameraIntent,
   ShellIntent,
 } from "../state";
+import { snapForPlanning } from "../state";
 
 type ItemSelectOptions = { zoom?: number; enterFly?: boolean };
 
@@ -13,7 +14,7 @@ export function planItemSelectIntent(
   location: MapItemLocation,
   options?: ItemSelectOptions,
 ): ShellIntent {
-  const layoutSnap = state.layoutSnap;
+  const effectiveSnap = snapForPlanning(state);
   const camera: ShellCameraIntent = options?.enterFly
     ? options.zoom !== undefined
       ? {
@@ -25,7 +26,7 @@ export function planItemSelectIntent(
       : { kind: "flyToItem", location, enterFly: true }
     : { kind: "flyToItem", location };
 
-  if (layoutSnap === "collapsed") {
+  if (effectiveSnap === "collapsed") {
     return {
       phase: "awaitGates",
       itemId: id,
@@ -35,7 +36,7 @@ export function planItemSelectIntent(
     };
   }
 
-  if (layoutSnap === "half") {
+  if (effectiveSnap === "half") {
     return {
       phase: "awaitGates",
       itemId: id,
@@ -64,9 +65,9 @@ export function planUserRecenterIntent(zoom?: number): ShellIntent {
 
 export function planSelectItemWithoutLocationIntent(
   id: string,
-): Pick<MapShellMachineState, "commandedSnap" | "intent" | "selectedItemId"> {
+): Pick<MapShellMachineState, "sheetTarget" | "intent" | "selectedItemId"> {
   return {
-    commandedSnap: "half",
+    sheetTarget: "half",
     intent: null,
     selectedItemId: id,
   };

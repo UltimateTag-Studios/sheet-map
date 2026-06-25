@@ -85,6 +85,7 @@ export function MapShellContent({
   const sheetLayout = resolveMapSheetLayout(config.sheetLayout);
   const resolvedTheme = config.theme ?? DEFAULT_THEME;
   const { tracking, mapPaddingReady } = userTracking;
+  const locationButtonDisabled = !userLocation || !mapPaddingReady;
 
   const [collapsedSheetHeightPx, setCollapsedSheetHeightPx] = useState(0);
 
@@ -132,17 +133,19 @@ export function MapShellContent({
         {actionChrome ? (
           <div className="sheet-map-overlay-slot--action">{actionChrome}</div>
         ) : null}
-        {myLocationButton && userLocation && mapPaddingReady
+        {myLocationButton
           ? (slots.renderMyLocationButton?.(
               recenterUser,
               tracking,
               myLocationAriaLabel,
+              locationButtonDisabled,
             ) ?? (
               <div className="sheet-map-overlay-slot--bottom-left">
                 <MapLocationButtonControl
                   ariaLabel={myLocationAriaLabel}
                   onPress={recenterUser}
                   tracking={tracking}
+                  disabled={locationButtonDisabled}
                 />
               </div>
             ))

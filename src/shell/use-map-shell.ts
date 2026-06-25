@@ -19,7 +19,7 @@ import type {
   MapShellMachineEffect,
   MapShellMachineEvent,
 } from "./map-shell-machine";
-import { useMapShellMachine } from "./map-shell-machine";
+import { sheetPropSnap, useMapShellMachine } from "./map-shell-machine";
 import type { RouteEnterFly } from "./map-shell-machine/route-enter-fly";
 import { runMapShellMachineEffect } from "./run-map-shell-effect";
 
@@ -122,15 +122,29 @@ export function useMapShell({
 
   const handleMachineEffect = useCallback(
     (effect: MapShellMachineEffect) => {
+      if (debug) {
+        console.info("[map-shell] effect", effect);
+      }
       runMapShellMachineEffect(effect, {
         flyToItem,
         userTrackingRef,
       });
     },
-    [flyToItem],
+    [flyToItem, debug],
   );
 
-  const { state: machine, dispatch } = useMapShellMachine(handleMachineEffect);
+  const { state: machine, dispatch: machineDispatch } =
+    useMapShellMachine(handleMachineEffect);
+
+  const dispatch = useCallback(
+    (event: MapShellMachineEvent) => {
+      if (debug) {
+        console.info("[map-shell] dispatch", event);
+      }
+      machineDispatch(event);
+    },
+    [machineDispatch, debug],
+  );
   dispatchRef.current = dispatch;
 
   useEffect(() => {
@@ -193,7 +207,7 @@ export function useMapShell({
   );
 
   return {
-    sheetSnap: machine.commandedSnap,
+    sheetSnap: sheetPropSnap(machine),
     handleSheetSnapSettled,
     handleSheetLayoutFrameChange,
     mapRef,

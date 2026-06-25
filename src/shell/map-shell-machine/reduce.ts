@@ -2,7 +2,7 @@ import { applyCameraSnapshot } from "./camera-snapshot/apply";
 import { mergeResults } from "./helpers/merge-results";
 import {
   clearSelectionState,
-  sheetClosedState,
+  sheetDismissCommand,
 } from "./helpers/selection-state";
 import { reduceRecenterUser } from "./recenter/reduce";
 import { reduceRouteEnterFlyChanged } from "./route/reduce-enter-fly-changed";
@@ -36,11 +36,7 @@ export function reduceMapShellMachine(
     }
 
     case "sheetLayoutFrameChanged": {
-      return reduceSheetLayoutFrameChanged(
-        state,
-        event.phase,
-        event.restingSnap,
-      );
+      return reduceSheetLayoutFrameChanged(state, event.phase);
     }
 
     case "sheetSettled": {
@@ -92,15 +88,16 @@ export function reduceMapShellMachine(
 
     case "dismissSheet": {
       if (
-        state.commandedSnap === "collapsed" &&
         state.selectedItemId === null &&
-        state.intent === null
+        state.intent === null &&
+        (state.sheetTarget === "collapsed" ||
+          (state.sheetTarget === null && state.sheetSnap === "collapsed"))
       ) {
         return { state, effects: [] };
       }
 
       return {
-        state: sheetClosedState(state),
+        state: sheetDismissCommand(state),
         effects: [],
       };
     }

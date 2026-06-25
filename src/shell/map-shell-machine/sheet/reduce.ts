@@ -9,7 +9,7 @@ import {
   dismissRouteEntry,
   resetRouteEntryToWaiting,
 } from "../route-enter-fly";
-import type { MapShellMachineState } from "../state";
+import { type MapShellMachineState, mapShellPhaseFromSheet } from "../state";
 import type { MapShellMachineEffect, MapShellMachineResult } from "../types";
 
 type SheetPhase = SheetLayoutFrameChange["phase"];
@@ -17,21 +17,20 @@ type SheetPhase = SheetLayoutFrameChange["phase"];
 export function reduceSheetLayoutFrameChanged(
   state: MapShellMachineState,
   phase: SheetPhase,
-  restingSnap: SheetSnap,
 ): MapShellMachineResult {
-  const previousPhase = state.sheetMotionPhase;
+  const sheetPhase = mapShellPhaseFromSheet(phase);
+  const previousPhase = state.sheetPhase;
   const nextState: MapShellMachineState = {
     ...state,
-    layoutSnap: restingSnap,
-    sheetMotionPhase: phase,
+    sheetPhase,
   };
 
   const effects: MapShellMachineEffect[] = [];
-  if (previousPhase !== phase) {
+  if (previousPhase !== sheetPhase) {
     effects.push({ type: "syncCameraSheetPhase", phase });
   }
 
-  if (phase === "idle") {
+  if (sheetPhase === "resting") {
     const emitted = emitCameraFlyIfReady(nextState);
     return {
       state: emitted.state,
@@ -48,28 +47,28 @@ export function reduceSheetSettled(
 ): MapShellMachineResult {
   const withLayout: MapShellMachineState = {
     ...state,
-    layoutSnap: snap,
-    sheetMotionPhase: "idle",
+    sheetSnap: snap,
+    sheetTarget: null,
+    sheetPhase: "resting",
   };
 
   if (snap === "collapsed") {
     if (routeEntryInterruptedOnCollapse(withLayout)) {
       return {
-        state: resetRouteEntryToWaiting(
-          sheetClosedState({ ...withLayout, commandedSnap: snap }),
-        ),
+        state: resetRouteEntryToWaiting(sheetClosedState(withLayout)),
         effects: [],
       };
     }
 
-    const closed = sheetClosedState({ ...withLayout, commandedSnap: snap });
+    const flyReady = emitCameraFlyIfReady(withLayout);
+    if (flyReady.effects.length > 0) {
+      return flyReady;
+    }
+
+    const closed = sheetClosedState(withLayout);
     const next = closed.routeVisit ? dismissRouteEntry(closed) : closed;
     return { state: next, effects: [] };
   }
 
-  const nextState: MapShellMachineState = {
-    ...withLayout,
-    commandedSnap: snap,
-  };
-  return emitCameraFlyIfReady(nextState);
+  return emitCameraFlyIfReady(withLayout);
 }

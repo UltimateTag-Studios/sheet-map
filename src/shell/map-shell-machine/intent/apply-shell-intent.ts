@@ -11,7 +11,7 @@ export function applyShellIntent(
   };
 
   if (intent.phase === "awaitGates" && intent.sheetTarget !== null) {
-    next.commandedSnap = intent.sheetTarget;
+    next.sheetTarget = intent.sheetTarget;
   }
 
   return next;

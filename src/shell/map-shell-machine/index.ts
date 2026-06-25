@@ -7,15 +7,19 @@ export {
 export type {
   MapShellCameraSnapshot,
   MapShellMachineState,
+  MapShellSheetPhase,
   ShellCameraIntent,
   ShellIntent,
 } from "./state";
 export {
   createInitialMapShellMachineState,
   intentReadyForCameraFly,
-  layoutSnapMatchesIntent,
+  mapShellPhaseFromSheet,
   sheetAndPaddingReady,
-  sheetMotionIdle,
+  sheetPhaseResting,
+  sheetPropSnap,
+  sheetSnapMatchesIntent,
+  snapForPlanning,
 } from "./state";
 export type {
   MapShellMachineEffect,

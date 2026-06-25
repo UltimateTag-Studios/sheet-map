@@ -5,6 +5,7 @@ export type MapLocationButtonProps = {
   onPress: () => void;
   /** Blue when actively tracking the user location. */
   tracking?: boolean;
+  disabled?: boolean;
   className?: string;
 };
 
@@ -13,6 +14,7 @@ export function MapLocationButton({
   ariaLabel,
   onPress,
   tracking = false,
+  disabled = false,
   className = "",
 }: MapLocationButtonProps) {
   return (
@@ -20,6 +22,7 @@ export function MapLocationButton({
       type="button"
       aria-label={ariaLabel}
       aria-pressed={tracking}
+      disabled={disabled}
       onClick={onPress}
       className={`sheet-map-location-button${className ? ` ${className}` : ""}`}
     >

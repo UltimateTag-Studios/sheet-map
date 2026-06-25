@@ -49,6 +49,7 @@ export type MapShellSlots = {
     onPress: () => void,
     tracking: boolean,
     ariaLabel: string,
+    disabled: boolean,
   ) => ReactNode;
   renderActionButton?: (onPress: () => void, ariaLabel: string) => ReactNode;
   renderUserLocation?: (

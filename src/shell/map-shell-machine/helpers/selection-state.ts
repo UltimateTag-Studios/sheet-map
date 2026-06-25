@@ -6,9 +6,17 @@ export function sheetClosedState(
 ): MapShellMachineState {
   return {
     ...state,
-    commandedSnap: "collapsed",
     selectedItemId: null,
     intent: null,
+  };
+}
+
+export function sheetDismissCommand(
+  state: MapShellMachineState,
+): MapShellMachineState {
+  return {
+    ...sheetClosedState(state),
+    sheetTarget: "collapsed",
   };
 }
 

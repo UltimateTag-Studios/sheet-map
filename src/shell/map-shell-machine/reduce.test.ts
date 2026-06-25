@@ -20,12 +20,6 @@ function baseState(
 ): MapShellMachineState {
   const base = createInitialMapShellMachineState();
   const merged: MapShellMachineState = { ...base, ...overrides };
-  if (
-    overrides.commandedSnap !== undefined &&
-    overrides.layoutSnap === undefined
-  ) {
-    merged.layoutSnap = overrides.commandedSnap;
-  }
   if (overrides.cameraSnapshot) {
     merged.cameraSnapshot = snapshot(overrides.cameraSnapshot);
   }
@@ -48,7 +42,7 @@ describe("reduceMapShellMachine", () => {
     });
 
     expect(result.state.selectedItemId).toBe("a");
-    expect(result.state.commandedSnap).toBe("collapsed");
+    expect(result.state.sheetTarget).toBe("collapsed");
     expect(result.state.intent).toEqual({
       phase: "awaitCameraIdleForHalf",
       itemId: "a",
@@ -72,14 +66,14 @@ describe("reduceMapShellMachine", () => {
       snapshot: snapshot({ ...readySnapshot, cameraSession: "idle" }),
     });
 
-    expect(result.state.commandedSnap).toBe("half");
+    expect(result.state.sheetTarget).toBe("half");
     expect(result.state.intent).toBeNull();
   });
 
   it("selectItem at half flies immediately", () => {
     const state = baseState({
-      commandedSnap: "half",
-      layoutSnap: "half",
+      sheetSnap: "half",
+      sheetTarget: null,
       cameraSnapshot: readySnapshot,
     });
 
@@ -89,16 +83,16 @@ describe("reduceMapShellMachine", () => {
       location: { lat: 1, lng: 2 },
     });
 
-    expect(result.state.commandedSnap).toBe("half");
+    expect(result.state.sheetTarget).toBe("half");
     expect(result.effects).toEqual([
       { type: "flyToItem", location: { lat: 1, lng: 2 } },
     ]);
   });
 
-  it("selectItem at full commands half and defers fly until layout half", () => {
+  it("selectItem at full commands half and defers fly until sheetSnap half", () => {
     const state = baseState({
-      commandedSnap: "full",
-      layoutSnap: "full",
+      sheetSnap: "full",
+      sheetTarget: null,
       cameraSnapshot: readySnapshot,
     });
 
@@ -108,7 +102,7 @@ describe("reduceMapShellMachine", () => {
       location: { lat: 1, lng: 2 },
     });
 
-    expect(result.state.commandedSnap).toBe("half");
+    expect(result.state.sheetTarget).toBe("half");
     expect(result.state.intent?.phase).toBe("awaitGates");
     if (result.state.intent?.phase === "awaitGates") {
       expect(result.state.intent.camera).toEqual({
@@ -119,10 +113,10 @@ describe("reduceMapShellMachine", () => {
     expect(result.effects).toEqual([]);
   });
 
-  it("full reselect B while A selected at layout full slides to half then flies", () => {
+  it("full reselect B while A selected at sheetSnap full slides to half then flies", () => {
     const state = baseState({
-      commandedSnap: "half",
-      layoutSnap: "full",
+      sheetSnap: "full",
+      sheetTarget: null,
       selectedItemId: "a",
       cameraSnapshot: readySnapshot,
     });
@@ -133,7 +127,7 @@ describe("reduceMapShellMachine", () => {
       location: { lat: 3, lng: 4 },
     });
 
-    expect(select.state.commandedSnap).toBe("half");
+    expect(select.state.sheetTarget).toBe("half");
     expect(select.effects).toEqual([]);
 
     const afterHalf = reduceMapShellMachine(select.state, {
@@ -148,8 +142,8 @@ describe("reduceMapShellMachine", () => {
 
   it("defers fly while sheet is dragging", () => {
     const state = baseState({
-      sheetMotionPhase: "dragging",
-      layoutSnap: "half",
+      sheetPhase: "dragging",
+      sheetSnap: "half",
       cameraSnapshot: readySnapshot,
     });
 
@@ -163,10 +157,10 @@ describe("reduceMapShellMachine", () => {
     expect(result.state.intent?.phase).toBe("awaitGates");
   });
 
-  it("defers fly when layoutSnap has not reached intent sheetTarget", () => {
+  it("defers fly when sheetSnap has not reached intent sheetTarget", () => {
     const state = baseState({
-      commandedSnap: "half",
-      layoutSnap: "full",
+      sheetSnap: "full",
+      sheetTarget: "half",
       cameraSnapshot: readySnapshot,
     });
 
@@ -181,8 +175,8 @@ describe("reduceMapShellMachine", () => {
 
   it("recenterUser at full flies without changing sheet snap", () => {
     const state = baseState({
-      commandedSnap: "full",
-      layoutSnap: "full",
+      sheetSnap: "full",
+      sheetTarget: null,
       selectedItemId: "a",
       cameraSnapshot: readySnapshot,
     });
@@ -192,15 +186,16 @@ describe("reduceMapShellMachine", () => {
     });
 
     expect(result.state.selectedItemId).toBeNull();
-    expect(result.state.commandedSnap).toBe("full");
+    expect(result.state.sheetSnap).toBe("full");
+    expect(result.state.sheetTarget).toBeNull();
     expect(result.effects).toEqual([{ type: "flyToUser", zoom: 14 }]);
   });
 
   it("recenterUser during drag defers fly", () => {
     const state = baseState({
-      commandedSnap: "full",
-      layoutSnap: "full",
-      sheetMotionPhase: "dragging",
+      sheetSnap: "full",
+      sheetTarget: null,
+      sheetPhase: "dragging",
       cameraSnapshot: readySnapshot,
     });
 
@@ -210,7 +205,8 @@ describe("reduceMapShellMachine", () => {
     if (result.state.intent?.phase === "awaitGates") {
       expect(result.state.intent.camera).toEqual({ kind: "flyToUser" });
     }
-    expect(result.state.commandedSnap).toBe("full");
+    expect(result.state.sheetSnap).toBe("full");
+    expect(result.state.sheetTarget).toBeNull();
   });
 
   it("latest intent wins when selecting during an in-flight camera move", () => {
@@ -234,8 +230,9 @@ describe("reduceMapShellMachine", () => {
     ]);
   });
 
-  it("dismissSheet collapses and clears intent", () => {
+  it("dismissSheet sets sheetTarget collapsed and clears intent", () => {
     const state = baseState({
+      sheetSnap: "half",
       selectedItemId: "a",
       intent: {
         phase: "awaitGates",
@@ -247,9 +244,61 @@ describe("reduceMapShellMachine", () => {
 
     const result = reduceMapShellMachine(state, { type: "dismissSheet" });
 
-    expect(result.state.commandedSnap).toBe("collapsed");
+    expect(result.state.sheetTarget).toBe("collapsed");
+    expect(result.state.sheetSnap).toBe("half");
     expect(result.state.selectedItemId).toBeNull();
     expect(result.state.intent).toBeNull();
+  });
+
+  it("select while sheet closing uses collapsed plan", () => {
+    const state = baseState({
+      sheetSnap: "half",
+      sheetTarget: "collapsed",
+      sheetPhase: "settling",
+      selectedItemId: null,
+      cameraSnapshot: readySnapshot,
+    });
+
+    const result = reduceMapShellMachine(state, {
+      type: "selectItem",
+      id: "b",
+      location: { lat: 3, lng: 4 },
+    });
+
+    expect(result.state.sheetTarget).toBe("collapsed");
+    if (result.state.intent?.phase === "awaitGates") {
+      expect(result.state.intent.openHalfAfterFly).toBe(true);
+    }
+  });
+
+  it("select during dismiss flys after collapsed settle", () => {
+    const state = baseState({
+      sheetSnap: "half",
+      sheetTarget: "collapsed",
+      sheetPhase: "settling",
+      selectedItemId: "b",
+      cameraSnapshot: readySnapshot,
+      intent: {
+        phase: "awaitGates",
+        itemId: "b",
+        camera: { kind: "flyToItem", location: { lat: 3, lng: 4 } },
+        sheetTarget: "collapsed",
+        openHalfAfterFly: true,
+      },
+    });
+
+    const result = reduceMapShellMachine(state, {
+      type: "sheetSettled",
+      snap: "collapsed",
+    });
+
+    expect(result.effects).toEqual([
+      { type: "flyToItem", location: { lat: 3, lng: 4 } },
+    ]);
+    expect(result.state.intent).toEqual({
+      phase: "awaitCameraIdleForHalf",
+      itemId: "b",
+    });
   });
 
   it("clearSelection dismisses route entry apply status", () => {
@@ -282,7 +331,7 @@ describe("reduceMapShellMachine", () => {
       location: null,
     });
 
-    expect(result.state.commandedSnap).toBe("half");
+    expect(result.state.sheetTarget).toBe("half");
     expect(result.state.selectedItemId).toBe("a");
     expect(result.state.intent).toBeNull();
     expect(result.effects).toEqual([]);
@@ -321,8 +370,11 @@ describe("reduceMapShellMachine", () => {
     });
   });
 
-  it("sheetLayoutFrameChanged emits syncCameraSheetPhase when phase changes", () => {
-    const state = baseState({ sheetMotionPhase: "idle" });
+  it("sheetLayoutFrameChanged updates sheetPhase only, not sheetSnap", () => {
+    const state = baseState({
+      sheetPhase: "resting",
+      sheetSnap: "full",
+    });
 
     const result = reduceMapShellMachine(state, {
       type: "sheetLayoutFrameChanged",
@@ -330,8 +382,8 @@ describe("reduceMapShellMachine", () => {
       restingSnap: "half",
     });
 
-    expect(result.state.layoutSnap).toBe("half");
-    expect(result.state.sheetMotionPhase).toBe("dragging");
+    expect(result.state.sheetSnap).toBe("full");
+    expect(result.state.sheetPhase).toBe("dragging");
     expect(result.effects).toEqual([
       { type: "syncCameraSheetPhase", phase: "dragging" },
     ]);

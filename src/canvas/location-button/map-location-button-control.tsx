@@ -6,12 +6,14 @@ export type MapLocationButtonRenderProps = {
   tracking: boolean;
   onPress: () => void;
   ariaLabel: string;
+  disabled?: boolean;
 };
 
 export type MapLocationButtonControlProps = {
   tracking: boolean;
   onPress: () => void;
   ariaLabel?: string;
+  disabled?: boolean;
   className?: string;
   renderButton?: (props: MapLocationButtonRenderProps) => ReactNode;
 };
@@ -21,6 +23,7 @@ export function MapLocationButtonControl({
   tracking,
   onPress,
   ariaLabel = "Focus my location",
+  disabled = false,
   className,
   renderButton,
 }: MapLocationButtonControlProps) {
@@ -28,6 +31,7 @@ export function MapLocationButtonControl({
     tracking,
     onPress,
     ariaLabel,
+    disabled,
   };
 
   if (renderButton) {
@@ -39,6 +43,7 @@ export function MapLocationButtonControl({
       ariaLabel={ariaLabel}
       onPress={onPress}
       tracking={tracking}
+      disabled={disabled}
       className={className}
     />
   );
