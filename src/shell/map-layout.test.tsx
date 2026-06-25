@@ -48,7 +48,7 @@ import { useRegisterMapRoute } from "./use-register-map-route";
 function TestRoute() {
   useRegisterMapRoute({
     header: { title: "Test route" },
-    body: <p>Route body</p>,
+    bodyContent: <p>Route body</p>,
   });
   return null;
 }

@@ -40,8 +40,8 @@ export function resolveRouteBody(
 ): ReactNode {
   let body: ReactNode;
 
-  if (routeContent?.body !== undefined) {
-    body = routeContent.body;
+  if (routeContent?.bodyContent !== undefined) {
+    body = routeContent.bodyContent;
   } else if (routeContent?.items && routeContent.items.length > 0) {
     body = createElement(
       MapSheetBody,

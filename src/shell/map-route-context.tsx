@@ -12,7 +12,8 @@ export type MapRouteContent = {
   header?: MapSheetHeaderProps;
   /** Bypass header data + slot chain entirely. */
   headerContent?: ReactNode;
-  body?: ReactNode;
+  /** Bypass body data + slot chain entirely. */
+  bodyContent?: ReactNode;
   mapLayers?: ReactNode;
   overlay?: ReactNode | null;
   /** Action button slot when the sheet is collapsed (e.g. trail back). Same slot as close. */

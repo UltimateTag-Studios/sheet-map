@@ -10,7 +10,7 @@ const shellStub = {} as MapShellState;
 
 const baseContent: MapRouteContent = {
   header: { title: "Inventory" },
-  body: "body",
+  bodyContent: "body",
 };
 
 function mountRegisterRoute(initialContent: MapRouteContent) {
