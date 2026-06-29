@@ -26,11 +26,12 @@ jobs:
           pkg.devDependencies["@siegetag/sheet"] =
             "github:UltimateTag-Studios/sheet#main";
           delete pkg.devDependencies["@siegetag/ui"];
+          delete pkg.peerDependencies["@siegetag/ui"];
           fs.writeFileSync("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
           EOF
 
       - name: Install
-        run: pnpm install --config.peerDependencyRules.ignoreMissing[]=@siegetag/ui
+        run: pnpm install
 
       - name: Build styles
         run: pnpm run build:styles
