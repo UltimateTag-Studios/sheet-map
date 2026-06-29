@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Prepare standalone manifest
+        run: |
+          node <<'EOF'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          pkg.devDependencies["@siegetag/sheet"] =
+            "github:UltimateTag-Studios/sheet#main";
+          delete pkg.devDependencies["@siegetag/ui"];
+          fs.writeFileSync("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
+          EOF
+
+      - name: Install
+        run: pnpm install
+
+      - name: Build styles
+        run: pnpm run build:styles
