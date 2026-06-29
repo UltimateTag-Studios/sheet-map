@@ -30,7 +30,7 @@ jobs:
           EOF
 
       - name: Install
-        run: pnpm install
+        run: pnpm install --config.peerDependencyRules.ignoreMissing[]=@siegetag/ui
 
       - name: Build styles
         run: pnpm run build:styles
